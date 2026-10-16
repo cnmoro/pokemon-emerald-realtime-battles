@@ -132,6 +132,18 @@ bool8 RtDebug_FieldInput(void)
         gPlayerParty[0] = mon;
         return FALSE;
     }
+    if (cmd == 13)
+    {
+        // HM test: all HMs and badges, standing below the cut tree of Petalburg Woods
+        u16 k;
+        for (k = ITEM_HM01; k <= ITEM_HM08; k++)
+            AddBagItem(k, 1);
+        for (k = FLAG_BADGE01_GET; k <= FLAG_BADGE08_GET; k++)
+            FlagSet(k);
+        SetWarpDestination(MAP_GROUP(MAP_PETALBURG_WOODS), MAP_NUM(MAP_PETALBURG_WOODS), WARP_ID_NONE, 19, 11);
+        DoWarp();
+        return TRUE;
+    }
     if (cmd == 7)
     {
         HealPlayerParty();
