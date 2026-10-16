@@ -64,7 +64,7 @@ static const struct WindowTemplate sRtWindows[] =
     [WIN_MSG]    = { .bg = 0, .tilemapLeft = 0,  .tilemapTop = 12, .width = 30, .height = 4,  .paletteNum = 14, .baseBlock = 237 },
     [WIN_MENU]   = { .bg = 0, .tilemapLeft = 15, .tilemapTop = 4,  .width = 14, .height = 9,  .paletteNum = 14, .baseBlock = 357 },
     // end-of-battle EXP panel: shares the tiles of WIN_MSG and WIN_MENU (never shown together)
-    [WIN_EXP]    = { .bg = 0, .tilemapLeft = 5,  .tilemapTop = 3,  .width = 20, .height = 8,  .paletteNum = 14, .baseBlock = 237 },
+    [WIN_EXP]    = { .bg = 0, .tilemapLeft = 5,  .tilemapTop = 3,  .width = 20, .height = 10,  .paletteNum = 14, .baseBlock = 237 },
     DUMMY_WIN_TEMPLATE
 };
 
@@ -1999,6 +1999,11 @@ static u32 ExpBarPixels(u16 species, u32 exp)
 static const u8 sText_ExpTitle[] = _("EXP. POINTS");
 static const u8 sText_ExpPlus[] = _("+{STR_VAR_1}");
 
+// transparent background: the rows are only 10px apart and must not paint over each other
+static const u8 sColExp[] = {0, 2, 3};
+static const u8 sColExpRed[] = {0, 5, 3};
+static const u8 sColExpGray[] = {0, 3, 7};
+
 static void DrawExpPanel(u16 t)
 {
     s32 i;
@@ -2012,7 +2017,7 @@ static void DrawExpPanel(u16 t)
         FillWindowPixelRect(WIN_EXP, PIXEL_FILL(4), 0, 0, 2, h);
         FillWindowPixelRect(WIN_EXP, PIXEL_FILL(4), 158, 0, 2, h);
     }
-    AddTextPrinterParameterized3(WIN_EXP, FONT_SMALL, 6, 2, sColMenuGray, TEXT_SKIP_DRAW, sText_ExpTitle);
+    AddTextPrinterParameterized3(WIN_EXP, FONT_SMALL, 6, 2, sColExpGray, TEXT_SKIP_DRAW, sText_ExpTitle);
     for (i = 0; i < sExpCount; i++)
     {
         u8 slot = sExpSlots[i];
@@ -2031,11 +2036,11 @@ static void DrawExpPanel(u16 t)
         fill = lv < MAX_LEVEL ? (shown - lo) * 46 / (hi - lo) : 46;
         GetMonData(mon, MON_DATA_NICKNAME, gStringVar1);
         StringGet_Nickname(gStringVar1);
-        AddTextPrinterParameterized3(WIN_EXP, FONT_SMALL, 6, y, sColMenu, TEXT_SKIP_DRAW, gStringVar1);
+        AddTextPrinterParameterized3(WIN_EXP, FONT_SMALL, 6, y, sColExp, TEXT_SKIP_DRAW, gStringVar1);
         gStringVar2[0] = CHAR_L;
         gStringVar2[1] = CHAR_v;
         ConvertIntToDecimalStringN(gStringVar2 + 2, lv, STR_CONV_MODE_LEFT_ALIGN, 3);
-        AddTextPrinterParameterized3(WIN_EXP, FONT_SMALL, 54, y, sColMenu, TEXT_SKIP_DRAW, gStringVar2);
+        AddTextPrinterParameterized3(WIN_EXP, FONT_SMALL, 54, y, sColExp, TEXT_SKIP_DRAW, gStringVar2);
         // the bar
         FillWindowPixelRect(WIN_EXP, PIXEL_FILL(2), 78, y + 3, 48, 5);
         FillWindowPixelRect(WIN_EXP, PIXEL_FILL(3), 79, y + 4, 46, 3);
@@ -2043,7 +2048,7 @@ static void DrawExpPanel(u16 t)
             FillWindowPixelRect(WIN_EXP, PIXEL_FILL(4), 79, y + 4, fill, 3);
         ConvertIntToDecimalStringN(gStringVar1, e1 - e0, STR_CONV_MODE_LEFT_ALIGN, 6);
         StringExpandPlaceholders(gStringVar4, sText_ExpPlus);
-        AddTextPrinterParameterized3(WIN_EXP, FONT_SMALL, 130, y, sColMenuRed, TEXT_SKIP_DRAW, gStringVar4);
+        AddTextPrinterParameterized3(WIN_EXP, FONT_SMALL, 130, y, sColExpRed, TEXT_SKIP_DRAW, gStringVar4);
     }
     PutWindowTilemap(WIN_EXP);
     CopyWindowToVram(WIN_EXP, COPYWIN_FULL);

@@ -1358,6 +1358,28 @@ void Rt_GiveExpForFaint(struct RtActor *fainted)
     base = gSpeciesInfo[species].expYield * fainted->level / 7;
     if (gRt->isTrainer)
         base = base * 150 / 100;
+    // EXP SHARE option: the EXP is split evenly among the first 2..6 POKeMON of the party
+    // (plus any one outside them that took part); the EXP SHARE item is not needed then
+    if (gSaveBlock2Ptr->optionsRtExpShare)
+    {
+        u8 firstN = gSaveBlock2Ptr->optionsRtExpShare + 1, n = 0;
+        u32 each;
+        for (i = 0; i < PlayerPartyLimit(); i++)
+        {
+            participants[i] = IsMonUsable(&gPlayerParty[i]) && (i < firstN || (mask & (1 << i)));
+            if (participants[i])
+                n++;
+        }
+        if (n == 0)
+            return;
+        each = base / n;
+        if (each == 0)
+            each = 1;
+        for (i = 0; i < PlayerPartyLimit(); i++)
+            if (participants[i])
+                Rt_GiveExpToMon(i, each, species);
+        return;
+    }
     if (nShare)
     {
         expEach = (base / 2) / nPart;
