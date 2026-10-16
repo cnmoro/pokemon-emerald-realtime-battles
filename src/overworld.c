@@ -1,5 +1,7 @@
 #include "global.h"
 #include "overworld.h"
+#include "party_menu.h"
+#include "constants/moves.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
 #include "berry.h"
@@ -970,6 +972,9 @@ bool32 Overworld_IsBikingAllowed(void)
 // Flash level of 8 is fully black
 void SetDefaultFlashLevel(void)
 {
+    // dark caves light up by themselves once HM05 is in the bag (with the badge that allows FLASH)
+    if (gMapHeader.cave && !FlagGet(FLAG_SYS_USE_FLASH) && FlagGet(FLAG_BADGE02_GET) && PlayerHasHmForFieldMove(MOVE_FLASH))
+        FlagSet(FLAG_SYS_USE_FLASH);
     if (!gMapHeader.cave)
         gSaveBlock1Ptr->flashLevel = 0;
     else if (FlagGet(FLAG_SYS_USE_FLASH))

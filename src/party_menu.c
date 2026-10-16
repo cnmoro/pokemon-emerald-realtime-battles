@@ -2624,6 +2624,21 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
         }
     }
 
+    // HMs in the bag whose field move is used from this menu (FLASH in caves, STRENGTH for the
+    // ruins' puzzles) are offered on every POKeMON, as long as there is room in the list
+    {
+        static const u16 sMenuHms[] = {MOVE_FLASH, MOVE_STRENGTH};
+        for (i = 0; i < ARRAY_COUNT(sMenuHms); i++)
+        {
+            if (sPartyMenuInternal->numActions >= 5 || !PlayerHasHmForFieldMove(sMenuHms[i])
+             || MonKnowsMove(&mons[slotId], sMenuHms[i]) || GetMonData(&mons[slotId], MON_DATA_IS_EGG))
+                continue;
+            for (j = 0; sFieldMoves[j] != FIELD_MOVES_COUNT; j++)
+                if (sFieldMoves[j] == sMenuHms[i])
+                    AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, j + MENU_FIELD_MOVES);
+        }
+    }
+
     if (!InBattlePike())
     {
         if (GetMonData(&mons[1], MON_DATA_SPECIES) != SPECIES_NONE)
@@ -4701,6 +4716,40 @@ bool8 IsMoveHm(u16 move)
             return TRUE;
     }
     return FALSE;
+}
+
+// Owning an HM is enough to use its field move outside battle: no POKeMON has to know it.
+// FLY is the exception (it is still picked from a POKeMON that knows it).
+bool8 PlayerHasHmForFieldMove(u16 move)
+{
+    u16 item;
+    switch (move)
+    {
+    case MOVE_CUT:        item = ITEM_HM01; break;
+    case MOVE_SURF:       item = ITEM_HM03; break;
+    case MOVE_STRENGTH:   item = ITEM_HM04; break;
+    case MOVE_FLASH:      item = ITEM_HM05; break;
+    case MOVE_ROCK_SMASH: item = ITEM_HM06; break;
+    case MOVE_WATERFALL:  item = ITEM_HM07; break;
+    case MOVE_DIVE:       item = ITEM_HM08; break;
+    default:
+        return FALSE;
+    }
+    return CheckBagHasItem(item, 1);
+}
+
+// the POKeMON shown using an HM nobody knows: the first one that isn't an egg
+u8 FirstUsablePartyMonForHm(void)
+{
+    u8 i;
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE)
+            break;
+        if (!GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG))
+            return i;
+    }
+    return PARTY_SIZE;
 }
 
 bool8 MonKnowsMove(struct Pokemon *mon, u16 move)
