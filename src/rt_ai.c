@@ -209,6 +209,12 @@ static u16 ScoreMove(struct RtActor *a, struct RtActor *t, u8 slot, s32 dist)
     u8 range = RtMove_GetRange(move);
     if (!RtActor_MoveSlotUsable(a, slot))
         return 0;
+    // wild POKeMON don't escape (Teleport, or Roar/Whirlwind ending the battle) in the first 8 seconds,
+    // so there is time to catch them; afterwards they try only now and then
+    if (a->side == RT_SIDE_ENEMY && !gRt->isTrainer
+     && (bm->effect == EFFECT_TELEPORT || bm->effect == EFFECT_ROAR)
+     && (gRt->frame - a->sentOutFrame < 480 || (Random() % 4) != 0))
+        return 0;
     if (bm->power)
     {
         u8 type = RtMove_TypeOf(a, move);

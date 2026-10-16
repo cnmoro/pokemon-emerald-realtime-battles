@@ -788,7 +788,7 @@ static void Rt_UpdateFight(void)
 
     gRt->timer++;
     if ((gBattleTypeFlags & BATTLE_TYPE_ROAMER) && (RtLegends_IsRoamingBattle() || !RtLegends_IsLegendBattle())
-     && gRt->timer == 150 + (gRt->frame & 63))
+     && gRt->timer == 480 + (gRt->frame & 127)) // roaming legends flee after ~8-10 s
     {
         struct RtActor *e = &gRt->actors[2];
         struct RtActor *p0 = Rt_PlayerActor();
