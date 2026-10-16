@@ -573,6 +573,7 @@ struct RtBattle
     u8 twoOpponents;
     u8 partner;          // in-game partner battle
     u8 outcome;
+    u8 fought;          // player party slots that took part in the battle (bit per slot)
     u8 weather;
     u16 weatherTimer;
     u8 arenaTheme;

@@ -36,6 +36,7 @@ Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas dupla
 - **Os 354 golpes da 3ª geração** têm comportamento, animação e efeitos próprios: projéteis, raios, ondas em cone, golpes corpo a corpo, áreas, zonas persistentes, ataques que caem do céu, Fly/Dig/Dive, clima e mais.
 - **Mira e esquiva:** tocar o botão dispara para a frente (com uma leve mira automática), segurar abre uma mira girável; SELECT faz um dash com quadros de invencibilidade.
 - **Cooldown no lugar de PP:** golpe com pouco PP no jogo original tem cooldown longo. PP Up / PP Max reduzem o cooldown, e a tela de resumo mostra o tempo em segundos.
+- **Fôlego pós-batalha:** ao vencer (ou capturar), cada Pokémon do time que lutou e não desmaiou recupera 30% do HP máximo.
 - **Regras originais preservadas:** fórmula de dano da 3ª geração, tipos, STAB, críticos, habilidades, itens segurados, berries, status, estágios de atributo, clima, experiência (Exp. Share, Lucky Egg, Pokémon trocados), dinheiro, Pay Day, Pickup, captura (fórmula original com multiplicadores de cada Poké Ball), apelido, aprender golpes e evolução.
 - **IA** com nível de habilidade por classe de treinador: escolhe alvos e golpes, mantém distância ideal, desvia de projéteis, contorna obstáculos (pathfinding em grade) e usa itens (Potions, X Items…).
 - **Sprites animados** de todos os 386 Pokémon (andar, parado, ataque, disparo, dano, dormir, carregar), em 8 direções, com paletas shiny.

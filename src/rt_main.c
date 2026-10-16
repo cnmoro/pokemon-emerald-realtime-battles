@@ -847,7 +847,10 @@ static void Rt_UpdateFight(void)
         {
             struct RtActor *pl = &gRt->actors[j];
             if (pl->active && pl->state != AST_GONE && RtActor_IsAlive(pl))
+            {
                 e->participated |= 1 << pl->partyIdx;
+                gRt->fought |= 1 << pl->partyIdx;
+            }
         }
     }
     RtProj_UpdateAll();
@@ -1609,6 +1612,26 @@ static void Rt_UpdateOutro(void)
     {
     case 0:
         Rt_SyncAllToParty();
+        // after a win, the Pokemon that fought catch their breath: +30% of their max HP (fainted ones stay down)
+        if (gRt->outcome == B_OUTCOME_WON || gRt->outcome == B_OUTCOME_CAUGHT)
+        {
+            for (i = 0; i < PARTY_SIZE; i++)
+            {
+                struct Pokemon *mon = &gPlayerParty[i];
+                u16 hp, maxHp;
+                if (!(gRt->fought & (1 << i)) || GetMonData(mon, MON_DATA_SPECIES) == SPECIES_NONE
+                 || GetMonData(mon, MON_DATA_IS_EGG))
+                    continue;
+                hp = GetMonData(mon, MON_DATA_HP);
+                maxHp = GetMonData(mon, MON_DATA_MAX_HP);
+                if (hp == 0 || hp >= maxHp)
+                    continue;
+                hp += (maxHp * 30 + 99) / 100;
+                if (hp > maxHp)
+                    hp = maxHp;
+                SetMonData(mon, MON_DATA_HP, &hp);
+            }
+        }
         if (gRt->outcome != B_OUTCOME_LOST && !(gBattleTypeFlags & BATTLE_TYPE_SAFARI))
         {
             extern void RtBattle_DoPickup(void);

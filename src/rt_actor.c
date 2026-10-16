@@ -1003,9 +1003,15 @@ void RtActor_SendOut(struct RtActor *a, u8 partyIdx, bool8 instant)
             if (!b->active || b->side == a->side || b->state == AST_GONE)
                 continue;
             if (a->side == RT_SIDE_PLAYER)
+            {
                 b->participated |= 1 << a->partyIdx;
+                gRt->fought |= 1 << a->partyIdx;
+            }
             else
+            {
                 a->participated |= 1 << b->partyIdx;
+                gRt->fought |= 1 << b->partyIdx;
+            }
         }
     }
     // spikes damage
