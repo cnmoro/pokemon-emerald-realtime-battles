@@ -23,6 +23,8 @@
 // ---------------------------------------------------------------------------
 #define ARENA_MW 32            // metatiles
 #define ARENA_MH 16
+#define FIELD_W 18             // battle field, metatiles (always this size)
+#define FIELD_H 10
 #define ARENA_W (ARENA_MW * 16) // pixels
 #define ARENA_H (ARENA_MH * 16)
 #define ARENA_BORDER 1         // metatiles of border on each side

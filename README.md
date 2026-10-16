@@ -29,7 +29,7 @@ Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas dupla
 ## Recursos
 
 - **Combate em tempo real** em todas as batalhas suportadas: selvagens, treinadores, duplas (2×2, com aliado controlado por IA), batalhas com parceiro (Steven), Safari Zone, Battle Frontier e Battle Pyramid.
-- **Arena = o lugar onde a batalha começou.** A arena é recortada do mapa real ao redor do jogador (árvores, prédios, cavernas, água, animações de tileset). Dentro dela, um **campo retangular limpo** é a área de luta: ele é posicionado onde o chão já é livre e só contém terreno sem colisão; objetos pequenos que caem dentro dele (pedras, placas, árvores soltas, ledges, degraus) são apagados com o chão em volta, e o cenário ao redor aparece escurecido — o que está claro é onde dá para andar, o que está escuro não.
+- **Arena = o lugar onde a batalha começou.** A arena é recortada do mapa real ao redor do jogador (árvores, prédios, cavernas, água, animações de tileset). Dentro dela, um **campo de luta de tamanho fixo (18×10 metatiles)** é a área de luta: ele vai para onde há menos obstáculos, e tudo dentro dele vira chão sem colisão (pedras, placas, árvores, paredes, ledges e degraus são pintados com o chão em volta). Uma moldura com as árvores/rochas de borda do mapa fecha o campo, e o cenário ao redor aparece escurecido — o que está claro é onde dá para andar, o que está escuro não.
 - **Objetos na arena:** pedras de Rock Smash, árvores de Cut, rochas de Strength e caixas de mudança — os próprios sprites do overworld do Emerald, escolhidos conforme o lugar (caixas em lugares fechados, pedras em cavernas, árvores e pedras em rotas). Eles bloqueiam passagem e tiros, quebram quando atingidos, e **golpes como Psychic, Confusion, Extrasensory, Seismic Toss, Strength, Vital Throw, Rock Throw e Ancient Power levantam um objeto próximo e o arremessam** no adversário.
 - **Todos os 386 Pokémon obtíveis:** Pokémon de Kanto e Johto (e os de Hoenn que só vinham de troca, evento ou escolha única) foram espalhados pelas rotas, cavernas e águas do Emerald, em lugares coerentes com o tipo e o nível ([lista](docs/POKEMON_LOCAIS.md)). Evoluções por troca viraram por nível/item, e os itens de evolução são vendidos em Lilycove.
 - **Lendários:** os pássaros de Kanto, os cães de Johto, Ho-Oh, Latias e Latios andam livres desde o início do jogo e podem aparecer em qualquer encontro; Lugia só no mar. Depois do Hall da Fama aparecem Celebi, Jirachi e Mewtwo em lugares temáticos, e os tickets de evento (Deoxys, Mew, Lugia/Ho-Oh, Latias/Latios) são entregues automaticamente.
@@ -72,11 +72,11 @@ Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas dupla
 
 ![](docs/screenshots/moves_sheet.png)
 
-**Arenas geradas a partir do mapa** (o campo claro é a área de luta; o cenário escurecido em volta não é caminhável) — Route 101, Petalburg Woods, ginásio de Rustboro, Meteor Falls, Slateport, Route 113 (cinzas), Route 119, Mt. Pyre (exterior), ginásio de Sootopolis, Centro Espacial de Mossdeep, Shoal Cave e ginásio de Fortree:
+**Arenas geradas a partir do mapa** (o campo claro é a área de luta; o cenário escurecido em volta não é caminhável) — Route 101, Petalburg Woods, ginásio de Rustboro, Meteor Falls, Slateport, Route 113 (cinzas), Route 119, Mt. Pyre (exterior), Dewford, Abandoned Ship, Jagged Pass e ginásio de Fortree:
 
 ![](docs/screenshots/arenas_ingame.png)
 
-Arena inteira (512×256 px), com o campo de luta em destaque, gerada para Route 101, Meteor Falls, Slateport, Route 113, Shoal Cave e ginásio de Fortree:
+Arena inteira (512×256 px), com o campo de luta em destaque e a moldura de borda, gerada para Route 101, Dewford, Petalburg, Route 113, Meteor Falls e Mt. Pyre:
 
 ![](docs/screenshots/arenas_full_maps.png)
 
@@ -171,7 +171,8 @@ Mudanças em arquivos do jogo original (pequenas): `battle_main.c` (desvio para 
 1. Uma grade de 80×48 metatiles ao redor do jogador é classificada em *caminhável*, *bloqueia projéteis* ou *aberta* (caminhável com os 8 vizinhos caminháveis). Se o jogador está surfando, a água vira o chão.
 2. Com somas de prefixo, todas as janelas de 32×16 metatiles (512×256 px, o tamanho de um mapa de BG) são pontuadas por área aberta e proximidade do jogador; as melhores candidatas passam por uma busca em largura que mede a maior região conectada.
 3. A janela vencedora é copiada como está (layers *normal/covered/split* idênticas às do overworld, com animações de tileset).
-4. **Campo de luta:** cada célula da janela é classificada como *chão limpo* (grama, alta ou não, trilha, areia, piso — no mesmo nível do jogador e dentro dos limites do mapa), *chão a pintar* (chão sob copas de árvores/telhados, ledges, peças raras como degraus, crateras ou uma tábua solta; em interiores, tapetes e banquinhos) ou *obstáculo* (qualquer coisa com colisão, água, escadas entre níveis, vazio fora do mapa). O que não é chão limpo é agrupado em objetos (8-conectados): objetos pequenos (até 9 células) são apagados inteiros, os grandes (penhascos, prédios, florestas) ficam fora do campo. Com somas de prefixo, o retângulo escolhido é o que maximiza a área menos o custo do que teria de ser pintado (obstáculos grandes são praticamente proibidos); em salas pequenas o campo fica do tamanho da sala em vez de invadir paredes. Cada objeto apagado é substituído pelo chão que mais aparece em volta dele (votação de maioria), então trilhas continuam trilhas e grama continua grama — sem emendas.
+4. **Campo de luta — sempre 18×10 metatiles (288×160 px):** o retângulo é posicionado (alinhado aos blocos de borda do mapa) onde menos coisa precisa ser limpa: cada célula que não é chão limpo do nível do jogador custa, e o vazio fora de uma sala custa mais. Dentro dele tudo vira chão: o que não é chão limpo é agrupado em objetos (8-conectados) e cada objeto é pintado com o chão que mais aparece em volta dele (votação de maioria), então trilhas continuam trilhas e grama continua grama; objetos pequenos que encostam no campo são apagados inteiros; degraus, crateras e peças raras também somem; em interiores o piso fica uniforme.
+   - **Moldura:** em volta do campo, onde algum objeto cortado pela borda apareceria (meio prédio, meio penhasco), é desenhado um anel de 2 metatiles com os *blocos de borda* do próprio mapa — as árvores das rotas e cidades, a rocha das cavernas. O campo vira uma clareira em vez de um buraco recortado no cenário. Em mapas cuja borda é água ou vazio (interiores) o anel não é desenhado.
 5. Fora do campo fica o cenário real, **escurecido** por hardware: a janela 0 do GBA cobre o campo (atualizada a cada quadro com o scroll da câmera) e o efeito de escurecimento (`BLDCNT`/`BLDY`) só vale fora dela. Assim fica óbvio onde dá e onde não dá para andar.
 6. Os pontos de spawn ficam dentro do campo, na diagonal (jogador embaixo à esquerda, inimigo em cima à direita), porque a tela é larga e baixa; a câmera enquadra os dois.
 
@@ -295,7 +296,7 @@ Usado para testes e prints. Requer o mGBA compilado como biblioteca estática (`
 - Com Repel ativo, os lendários errantes também não aparecem.
 - Em salas internas mais estreitas que a tela aparecem faixas pretas nas laterais (como no overworld).
 - Objetos do mapa que não são metatiles (NPCs, árvores cortáveis, pedras de Rock Smash) não aparecem na arena.
-- O campo de luta é sempre retangular; em mapas muito estreitos ele pode ser pequeno.
+- O campo de luta é sempre um retângulo de 18×10; em salas menores que isso ele passa por cima das paredes e do vazio em volta da sala.
 - Balanceamento (ritmo de dano, cooldowns) foi ajustado por testes, mas é subjetivo; o multiplicador global fica em `RT_DMG_SCALE` (`src/rt_moves.c`).
 
 ## Créditos e licenças

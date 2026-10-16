@@ -386,6 +386,19 @@ static bool8 IsLedgeMeta(u16 m)
         || MetatileBehavior_IsJumpNorth(b) || MetatileBehavior_IsJumpSouth(b);
 }
 
+// the black void around rooms: a metatile drawn with a single tile everywhere
+static bool8 IsBlankMetatile(u16 m)
+{
+    const u16 *t = GetMetatileTiles(m);
+    s32 k;
+    if (t == NULL)
+        return TRUE;
+    for (k = 1; k < 8; k++)
+        if ((t[k] & 0x3FF) != (t[0] & 0x3FF))
+            return FALSE;
+    return TRUE;
+}
+
 // single-level maps (most rooms and gyms) mix elevation 0 ("any level") floor with the player's level
 static bool8 sZeroElevOk;
 
@@ -754,47 +767,54 @@ void RtArena_Build(void)
         sZeroElevOk = (second * 12 < top) && gMapHeader.mapType != MAP_TYPE_TOWN && gMapHeader.mapType != MAP_TYPE_CITY
                    && gMapHeader.mapType != MAP_TYPE_ROUTE && gMapHeader.mapType != MAP_TYPE_OCEAN_ROUTE;
     }
-    // 3b. best untouched field: the biggest rectangle made only of clean ground. When there is one,
-    // the arena is the real map as it is (nothing painted), just with the scenery around dimmed.
+    // 3b. the battle field: always FIELD_W x FIELD_H metatiles. It goes where the least has to be cleared
+    // (everything that is not plain ground of the player's level counts, the void outside a room the most),
+    // close to the player. It is aligned like the map's border blocks so the frame of border blocks
+    // (trees, rock) drawn around it later lines up.
     {
-        u8 *hgt = gRt->scr.hgt;
         u8 pe = MapGridGetElevationAt(px, py);
-        s32 bestA = 0;
-        cleanW = 0;
-        memset(hgt, 0, GRID_W);
-        for (y = 1; y < GRID_H - 1; y++)
-        {
-            for (x = 1; x < GRID_W - 1; x++)
+        bool8 noConn = (gMapHeader.connections == NULL || gMapHeader.connections->count == 0);
+        const struct MapLayout *layout = gMapHeader.mapLayout;
+        s32 bestC = 0x7FFFFFFF;
+        for (y = 0; y <= GRID_H; y++)
+            for (x = 0; x <= GRID_W; x++)
             {
-                hgt[x] = CellClean(gx0 + x, gy0 + y, water, pe) ? (hgt[x] < 14 ? hgt[x] + 1 : 14) : 0;
-            }
-            for (x = 1; x < GRID_W - 1; x++)
-            {
-                s32 x2, mh = 14;
-                if (hgt[x] < 5)
-                    continue;
-                for (x2 = x; x2 < GRID_W - 1 && x2 - x < 30; x2++)
+                if (x == 0 || y == 0)
+                    sum[y * (GRID_W + 1) + x] = 0;
+                else
                 {
-                    s32 w = x2 - x + 1, a, dcx, dcy;
-                    if (hgt[x2] < mh)
-                        mh = hgt[x2];
-                    if (mh < 5)
-                        break;
-                    if (w < 7)
-                        continue;
-                    dcx = gx0 + x + w / 2 - px;
-                    dcy = gy0 + y - mh / 2 - py;
-                    if (dcx < 0) dcx = -dcx;
-                    if (dcy < 0) dcy = -dcy;
-                    a = (w > 22 ? 22 : w) * mh * 4 - (dcx + dcy) * 3;
-                    if (a > bestA)
-                    {
-                        bestA = a;
-                        cleanX = x;
-                        cleanY = y - mh + 1;
-                        cleanW = w;
-                        cleanH = mh;
-                    }
+                    s32 cx = gx0 + x - 1, cy = gy0 + y - 1, c = 0;
+                    if (noConn && (cx < MAP_OFFSET || cy < MAP_OFFSET || cx >= MAP_OFFSET + layout->width || cy >= MAP_OFFSET + layout->height))
+                        c = 6;
+                    else if (!CellClean(cx, cy, water, pe))
+                        c = 2;
+                    sum[y * (GRID_W + 1) + x] = c + sum[(y - 1) * (GRID_W + 1) + x] + sum[y * (GRID_W + 1) + x - 1]
+                                                - sum[(y - 1) * (GRID_W + 1) + x - 1];
+                }
+            }
+        for (y = (ARENA_MH - FIELD_H) / 2; y + FIELD_H + (ARENA_MH - FIELD_H) / 2 <= GRID_H; y++)
+        {
+            if (((gy0 + y) & 1) == 0)
+                continue;
+            for (x = (ARENA_MW - FIELD_W) / 2; x + FIELD_W + (ARENA_MW - FIELD_W) / 2 <= GRID_W; x++)
+            {
+                s32 c, dcx, dcy;
+                if (((gx0 + x) & 1) == 0)
+                    continue;
+                c = sum[(y + FIELD_H) * (GRID_W + 1) + x + FIELD_W] - sum[y * (GRID_W + 1) + x + FIELD_W]
+                  - sum[(y + FIELD_H) * (GRID_W + 1) + x] + sum[y * (GRID_W + 1) + x];
+                dcx = gx0 + x + FIELD_W / 2 - px;
+                dcy = gy0 + y + FIELD_H / 2 - py;
+                if (dcx < 0) dcx = -dcx;
+                if (dcy < 0) dcy = -dcy;
+                c = c * 4 + dcx + dcy;
+                if (c < bestC)
+                {
+                    bestC = c;
+                    cleanX = x;
+                    cleanY = y;
+                    cleanW = FIELD_W;
+                    cleanH = FIELD_H;
                 }
             }
         }
@@ -841,7 +861,7 @@ void RtArena_Build(void)
             bestComp = n;
         }
     }
-    if (bestComp < 20)
+    if (bestComp < 20 && !cleanW)
         goto fallback;
 
     // 5. build the arena from the chosen window
@@ -1176,22 +1196,13 @@ void RtArena_Build(void)
                                                   - cost[(y - 1) * (ARENA_MW + 1) + x - 1];
                 }
             }
-        // small rooms get a small field rather than one spilling over walls and void
-        // (a field needs some room to move around: in tight places it takes the least cluttered spot)
-        for (h = water ? 4 : 5; h <= ARENA_MH - 2; h++)
-            for (w = water ? 5 : 7; w <= ARENA_MW - 2; w++)
-                for (y = 1; y + h <= ARENA_MH - 1; y++)
-                    for (x = 1; x + w <= ARENA_MW - 1; x++)
-                    {
-                        s32 c = cost[(y + h) * (ARENA_MW + 1) + x + w] - cost[y * (ARENA_MW + 1) + x + w]
-                              - cost[(y + h) * (ARENA_MW + 1) + x] + cost[y * (ARENA_MW + 1) + x];
-                        s32 sc = (w > 22 ? 22 : w) * (h > 12 ? 12 : h) * 8 - c * 3;
-                        if (sc > bestS)
-                        {
-                            bestS = sc;
-                            bx0 = x; by0 = y; bw = w; bh = h;
-                        }
-                    }
+        if (cleanW)
+        {
+            bx0 = cleanX - bestOx;
+            by0 = cleanY - bestOy;
+            bw = cleanW;
+            bh = cleanH;
+        }
         for (y = 0; y < ARENA_MH; y++)
         {
             for (x = 0; x < ARENA_MW; x++)
@@ -1242,6 +1253,41 @@ void RtArena_Build(void)
                         gRt->arenaMeta[y][x] = objFill[near];
                 }
         }
+        // a frame of the map's border blocks (the trees or rock that close off the map) around the field,
+        // wherever something cut by the field's edge would show: the field looks like a clearing instead of
+        // a hole cut through buildings and cliffs
+        {
+            const struct MapLayout *layout = gMapHeader.mapLayout;
+            u8 (*erased)[ARENA_MW] = gRt->scr.erased;
+            if (!water && !indoorField && layout->border != NULL
+             && !MetatileBehavior_IsSurfableWaterOrUnderwater(BehaviorOf(layout->border[0] & MAPGRID_METATILE_ID_MASK))
+             && !IsBlankMetatile(layout->border[0] & MAPGRID_METATILE_ID_MASK))
+            {
+                s32 bxs, bys;
+                for (bys = by0 - 2; bys < by0 + bh + 2; bys += 2)
+                    for (bxs = bx0 - 2; bxs < bx0 + bw + 2; bxs += 2)
+                    {
+                        s32 j, k;
+                        bool8 dirty = FALSE;
+                        if (bxs >= bx0 && bxs < bx0 + bw && bys >= by0 && bys < by0 + bh)
+                            continue; // inside the field
+                        if (bxs < 0 || bys < 0 || bxs + 1 >= ARENA_MW || bys + 1 >= ARENA_MH)
+                            continue;
+                        for (j = 0; j < 2; j++)
+                            for (k = 0; k < 2; k++)
+                                if (clean[bys + j][bxs + k] != 0 && !erased[bys + j][bxs + k])
+                                    dirty = TRUE;
+                        if (!dirty)
+                            continue;
+                        for (j = 0; j < 2; j++)
+                            for (k = 0; k < 2; k++)
+                            {
+                                s32 ax = gx0 + bestOx + bxs + k, ay = gy0 + bestOy + bys + j;
+                                gRt->arenaMeta[bys + j][bxs + k] = layout->border[((ax + 1) & 1) + (((ay + 1) & 1) << 1)] & MAPGRID_METATILE_ID_MASK;
+                            }
+                    }
+            }
+        }
         gRt->playX0 = bx0 * 16;
         gRt->playY0 = by0 * 16;
         gRt->playX1 = (bx0 + bw) * 16;
@@ -1261,6 +1307,11 @@ void RtArena_Build(void)
         gRt->viewY0 = my0 * 16;
         gRt->viewX1 = mx1 * 16;
         gRt->viewY1 = my1 * 16;
+        // the whole field stays reachable by the camera even where it goes past a small room
+        if (gRt->viewX0 > gRt->playX0) gRt->viewX0 = gRt->playX0;
+        if (gRt->viewY0 > gRt->playY0) gRt->viewY0 = gRt->playY0;
+        if (gRt->viewX1 < gRt->playX1) gRt->viewX1 = gRt->playX1;
+        if (gRt->viewY1 < gRt->playY1) gRt->viewY1 = gRt->playY1;
     }
     // the outermost ring is always closed for walking (the view ends there)
     for (x = 0; x < ARENA_MW; x++)
