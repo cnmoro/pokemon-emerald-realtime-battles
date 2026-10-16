@@ -279,6 +279,14 @@ void CB2_InitRtBattle(void)
     gPreBattleCallback1 = gMain.callback1;
     gMain.callback1 = CB1_RtBattle;
     gRt = AllocZeroed(sizeof(struct RtBattle));
+    {
+        s32 i;
+        for (i = 0; i < PARTY_SIZE; i++)
+            gRt->expStart[i] = GetMonData(&gPlayerParty[i], MON_DATA_EXP);
+    }
+    // there is always a POKe BALL in the bag (it is never used up, see RemoveItem in rt_ui.c)
+    if (!(gBattleTypeFlags & BATTLE_TYPE_FRONTIER) && !CheckBagHasItem(ITEM_POKE_BALL, 1))
+        AddBagItem(ITEM_POKE_BALL, 1);
     gMain.state = 0;
     SetMainCallback2(CB2_RtSetup);
 }
@@ -1769,6 +1777,16 @@ static void Rt_UpdateOutro(void)
         gRt->subState = 4;
         break;
     case 4:
+        // EXP gained in this battle, before the move-learning prompts
+        if (!gRt->expPanelDone)
+        {
+            gRt->expPanelDone = TRUE;
+            if ((gRt->outcome == B_OUTCOME_WON || gRt->outcome == B_OUTCOME_CAUGHT) && RtUi_ExpPanelStart())
+            {
+                gRt->subState = 40;
+                break;
+            }
+        }
         if (gRt->pendingLearnCount)
         {
             RtUi_OpenLearnPrompt();
@@ -1790,6 +1808,10 @@ static void Rt_UpdateOutro(void)
     case 6:
         if (!gPaletteFade.active)
             gRt->state = RTS_EXIT;
+        break;
+    case 40: // EXP panel
+        if (RtUi_ExpPanelUpdate())
+            gRt->subState = 4;
         break;
     case 10: // trainer speech
         if (RtUi_MessageBoxDone())

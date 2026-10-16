@@ -1,7 +1,9 @@
 # Onde encontrar os Pokémon adicionados
 
 Pokémon que não apareciam no Emerald (ou que só vinham de troca/evento/escolha única) agora aparecem na natureza.
-Lista gerada por `tools/rt/dexplan.py`. Os demais já existiam no Emerald original ou evoluem/nascem (ovo) de um destes.
+Lista gerada por `tools/rt/dexplan.py`. Os demais já existiam no Emerald original ou evoluem de um destes — **todos os 386 podem ser capturados sem breeding** (bebês incluídos).
+
+**Chance de encontro:** em cada área, toda espécie da lista tem a mesma chance (com 8 espécies na grama, 1/8 cada); o nível vem dos slots daquela espécie. Lendários seguem regras próprias (seção abaixo).
 
 | Pokémon | Onde |
 |---|---|
@@ -83,6 +85,17 @@ Lista gerada por `tools/rt/dexplan.py`. Os demais já existiam no Emerald origin
 | Qwilfish | Route 134 (pesca, nv. 10-30); Route 129 (pesca, nv. 10-30) |
 | Mantine | Route 115 (surf, nv. 25-30); Slateport City (surf, nv. 25-30) |
 | Meditite | Granite Cave B1F (grama/caverna, nv. 9); Granite Cave Stevens Room (grama/caverna, nv. 9) |
+| Pichu | Route 110 (grama, nv. 13) |
+| Elekid | New Mauville (dentro, nv. 22) |
+| Cleffa | Route 114 (grama, nv. 17) |
+| Igglybuff | Route 115 (grama, nv. 25) |
+| Smoochum | Shoal Cave, Lower Room (maré baixa, nv. 32) |
+| Magby | Fiery Path (nv. 14) |
+| Tyrogue (evolui em Hitmonlee, Hitmonchan ou Hitmontop) | Granite Cave B1F (nv. 11) |
+| Sudowoodo | Route 120 (grama, nv. 27) |
+| Castform | Route 119 (grama, nv. 27) — além do presente do Weather Institute |
+| Beldum | Meteor Falls B1F 2R (nv. 40) — além do presente do Steven |
+| Feebas | Route 119, Super Rod em qualquer ponto da água (nv. 40-45) — além dos pontos especiais do jogo original |
 
 ## Lendários e míticos
 

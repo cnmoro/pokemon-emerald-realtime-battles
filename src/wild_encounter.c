@@ -226,45 +226,6 @@ static u8 ChooseWildMonIndex_WaterRock(void)
         return 4;
 }
 
-// NUM_FISHING_MONS_ENCOUNTER_SLOTS
-static u8 ChooseWildMonIndex_Fishing(u8 rod)
-{
-    u8 wildMonIndex = 0;
-    u8 rand = Random() % max(max(ENCOUNTER_CHANCE_FISHING_MONS_OLD_ROD_TOTAL, ENCOUNTER_CHANCE_FISHING_MONS_GOOD_ROD_TOTAL),
-                             ENCOUNTER_CHANCE_FISHING_MONS_SUPER_ROD_TOTAL);
-
-    switch (rod)
-    {
-    case OLD_ROD:
-        if (rand < ENCOUNTER_CHANCE_FISHING_MONS_OLD_ROD_SLOT_0)
-            wildMonIndex = 0;
-        else
-            wildMonIndex = 1;
-        break;
-    case GOOD_ROD:
-        if (rand < ENCOUNTER_CHANCE_FISHING_MONS_GOOD_ROD_SLOT_2)
-            wildMonIndex = 2;
-        if (rand >= ENCOUNTER_CHANCE_FISHING_MONS_GOOD_ROD_SLOT_2 && rand < ENCOUNTER_CHANCE_FISHING_MONS_GOOD_ROD_SLOT_3)
-            wildMonIndex = 3;
-        if (rand >= ENCOUNTER_CHANCE_FISHING_MONS_GOOD_ROD_SLOT_3 && rand < ENCOUNTER_CHANCE_FISHING_MONS_GOOD_ROD_SLOT_4)
-            wildMonIndex = 4;
-        break;
-    case SUPER_ROD:
-        if (rand < ENCOUNTER_CHANCE_FISHING_MONS_SUPER_ROD_SLOT_5)
-            wildMonIndex = 5;
-        if (rand >= ENCOUNTER_CHANCE_FISHING_MONS_SUPER_ROD_SLOT_5 && rand < ENCOUNTER_CHANCE_FISHING_MONS_SUPER_ROD_SLOT_6)
-            wildMonIndex = 6;
-        if (rand >= ENCOUNTER_CHANCE_FISHING_MONS_SUPER_ROD_SLOT_6 && rand < ENCOUNTER_CHANCE_FISHING_MONS_SUPER_ROD_SLOT_7)
-            wildMonIndex = 7;
-        if (rand >= ENCOUNTER_CHANCE_FISHING_MONS_SUPER_ROD_SLOT_7 && rand < ENCOUNTER_CHANCE_FISHING_MONS_SUPER_ROD_SLOT_8)
-            wildMonIndex = 8;
-        if (rand >= ENCOUNTER_CHANCE_FISHING_MONS_SUPER_ROD_SLOT_8 && rand < ENCOUNTER_CHANCE_FISHING_MONS_SUPER_ROD_SLOT_9)
-            wildMonIndex = 9;
-        break;
-    }
-    return wildMonIndex;
-}
-
 static u8 ChooseWildMonLevel(const struct WildPokemon *wildPokemon)
 {
     u8 min;
@@ -419,6 +380,30 @@ static void CreateWildMon(u16 species, u8 level)
 #define TRY_GET_ABILITY_INFLUENCED_WILD_MON_INDEX(wildPokemon, type, ability, ptr, count) TryGetAbilityInfluencedWildMonIndex(wildPokemon, type, ability, ptr)
 #endif
 
+// Every species of an area is equally likely (12 slots with 3 species -> 1/3 each, whatever the slots'
+// original weights); the slot (and so the level range) is then picked among that species' slots.
+// Legendaries never sit in these tables: they come from rt_legends with their own odds.
+static u8 ChooseBalancedWildMonIndex(const struct WildPokemon *mons, u8 first, u8 count)
+{
+    u16 species[12];
+    u8 nSpecies = 0, i, j, pick, nSlots = 0, slots[12];
+    for (i = first; i < first + count && nSpecies < ARRAY_COUNT(species); i++)
+    {
+        for (j = 0; j < nSpecies; j++)
+            if (species[j] == mons[i].species)
+                break;
+        if (j == nSpecies)
+            species[nSpecies++] = mons[i].species;
+    }
+    if (nSpecies == 0)
+        return first;
+    pick = Random() % nSpecies;
+    for (i = first; i < first + count && nSlots < ARRAY_COUNT(slots); i++)
+        if (mons[i].species == species[pick])
+            slots[nSlots++] = i;
+    return slots[Random() % nSlots];
+}
+
 static bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, u8 area, u8 flags)
 {
     u8 wildMonIndex = 0;
@@ -432,16 +417,16 @@ static bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, u8 ar
         if (TRY_GET_ABILITY_INFLUENCED_WILD_MON_INDEX(wildMonInfo->wildPokemon, TYPE_ELECTRIC, ABILITY_STATIC, &wildMonIndex, NUM_LAND_MONS_ENCOUNTER_SLOTS))
             break;
 
-        wildMonIndex = ChooseWildMonIndex_Land();
+        wildMonIndex = ChooseBalancedWildMonIndex(wildMonInfo->wildPokemon, 0, NUM_LAND_MONS_ENCOUNTER_SLOTS);
         break;
     case WILD_AREA_WATER:
         if (TRY_GET_ABILITY_INFLUENCED_WILD_MON_INDEX(wildMonInfo->wildPokemon, TYPE_ELECTRIC, ABILITY_STATIC, &wildMonIndex, NUM_WATER_MONS_ENCOUNTER_SLOTS))
             break;
 
-        wildMonIndex = ChooseWildMonIndex_WaterRock();
+        wildMonIndex = ChooseBalancedWildMonIndex(wildMonInfo->wildPokemon, 0, NUM_WATER_MONS_ENCOUNTER_SLOTS);
         break;
     case WILD_AREA_ROCKS:
-        wildMonIndex = ChooseWildMonIndex_WaterRock();
+        wildMonIndex = ChooseBalancedWildMonIndex(wildMonInfo->wildPokemon, 0, NUM_ROCK_SMASH_MONS_ENCOUNTER_SLOTS);
         break;
     }
 
@@ -457,7 +442,10 @@ static bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, u8 ar
 
 static u16 GenerateFishingWildMon(const struct WildPokemonInfo *wildMonInfo, u8 rod)
 {
-    u8 wildMonIndex = ChooseWildMonIndex_Fishing(rod);
+    // each rod has its own slots: old 0-1, good 2-4, super 5-9
+    u8 wildMonIndex = rod == OLD_ROD ? ChooseBalancedWildMonIndex(wildMonInfo->wildPokemon, 0, 2)
+                    : rod == GOOD_ROD ? ChooseBalancedWildMonIndex(wildMonInfo->wildPokemon, 2, 3)
+                    : ChooseBalancedWildMonIndex(wildMonInfo->wildPokemon, 5, 5);
     u8 level = ChooseWildMonLevel(&wildMonInfo->wildPokemon[wildMonIndex]);
 
     CreateWildMon(wildMonInfo->wildPokemon[wildMonIndex].species, level);

@@ -37,6 +37,9 @@ Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas dupla
 - **Mira e esquiva:** tocar o botão dispara para a frente (com uma leve mira automática), segurar abre uma mira girável; SELECT faz um dash com quadros de invencibilidade.
 - **Cooldown no lugar de PP:** golpe com pouco PP no jogo original tem cooldown longo. PP Up / PP Max reduzem o cooldown, e a tela de resumo mostra o tempo em segundos.
 - **Dificuldade (menu OPTION → DIFFICULTY: EASY / MEDIUM / HARD):** muda o quão esperta é a IA dos inimigos — tempo de reação, pontaria (inclusive mirar à frente de quem está correndo), chance de desviar com dash, escolha de golpes por tipo e pausas. EASY tira 3 níveis de habilidade (máx. 4), HARD soma 3 (mín. 5, máx. 10); MEDIUM é o padrão. A linha substitui BATTLE SCENE, que não tem efeito em batalhas em tempo real.
+- **Encontros equilibrados:** em cada grama/água/rocha/vara, toda espécie da área tem a mesma chance (8 espécies → 12,5% cada). Todos os 386 Pokémon podem ser capturados na natureza, inclusive os bebês (Pichu, Elekid, Magby, Smoochum, Tyrogue, Cleffa, Igglybuff) — sem breeding.
+- **POKé BALL infinita:** sempre há pelo menos uma POKé BALL comum na bolsa e ela não é gasta ao ser lançada; as outras bolas são consumidas normalmente.
+- **Painel de EXP no fim da batalha:** cada Pokémon que ganhou experiência aparece com a barra enchendo do ponto em que estava até o atual (com subida de nível) e o total ganho.
 - **Fôlego pós-batalha:** ao vencer (ou capturar), cada Pokémon do time que lutou recupera 30% do HP máximo — inclusive os que desmaiaram, que voltam a ficar de pé.
 - **Regras originais preservadas:** fórmula de dano da 3ª geração, tipos, STAB, críticos, habilidades, itens segurados, berries, status, estágios de atributo, clima, experiência (Exp. Share, Lucky Egg, Pokémon trocados), dinheiro, Pay Day, Pickup, captura (fórmula original com multiplicadores de cada Poké Ball), apelido, aprender golpes e evolução.
 - **IA** com nível de habilidade por classe de treinador: escolhe alvos e golpes, mantém distância ideal, desvia de projéteis, contorna obstáculos (pathfinding em grade) e usa itens (Potions, X Items…).
@@ -197,7 +200,7 @@ O script lê `species_info.h`, `evolution.h` e `wild_encounters.json`, calcula o
 ### Combate
 
 - **Posições em ponto fixo Q8**, ângulos de 0–255, colisão círculo-contra-grade com preservação de sub-pixel.
-- **Cooldown** = `1560 / PP máximo` quadros, limitado a 0,5–5,5 s (PP Ups contam).
+- **Cooldown** = `1950 / PP máximo` quadros, limitado a ~0,6–6,9 s (PP Ups contam).
 - **Dano**: fórmula da 3ª geração completa (nível, Atk/Def ou SpA/SpD, estágios, STAB, tipos, crítico, clima, habilidades, itens), aplicada quando a hitbox encosta no alvo. Cada acerto tira exatamente o mesmo que no jogo original (sem escala extra).
 - **Padrões de golpe** (cada um dos 354 golpes tem uma especificação em `src/data/rt/move_defs.h` com padrão, forma do efeito, paleta, velocidade, alcance, raio, quantidade, dispersão, tempos, impacto e som):
 

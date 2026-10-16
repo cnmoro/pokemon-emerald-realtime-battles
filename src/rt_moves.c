@@ -79,9 +79,9 @@ u16 RtMove_Cooldown(u16 move, u8 ppBonuses, u8 slot)
     pp = CalculatePPWithBonus(move, ppBonuses, slot);
     if (pp == 0)
         pp = 1;
-    cd = 1560 / pp;
-    if (cd < 30) cd = 30;
-    if (cd > 330) cd = 330;
+    cd = 1950 / pp;          // +25% over the first tuning (1560 / pp)
+    if (cd < 38) cd = 38;
+    if (cd > 412) cd = 412;
     return cd;
 }
 

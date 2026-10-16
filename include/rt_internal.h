@@ -677,6 +677,9 @@ struct RtBattle
         u16 pathQueue[ARENA_MH * ARENA_MW];
         u8 pathPad[(ARENA_MW + 2) * (ARENA_MH + 2)];
     } scr;
+
+    u32 expStart[PARTY_SIZE]; // party EXP when the battle started (for the EXP panel at the end)
+    u8 expPanelDone;
 };
 
 extern struct RtBattle *gRt;
@@ -804,6 +807,8 @@ bool8 RtUi_UpdatePrompt(void);
 void RtUi_OpenPartyForced(void);
 void RtUi_ShowMessageBox(const u8 *str);
 bool8 RtUi_MessageBoxDone(void);
+bool8 RtUi_ExpPanelStart(void);   // FALSE when nobody gained EXP
+bool8 RtUi_ExpPanelUpdate(void);  // TRUE when closed
 void RtUi_HideMessageBox(void);
 void RtUi_HideToast(void);
 
