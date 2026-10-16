@@ -61,6 +61,9 @@ static void CB2_RtMain(void);
 static void VBlankCB_Rt(void);
 static void Rt_UpdateIntro(void);
 static void Rt_UpdateFight(void);
+bool8 RtLegends_IsLegendBattle(void);
+bool8 RtLegends_IsRoamingBattle(void);
+void RtLegends_AfterBattle(u8 outcome);
 void RtProf(u8 n);
 static void Rt_UpdateOutro(void);
 static void Rt_Exit(void);
@@ -776,7 +779,8 @@ static void Rt_UpdateFight(void)
     struct RtActor *p;
 
     gRt->timer++;
-    if ((gBattleTypeFlags & BATTLE_TYPE_ROAMER) && gRt->timer == 150 + (gRt->frame & 63))
+    if ((gBattleTypeFlags & BATTLE_TYPE_ROAMER) && (RtLegends_IsRoamingBattle() || !RtLegends_IsLegendBattle())
+     && gRt->timer == 150 + (gRt->frame & 63))
     {
         struct RtActor *e = &gRt->actors[2];
         struct RtActor *p0 = Rt_PlayerActor();
@@ -1845,7 +1849,11 @@ static void Rt_FinalReturn(void)
     gSpecialVar_Result = gBattleOutcome;
     gMain.inBattle = FALSE;
     gMain.callback1 = gPreBattleCallback1;
-    if (gBattleTypeFlags & BATTLE_TYPE_ROAMER)
+    if (RtLegends_IsLegendBattle())
+    {
+        RtLegends_AfterBattle(gBattleOutcome);
+    }
+    else if (gBattleTypeFlags & BATTLE_TYPE_ROAMER)
     {
         UpdateRoamerHPStatus(&gEnemyParty[0]);
         if (gBattleOutcome == B_OUTCOME_WON || gBattleOutcome == B_OUTCOME_CAUGHT)

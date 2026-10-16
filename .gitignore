@@ -53,3 +53,4 @@ tools/rt_harness/debug.gba
 tools/rt_harness/syms.txt
 tools/rt_harness/field.ss
 build/rt_work/
+tools/rt/__pycache__/

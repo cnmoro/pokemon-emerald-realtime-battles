@@ -30,6 +30,9 @@ Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas dupla
 
 - **Combate em tempo real** em todas as batalhas suportadas: selvagens, treinadores, duplas (2×2, com aliado controlado por IA), batalhas com parceiro (Steven), Safari Zone, Battle Frontier e Battle Pyramid.
 - **Arena = o lugar onde a batalha começou.** A arena é recortada do mapa real ao redor do jogador (árvores, prédios, cavernas, água, animações de tileset). Dentro dela, um **campo retangular limpo** é a área de luta: tudo que fica dentro dele (rochas, paredes, placas, árvores soltas, ledges) é pintado com o chão do lugar, e o cenário em volta aparece escurecido — o que está claro é onde dá para andar, o que está escuro não.
+- **Objetos na arena:** pedras de Rock Smash, árvores de Cut, rochas de Strength e caixas de mudança — os próprios sprites do overworld do Emerald, escolhidos conforme o lugar (caixas em lugares fechados, pedras em cavernas, árvores e pedras em rotas). Eles bloqueiam passagem e tiros, quebram quando atingidos, e **golpes como Psychic, Confusion, Extrasensory, Seismic Toss, Strength, Vital Throw, Rock Throw e Ancient Power levantam um objeto próximo e o arremessam** no adversário.
+- **Todos os 386 Pokémon obtíveis:** Pokémon de Kanto e Johto (e os de Hoenn que só vinham de troca, evento ou escolha única) foram espalhados pelas rotas, cavernas e águas do Emerald, em lugares coerentes com o tipo e o nível ([lista](docs/POKEMON_LOCAIS.md)). Evoluções por troca viraram por nível/item, e os itens de evolução são vendidos em Lilycove.
+- **Lendários:** os pássaros de Kanto, os cães de Johto, Ho-Oh, Latias e Latios andam livres desde o início do jogo e podem aparecer em qualquer encontro; Lugia só no mar. Depois do Hall da Fama aparecem Celebi, Jirachi e Mewtwo em lugares temáticos, e os tickets de evento (Deoxys, Mew, Lugia/Ho-Oh, Latias/Latios) são entregues automaticamente.
 - **Os 354 golpes da 3ª geração** têm comportamento, animação e efeitos próprios: projéteis, raios, ondas em cone, golpes corpo a corpo, áreas, zonas persistentes, ataques que caem do céu, Fly/Dig/Dive, clima e mais.
 - **Mira e esquiva:** tocar o botão dispara para a frente (com uma leve mira automática), segurar abre uma mira girável; SELECT faz um dash com quadros de invencibilidade.
 - **Cooldown no lugar de PP:** golpe com pouco PP no jogo original tem cooldown longo. PP Up / PP Max reduzem o cooldown, e a tela de resumo mostra o tempo em segundos.
@@ -48,6 +51,14 @@ Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas dupla
 | ![](docs/screenshots/aim_reticle.png) Mira manual (segurando o botão do golpe) | ![](docs/screenshots/bag_menu.png) Bolsa durante a batalha |
 | ![](docs/screenshots/party_menu.png) Escolha do alvo do item | ![](docs/screenshots/safari.png) Safari Zone |
 | ![](docs/screenshots/summary_cooldown.png) Cooldown em segundos no resumo | |
+
+**Objeto arremessado com Psychic** (a pedra é levantada, flutua sobre o Pikachu e é lançada no Snorlax)
+
+![](docs/screenshots/prop_throw_sequence.png)
+
+**Lendário andando livre** (Zapdos encontrado na Route 101)
+
+![](docs/screenshots/roaming_zapdos.png)
 
 **Quadros de animação** (Thunderbolt, Thunder, Earthquake, Shadow Ball): carga de energia, disparo, rastro e impacto
 
@@ -164,6 +175,22 @@ Mudanças em arquivos do jogo original (pequenas): `battle_main.c` (desvio para 
 5. Fora do campo fica o cenário real, **escurecido** por hardware: a janela 0 do GBA cobre o campo (atualizada a cada quadro com o scroll da câmera) e o efeito de escurecimento (`BLDCNT`/`BLDY`) só vale fora dela. Assim fica óbvio onde dá e onde não dá para andar.
 6. Os pontos de spawn ficam dentro do campo, na diagonal (jogador embaixo à esquerda, inimigo em cima à direita), porque a tela é larga e baixa; a câmera enquadra os dois.
 
+### Objetos da arena (`src/rt_props.c`)
+
+- Até 6 objetos por arena, sorteados dentro do campo de luta, longe dos pontos de spawn e entre si. O tipo depende do mapa: caixas em interiores/cidades, pedras e rochas em cavernas/deserto, árvores, pedras e rochas nas rotas; nada sobre a água.
+- Gráficos: os sprites do overworld (`graphics/object_events/pics/misc`) com as paletas originais, incluídos no atlas de efeitos pelo `fxgen.py`. Pedra e árvore usam os quadros reais de Rock Smash / Cut quando quebram.
+- Física: colisão em círculo com os atores (empurrão), bloqueiam o movimento de investidas, projéteis e linhas de visão; têm HP e piscam ao serem atingidos.
+- Arremesso: quando um golpe da lista é executado e há um objeto alcançável (Psychic e parecidos: até ~110 px; golpes físicos: à frente e colado), o golpe normal é substituído: o objeto flutua até ficar acima do usuário e é lançado como projétil do próprio golpe, mirando o alvo — o dano é o do golpe (incluindo efeitos secundários), e o objeto se despedaça no impacto.
+
+### Pokédex completa (`tools/rt/dexplan.py`)
+
+O script lê `species_info.h`, `evolution.h` e `wild_encounters.json`, calcula o que já é obtível (natureza, presentes, estáticos, evolução e reprodução) e, para cada família que falta, troca alguns slots de encontro por ela. A escolha pontua cada slot pela afinidade de tipo com o Pokémon que estava ali (Caterpie/Weedle onde há Wurmple, Pikachu onde há Electrike…), pelo habitat (grama, caverna, surf, pesca, Rock Smash), pelo poder (BST) e pelo nível da área, sem tirar espécies originais de onde elas são raras. Alguns casos são posicionados à mão (Porygon em New Mauville, Unown em ruínas, fósseis de Kanto no mar, iniciais de Kanto/Johto/Hoenn em lugares temáticos…).
+
+### Lendários (`src/rt_legends.c`)
+
+- Encaixado em `TryStartRoamerEncounter()`: em ~1/48 dos encontros selvagens surge um lendário ainda não capturado (Lugia só surfando em rotas oceânicas). O dano que ele leva é guardado em variáveis não usadas do save, e ele foge depois de alguns segundos, como os roamers originais. O roamer único do Emerald pós-jogo foi desativado.
+- Depois do Hall da Fama: Celebi, Jirachi e Mewtwo com 1/12 de chance nos encontros de Petalburg Woods, Meteor Falls e Victory Road; e os quatro tickets de evento (Aurora Ticket, Old Sea Map, Mystic Ticket, Eon Ticket) são colocados na bolsa com as rotas de barco liberadas.
+
 ### Combate
 
 - **Posições em ponto fixo Q8**, ângulos de 0–255, colisão círculo-contra-grade com preservação de sub-pixel.
@@ -240,6 +267,7 @@ Toda a validação foi automatizada com um **runner headless do mGBA** (`tools/r
 | `build_sprites.py` | `graphics/rt/sprites.bin` + `src/data/rt/species_gfx.h` |
 | `fxgen.py` | `graphics/rt/fx_atlas.bin`, `include/rt_fx_ids.h`, `src/data/rt/fx_data.h` |
 | `movelist.py` → `movegen.py` | `src/data/rt/move_defs.h` (especificação de cada golpe) |
+| `dexplan.py [--apply]` | Distribui os Pokémon que faltam em `src/data/wild_encounters.json` (já aplicado; rodar de novo não é necessário) |
 | `lzc.c` | Compressor LZ77 em lote usado pelo `build_sprites.py` |
 
 ```bash
@@ -264,6 +292,7 @@ Usado para testes e prints. Requer o mGBA compilado como biblioteca estática (`
 ## Limitações conhecidas
 
 - Continuam no sistema por turnos original: batalhas por cabo/link, gravações (Battle Frontier recorded battles), e-Reader e o tutorial do Wally.
+- Com Repel ativo, os lendários errantes também não aparecem.
 - Em salas internas mais estreitas que a tela aparecem faixas pretas nas laterais (como no overworld).
 - Objetos do mapa que não são metatiles (NPCs, árvores cortáveis, pedras de Rock Smash) não aparecem na arena.
 - O campo de luta é sempre retangular; em mapas muito estreitos ele pode ser pequeno.

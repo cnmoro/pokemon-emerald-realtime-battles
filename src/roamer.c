@@ -107,9 +107,10 @@ static void CreateInitialRoamerMon(bool16 createLatios)
 // gSpecialVar_0x8004 here corresponds to the options in the multichoice MULTI_TV_LATI (0 for 'Red', 1 for 'Blue')
 void InitRoamer(void)
 {
+    // Real-time mod: Latias and Latios both roam through RtLegends (rt_legends.c) from the start,
+    // so the post-game single roamer is not created.
     ClearRoamerData();
     ClearRoamerLocationData();
-    CreateInitialRoamerMon(gSpecialVar_0x8004);
 }
 
 void UpdateLocationHistoryForRoamer(void)
@@ -215,6 +216,9 @@ void CreateRoamerMonInstance(void)
 
 bool8 TryStartRoamerEncounter(void)
 {
+    extern bool8 RtLegends_TryEncounter(void);
+    if (RtLegends_TryEncounter())
+        return TRUE;
     if (IsRoamerAt(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum) == TRUE && (Random() % 4) == 0)
     {
         CreateRoamerMonInstance();
