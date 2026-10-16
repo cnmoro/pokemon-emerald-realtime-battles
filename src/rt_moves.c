@@ -32,6 +32,8 @@
 static void ExecuteMove(struct RtActor *a);
 void RtMove_CheckBerries(struct RtActor *a);
 static void FinishCast(struct RtActor *a, u16 recovery);
+EWRAM_DATA u16 gRtCastLog[64][2] = {0};
+EWRAM_DATA u8 gRtCastLogN = 0;
 static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot);
 static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *def);
 void RtActor_CureStatus(struct RtActor *a);
@@ -2360,6 +2362,15 @@ static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot)
     else
         gBattleResults.lastUsedMoveOpponent = move;
 
+    {
+        extern const u8 gRtDebugEnabled;
+        if (gRtDebugEnabled && gRtCastLogN < 64)
+        {
+            gRtCastLog[gRtCastLogN][0] = gRt->frame;
+            gRtCastLog[gRtCastLogN][1] = move | (a->id << 12);
+            gRtCastLogN++;
+        }
+    }
     a->lastMove = move;
     gRt->lastMoveUsed = move;
     a->state = AST_CAST;
@@ -2459,9 +2470,14 @@ static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot)
         RtActor_ChangeStage(a, STG_DEF, 1, a->id, TRUE);
 }
 
+// shared pause after any move before the next one can start (all moves, both sides)
+#define RT_MOVE_GCD 24
+
 static void FinishCast(struct RtActor *a, u16 recovery)
 {
     u8 eff = gBattleMoves[a->act.move].effect;
+    if (recovery && recovery < RT_MOVE_GCD)
+        recovery = RT_MOVE_GCD;
     a->invuln = 0;
     a->hidden = FALSE;
     a->z = 0;

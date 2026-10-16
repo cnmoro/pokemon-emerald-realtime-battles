@@ -27,6 +27,7 @@ EWRAM_DATA u16 gRtDebugTrainer = 0;
 EWRAM_DATA u8 gRtDebugAutoplay = 0;
 EWRAM_DATA u8 gRtDebugWarpIdx = 0;
 EWRAM_DATA u8 gRtDebugCommand = 0;
+EWRAM_DATA u8 gRtDebugAiSkill = 0;
 EWRAM_DATA u16 gRtDebugTestMove = 0; // harness can poke: 1 wild, 2 trainer, 3 next warp
 
 void RtDebug_StartTrainerBattle(u16 trainerId); // battle_setup.c
@@ -106,6 +107,18 @@ bool8 RtDebug_FieldInput(void)
     if (cmd == 2 || (gMain.newKeys & R_BUTTON))
     {
         RtDebug_StartTrainerBattle(gRtDebugTrainer ? gRtDebugTrainer : TRAINER_ROXANNE_1);
+        return TRUE;
+    }
+    if (cmd == 17)
+    {
+        // Wattson's Magneton as a wild battle
+        static const u16 moves[] = {MOVE_SUPERSONIC, MOVE_SHOCK_WAVE, MOVE_THUNDER_WAVE, MOVE_SONIC_BOOM};
+        u8 k;
+        ZeroEnemyPartyMons();
+        CreateMon(&gEnemyParty[0], SPECIES_MAGNETON, 22, 31, FALSE, 0, OT_ID_PLAYER_ID, 0);
+        for (k = 0; k < MAX_MON_MOVES; k++)
+            SetMonMoveSlot(&gEnemyParty[0], moves[k], k);
+        BattleSetup_StartWildBattle();
         return TRUE;
     }
     if (cmd == 10)

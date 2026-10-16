@@ -57,6 +57,12 @@ void RtAi_Init(struct RtActor *a)
     {
         skill = 6;
     }
+    {
+        extern const u8 gRtDebugEnabled;
+        extern u8 gRtDebugAiSkill;
+        if (gRtDebugEnabled && gRtDebugAiSkill && a->side == RT_SIDE_ENEMY)
+            skill = gRtDebugAiSkill;
+    }
     // difficulty (OPTIONS menu): easy/hard shift how sharp the opponents are
     if (a->side == RT_SIDE_ENEMY)
     {
@@ -571,6 +577,14 @@ void RtAi_Update(struct RtActor *a)
             {
                 a->inSlot = bestSlot;
                 a->inAim = LeadAim(a, t, move);
+                // attack rhythm: foes leave a window to hit back between moves
+                // (EASY ~1.4 s, MEDIUM ~1.1 s, HARD ~0.85 s from one move to the next)
+                if (a->side == RT_SIDE_ENEMY)
+                {
+                    static const u8 sPace[3] = {54, 72, 38}; // medium, easy, hard (option order)
+                    u8 dif = gSaveBlock2Ptr->optionsRtDifficulty;
+                    a->aiThinkCd = sPace[dif < 3 ? dif : 1] + Random() % 16;
+                }
                 return;
             }
         }
