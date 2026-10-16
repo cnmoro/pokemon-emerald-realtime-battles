@@ -1671,7 +1671,18 @@ static u8 CountShakes(u16 ball, struct RtActor *t)
     b = Sqrt(b);
     b = Sqrt(b);
     b = 1048560 / b;
-    for (shakes = 0; shakes < 4 && Random() < b; shakes++)
+    // catch chance = all four shake checks; every ball gets +10% of it, and never less than 2%
+    {
+        u32 b2 = (b * b) >> 16;
+        u32 p = (b2 * b2) >> 16;           // Q16 probability of the original formula
+        p = p * 110 / 100;
+        if (p < 65536 * 2 / 100)
+            p = 65536 * 2 / 100;
+        if (p >= 65536 || Random() < p)
+            return 4;
+    }
+    // failed: how many times it wobbled before breaking free (for the animation)
+    for (shakes = 0; shakes < 3 && Random() < b; shakes++)
         ;
     return shakes;
 }
