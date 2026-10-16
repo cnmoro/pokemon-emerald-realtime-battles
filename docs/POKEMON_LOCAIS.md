@@ -106,5 +106,28 @@ Um lendário deixa de aparecer quando a espécie já está registrada como captu
 Como o jogo é single player, as evoluções por troca foram trocadas:
 
 - Kadabra, Machoke, Graveler e Haunter evoluem no **nível 37**.
-- Onix, Scyther (Metal Coat), Seadra (Dragon Scale), Porygon (Up-Grade), Poliwhirl e Slowpoke (King's Rock), Clamperl (DeepSeaTooth/DeepSeaScale) evoluem **usando o item** pela bolsa, como uma pedra.
-- Esses itens e todas as pedras de evolução são vendidos no 3º andar da Lilycove Department Store.
+- Onix, Scyther, Seadra, Porygon, Poliwhirl, Slowpoke e Clamperl evoluem **usando o item** pela bolsa, como uma pedra.
+
+## Itens de evolução
+
+Todos os itens de evolução custam **₽1000** e são vendidos em dois lugares:
+
+- **Poké Mart de Rustboro** — disponível assim que você chega a Rustboro, antes mesmo do 1º ginásio.
+- **Lilycove Department Store, 3º andar.**
+
+| Item | Pokémon |
+|---|---|
+| Fire Stone | Vulpix → Ninetales, Growlithe → Arcanine, Eevee → Flareon |
+| Water Stone | Poliwhirl → Poliwrath, Shellder → Cloyster, Staryu → Starmie, Lombre → Ludicolo, Eevee → Vaporeon |
+| Thunder Stone | Pikachu → Raichu, Eevee → Jolteon |
+| Leaf Stone | Gloom → Vileplume, Weepinbell → Victreebel, Exeggcute → Exeggutor, Nuzleaf → Shiftry |
+| Moon Stone | Nidorina → Nidoqueen, Nidorino → Nidoking, Clefairy → Clefable, Jigglypuff → Wigglytuff, Skitty → Delcatty |
+| Sun Stone | Gloom → Bellossom, Sunkern → Sunflora |
+| King's Rock | Poliwhirl → Politoed, Slowpoke → Slowking |
+| Metal Coat | Onix → Steelix, Scyther → Scizor |
+| Dragon Scale | Seadra → Kingdra |
+| Up-Grade | Porygon → Porygon2 |
+| DeepSeaTooth | Clamperl → Huntail |
+| DeepSeaScale | Clamperl → Gorebyss |
+
+Evoluções que não usam item: por amizade (Golbat, Chansey, Pichu, Cleffa, Igglybuff, Togepi, Azurill; Eevee → Espeon de dia e Umbreon à noite) e Feebas → Milotic por beleza (Pokéblocks azuis, feitos no Berry Blender de Lilycove).
