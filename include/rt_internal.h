@@ -531,6 +531,34 @@ struct RtFutureHit
     u16 dmg;
 };
 
+#define RT_MAX_PROPS 6
+enum
+{
+    PROP_NONE,
+    PROP_ROCK,
+    PROP_TREE,
+    PROP_BOULDER,
+    PROP_BOX,
+};
+enum
+{
+    PRS_REST,
+    PRS_LIFTED,
+    PRS_BREAKING,
+};
+struct RtProp
+{
+    u8 kind;
+    u8 state;
+    u8 hp;
+    u8 owner;
+    u8 timer;
+    u8 hurtCd;
+    u16 move;
+    s32 x, y;     // Q8, feet
+    s16 z;
+};
+
 struct RtBattle
 {
     u8 state;
@@ -621,6 +649,9 @@ struct RtBattle
     u8 affineUsed;
 
     u16 bg0Tilemap[32 * 32];
+
+    // arena props (rocks, cuttable trees, boulders, boxes)
+    struct RtProp props[RT_MAX_PROPS];
 };
 
 extern struct RtBattle *gRt;
@@ -637,6 +668,19 @@ bool8 RtArena_PointBlocksShot(s32 px, s32 py);
 bool8 RtArena_ShotClear(s32 x0, s32 y0, s32 x1, s32 y1);
 bool8 RtArena_PathAngle(s32 fx, s32 fy, s32 tx, s32 ty, s32 r, u8 *ang);
 void RtArena_ResolveActor(struct RtActor *a);
+// rt_props.c
+void RtProps_Place(void);
+void RtProps_Update(void);
+bool8 RtProps_CircleBlocked(s32 x, s32 y, s32 r);
+void RtProps_PushActor(struct RtActor *a);
+bool8 RtProps_HitAt(s32 fx, s32 fy, s32 r, u8 dmg);
+bool8 RtProps_TryGrab(struct RtActor *a, u16 move);
+void RtProps_Debris(u8 kind, s32 x, s32 y);
+void RtProps_DrawOne(u8 i);
+u8 RtProps_ShapeOf(u8 kind);
+u8 RtProps_PalOf(u8 kind);
+// rt_moves.c
+void RtMove_ThrowProp(struct RtActor *a, u16 move, u8 kind, s32 x, s32 y, s16 z);
 void RtArena_FindSpawn(u8 side, u8 index, s32 *x, s32 *y);
 
 // rt_actor.c

@@ -579,6 +579,38 @@ static u16 ProjLife(u8 range, u8 speed)
     return px * 16 / speed + 1;
 }
 
+// A prop lifted by Psychic / Seismic Toss / Strength... is hurled as a projectile of that move.
+void RtMove_ThrowProp(struct RtActor *a, u16 move, u8 kind, s32 x, s32 y, s16 z)
+{
+    struct RtProj *p = NewProj(a, PK_BULLET, move);
+    struct RtActor *t = (a->act.targetId < RT_MAX_ACTORS) ? &gRt->actors[a->act.targetId] : NULL;
+    s32 sp = 80;
+    u8 angle = a->act.angle;
+    if (!p)
+        return;
+    if (t == NULL || !t->active || t->state == AST_GONE || !RtActor_IsAlive(t) || t->side == a->side)
+        t = Rt_NearestFoe(a);
+    if (t)
+        angle = RtAtan2(FROM_FX(t->x - x), FROM_FX(t->y - y));
+    p->shape = RtProps_ShapeOf(kind);
+    p->pal = RtProps_PalOf(kind);
+    p->flags &= ~(RTMF_ARC | RTMF_HOMING | RTMF_BOOMERANG | RTMF_PIERCE | RTMF_FAN | RTMF_BLEND);
+    p->trail = FX_NONE;
+    p->angle = angle;
+    p->x = x;
+    p->y = y;
+    p->z = z;
+    p->vx = RtCos(angle) * sp / 16;
+    p->vy = RtSin(angle) * sp / 16;
+    p->radius = 10;
+    p->life = ProjLife(110, sp);
+    p->len = p->life;
+    p->param = 16 | 32;          // 16: thrown prop, 32: keep its height
+    p->param2 = (a->act.castId & 0xFF) | (kind << 8);
+    PlaySE(SE_M_VITAL_THROW2);
+    RtActor_SetAnim(a, RTA_ATTACK, FALSE);
+}
+
 // group hit masks: hitboxes spawned by the same cast share one mask (streams, multi hitbox patterns)
 static bool8 AlreadyHit(struct RtProj *p, struct RtActor *t)
 {
@@ -660,6 +692,8 @@ static void ProjImpact(struct RtProj *p, s32 x, s32 y)
 
 static void KillProj(struct RtProj *p)
 {
+    if (p->kind == PK_BULLET && (p->param & 16))
+        RtProps_Debris(p->param2 >> 8 ? (p->param2 >> 8) : PROP_ROCK, p->x, p->y + TO_FX(p->z));
     p->kind = PK_NONE;
 }
 
@@ -716,6 +750,11 @@ static void UpdateBullet(struct RtProj *p)
         s32 t = p->age * 256 / (p->len ? p->len : 1); // 0..256
         p->z = 6 + (t * (256 - t)) * 40 / 65536;
     }
+    else if (p->param & 32)
+    {
+        if (p->z > 12)
+            p->z--;
+    }
     else
     {
         p->z = 10;
@@ -731,6 +770,16 @@ static void UpdateBullet(struct RtProj *p)
     if (p->life)
         p->life--;
     // obstacles
+    // arena props stop shots (and get damaged)
+    if (!(p->flags & RTMF_ARC) && RtProps_HitAt(p->x, p->y, p->radius / 2 + 1, (p->param & 16) ? 4 : (gBattleMoves[p->move].power >= 80 ? 2 : 1))
+     && !(p->flags & RTMF_PIERCE))
+    {
+        ProjImpact(p, p->x, p->y);
+        if (p->param & 4)
+            goto zone;
+        KillProj(p);
+        return;
+    }
     if (!(p->flags & RTMF_ARC) && RtArena_PointBlocksShot(FROM_FX(p->x), FROM_FX(p->y)))
     {
         ProjImpact(p, p->x, p->y);
@@ -880,6 +929,8 @@ static void UpdateMelee(struct RtProj *p)
             TryHitActor(p, o, t);
         }
     }
+    if (!(p->hitMask & 0x80) && RtProps_HitAt(p->x, p->y + TO_FX(o->height / 3), p->radius, gBattleMoves[p->move].power >= 70 ? 2 : 1))
+        p->hitMask |= 0x80;
     if (p->life == 0)
         KillProj(p);
 }
@@ -896,6 +947,12 @@ static void UpdateRushBox(struct RtProj *p)
     p->x = o->x + RtCos(o->act.angle) * o->radius / 2;
     p->y = o->y + RtSin(o->act.angle) * o->radius / 4 - TO_FX(o->height / 3);
     p->age++;
+    if (!(p->hitMask & 0x80) && RtProps_HitAt(p->x, p->y + TO_FX(o->height / 3), p->radius, 2))
+    {
+        p->hitMask |= 0x80;
+        if (Def(p->move)->pattern != RTP_ROLL)
+            o->act.timer = 0xFFF0; // crashed into it
+    }
     for (i = 0; i < RT_MAX_ACTORS; i++)
     {
         struct RtActor *t = &gRt->actors[i];
@@ -1082,6 +1139,22 @@ static void UpdateArea(struct RtProj *p)
         u32 dur = d->duration ? d->duration : 16;
         p->radius = maxR * (p->age > dur ? dur : p->age) / dur;
     }
+    if (!(p->hitMask & 0x80) && p->age > 2)
+    {
+        // props caught in the blast
+        s32 k;
+        for (k = 0; k < RT_MAX_PROPS; k++)
+        {
+            struct RtProp *pr = &gRt->props[k];
+            s32 dx, dy;
+            if (pr->kind == PROP_NONE || pr->state != PRS_REST)
+                continue;
+            dx = FROM_FX(pr->x - p->x);
+            dy = FROM_FX(pr->y - p->y) * 2;
+            if (RtDist(dx, dy) <= p->radius)
+                RtProps_HitAt(pr->x, pr->y - TO_FX(6), 2, gBattleMoves[p->move].power >= 80 ? 3 : 1);
+        }
+    }
     // particles along the ring
     if ((p->age % 2) == 0)
     {
@@ -1143,6 +1216,7 @@ static void StrikeAt(struct RtProj *p)
     RtFx_Impact(d->impact, p->pal, p->x, p->y);
     RtFx_Shake(2, 8);
     PlaySE(d->sfx);
+    RtProps_HitAt(p->x, p->y - TO_FX(6), p->radius, 3);
     for (i = 0; i < RT_MAX_ACTORS; i++)
     {
         struct RtActor *t = &gRt->actors[i];
@@ -2566,6 +2640,13 @@ static void ExecuteMove(struct RtActor *a)
     struct RtProj *p;
     u8 i;
 
+    // telekinetic / throwing moves pick up a nearby arena prop and hurl it instead
+    if (RtProps_TryGrab(a, move))
+    {
+        if (d->anim != RTA_WALK)
+            RtActor_SetAnim(a, RTA_CHARGE, FALSE);
+        return;
+    }
     if (d->pattern != RTP_MELEE && d->pattern != RTP_BULLET)
         PlaySE(d->sfx);
     if (d->anim != RTA_WALK)

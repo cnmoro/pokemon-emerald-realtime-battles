@@ -1060,6 +1060,7 @@ void RtArena_Build(void)
             sSpawnValid = TRUE;
         }
     }
+    RtProps_Place();
     gRt->floorKind = water ? 1 : ((MetatileBehavior_IsTallGrass(playerBehav) || MetatileBehavior_IsLongGrass(playerBehav)) ? 2 : 0);
     Free(grid);
     Free(sum);
@@ -1204,12 +1205,14 @@ bool8 RtArena_CircleBlocked(s32 x, s32 y, s32 r)
                 return TRUE;
         }
     }
-    return FALSE;
+    return RtProps_CircleBlocked(x, y, r);
 }
 
 // Push an actor's (feet) circle out of solid cells. Keeps sub-pixel precision unless a push happens.
 void RtArena_ResolveActor(struct RtActor *a)
 {
+    RtProps_PushActor(a);
+    {
     s32 r = a->radius > 4 ? a->radius - 2 : a->radius;
     s32 x = FROM_FX(a->x), y = FROM_FX(a->y);
     s32 iter;
@@ -1288,6 +1291,7 @@ void RtArena_ResolveActor(struct RtActor *a)
             }
         a->x = TO_FX(bx);
         a->y = TO_FX(by);
+    }
     }
 }
 

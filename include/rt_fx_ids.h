@@ -82,7 +82,11 @@
 #define FX_W_LV_UP 78
 #define FX_W_MAX 79
 #define FX_W_RESIST 80
-#define FX_COUNT 81
+#define FX_PROP_ROCK 81
+#define FX_PROP_TREE 82
+#define FX_PROP_BOULDER 83
+#define FX_PROP_BOX 84
+#define FX_COUNT 85
 #define FXP_NORMAL 0
 #define FXP_FIGHTING 1
 #define FXP_FLYING 2
@@ -117,7 +121,11 @@
 #define FXP_DIGIT_G 31
 #define FXP_DIGIT_R 32
 #define FXP_DIGIT_B 33
+#define FXP_PROP_ROCK 34
+#define FXP_PROP_TREE 35
+#define FXP_PROP_BOULDER 36
+#define FXP_PROP_BOX 37
 #define FXP_UI 0xFF
-#define FXP_COUNT 34
+#define FXP_COUNT 38
 #define RT_FX_ATLAS_TILES 715
 #endif

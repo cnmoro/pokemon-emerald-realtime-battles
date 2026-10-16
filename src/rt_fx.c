@@ -492,6 +492,9 @@ static bool8 DrawShape(u8 shape, u8 frame, u8 fxPal, s32 sx, s32 sy, u8 bucket, 
         if (sx + w / 2 < 0 || sx - w / 2 > DISPLAY_WIDTH || sy + h / 2 < 0 || sy - h / 2 > DISPLAY_HEIGHT)
             return FALSE;
     }
+    // single-frame shapes animated by mirroring
+    if (shape == FX_TORNADO32 || shape == FX_AURA32)
+        hflip ^= (gRt->frame >> 2) & 1;
     palSlot = RtFx_GetPalSlot(fxPal);
     o = RtOam_Next(bucket);
     if (!o)
@@ -683,7 +686,7 @@ void RtFx_DrawProjectiles(void)
                     sc = 24;
                     aff = TRUE;
                 }
-                DrawShape(p->shape, AnimFrame(p->shape, p->age, 4), p->pal, sx, sy - p->z, 1, 2,
+                DrawShape(p->shape, (p->param & 16) ? 0 : AnimFrame(p->shape, p->age, 4), p->pal, sx, sy - p->z, 1, 2,
                           IsDirectional(p->shape) ? p->angle : 0, sc, (p->flags & RTMF_BLEND) != 0, FALSE, aff);
             }
             break;

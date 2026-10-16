@@ -391,7 +391,7 @@ def mk_tornado():
                 c.putmax(x+1,y,ramp(0.3+0.5*math.cos(ph)))
         c.outline(1); fr.append(c)
     return fr
-add('TORNADO32',32,32,mk_tornado())
+add('TORNADO32',32,32,mk_tornado()[:1])  # 1 frame: animated by h-flip
 
 def mk_wisp():
     fr=[]
@@ -496,7 +496,7 @@ def mk_aura():
                 c.putmax(x+math.sin((y0-i)*0.5)*0.8,y0-i,ramp(0.9-i/h))
         fr.append(c)
     return fr
-add('AURA32',32,32,mk_aura())
+add('AURA32',32,32,mk_aura()[:1])  # 1 frame: animated by flicker/scale (saves VRAM)
 
 def mk_arrow(up):
     c=Canvas(8,8)
@@ -901,6 +901,30 @@ UIPAL=[(0,0,0),(16,16,16),(70,70,80),(140,140,150),(250,250,250),(230,50,40),(13
 
 def c555(c): return (int(c[0])>>3)|((int(c[1])>>3)<<5)|((int(c[2])>>3)<<10)
 
+# ---------------------------------------------------------------- arena props
+# Real Emerald overworld object graphics (Rock Smash rock, Cut tree, Strength boulder, moving box),
+# with their own palettes.
+PROP_PALS={}
+def prop_frames(png, frames, pal_name):
+    im=Image.open(os.path.join(PE,'graphics/object_events/pics/misc',png))
+    pal=im.getpalette()[:48]
+    PROP_PALS[pal_name]=[tuple(pal[i*3:i*3+3]) for i in range(16)]
+    out=[]
+    for f in frames:
+        c=Canvas(16,16)
+        for y in range(16):
+            for x in range(16):
+                c.p[y][x]=im.getpixel((f*16+x,y)) & 15
+        out.append(c)
+    return out
+add('PROP_ROCK',16,16,prop_frames('breakable_rock.png',[0,2,3],'PROP_ROCK'))
+add('PROP_TREE',16,16,prop_frames('cuttable_tree.png',[0,2,3],'PROP_TREE'))
+add('PROP_BOULDER',16,16,prop_frames('pushable_boulder.png',[0],'PROP_BOULDER'))
+add('PROP_BOX',16,16,prop_frames('moving_box.png',[0],'PROP_BOX'))
+for k,v in PROP_PALS.items():
+    P[k]=v
+PALS=list(P.keys())
+
 # ---------------------------------------------------------------- emit
 atlas=bytearray(); table=[]
 for (name,w,h,frames,ui) in SHAPES:
@@ -910,7 +934,7 @@ for (name,w,h,frames,ui) in SHAPES:
     for f in frames: atlas+=f.tiles()
 ntiles=len(atlas)//32
 print('atlas tiles',ntiles,'shapes',len(SHAPES),'pals',len(PALS))
-assert ntiles<=720, ntiles
+assert ntiles<=720, ntiles  # OBJ VRAM: 304 + atlas <= 1024
 os.makedirs(PE+'/graphics/rt',exist_ok=True)
 open(PE+'/graphics/rt/fx_atlas.bin','wb').write(atlas)
 with open(PE+'/include/rt_fx_ids.h','w') as o:

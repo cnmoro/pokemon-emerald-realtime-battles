@@ -531,26 +531,40 @@ void RtProf(u8 n) { switch (n) { case 13: PROF(13); break; case 14: PROF(14); br
 static void Rt_RenderFrame(void)
 {
     s32 i;
-    u8 order[RT_MAX_ACTORS];
+    u8 order[RT_MAX_ACTORS + RT_MAX_PROPS];
+    s32 key[RT_MAX_ACTORS + RT_MAX_PROPS];
     u8 n = 0;
 
     RtOam_Reset();
     RtFx_ResetAffine();
     RtUi_DrawObjs();
     PROF(7);
+    // actors and props, front (larger y) first: lower OAM index draws on top
     for (i = 0; i < RT_MAX_ACTORS; i++)
         if (gRt->actors[i].active)
+        {
+            key[n] = gRt->actors[i].y;
             order[n++] = i;
+        }
+    for (i = 0; i < RT_MAX_PROPS; i++)
+        if (gRt->props[i].kind != PROP_NONE)
+        {
+            key[n] = gRt->props[i].y;
+            order[n++] = 0x80 | i;
+        }
     for (i = 0; i < n; i++)
     {
         s32 j;
         for (j = i + 1; j < n; j++)
         {
-            if (gRt->actors[order[j]].y > gRt->actors[order[i]].y)
+            if (key[j] > key[i])
             {
                 u8 t = order[i];
+                s32 tk = key[i];
                 order[i] = order[j];
+                key[i] = key[j];
                 order[j] = t;
+                key[j] = tk;
             }
         }
     }
@@ -559,7 +573,12 @@ static void Rt_RenderFrame(void)
     RtFx_DrawAll();
     PROF(10);
     for (i = 0; i < n; i++)
-        RtActor_Draw(&gRt->actors[order[i]]);
+    {
+        if (order[i] & 0x80)
+            RtProps_DrawOne(order[i] & 0x7F);
+        else
+            RtActor_Draw(&gRt->actors[order[i]]);
+    }
     RtOam_Commit();
 }
 
@@ -828,6 +847,7 @@ static void Rt_UpdateFight(void)
         }
     }
     RtProj_UpdateAll();
+    RtProps_Update();
     RtMove_TickFuture();
     RtMove_DoFieldTick();
     RtAi_TrainerItems();
