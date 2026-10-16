@@ -2628,8 +2628,7 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
     }
 
     // MOVES: relearn level-up moves (up to the current level) and egg moves, like a TM
-    if (sPartyMenuInternal->numActions <= 4 && !GetMonData(&mons[slotId], MON_DATA_IS_EGG)
-     && GetNumberOfRelearnableMoves(&mons[slotId]) != 0)
+    if (sPartyMenuInternal->numActions <= 4 && !GetMonData(&mons[slotId], MON_DATA_IS_EGG))
         AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_RELEARN);
 
     // HMs in the bag whose field move is used from this menu (FLASH in caves, STRENGTH for the
@@ -2802,9 +2801,21 @@ static void CB2_OpenMoveRelearnerFromParty(void)
     OpenMoveRelearnerFromParty(gPartyMenu.slotId, CB2_ReturnToPartyMenuFromSummaryScreen);
 }
 
+static const u8 sText_NoMovesToRelearn[] = _("{STR_VAR_1} has no other moves\nto learn right now.{PAUSE_UNTIL_PRESS}");
+
 static void CursorCb_Relearn(u8 taskId)
 {
     PlaySE(SE_SELECT);
+    if (GetNumberOfRelearnableMoves(&gPlayerParty[gPartyMenu.slotId]) == 0)
+    {
+        PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
+        PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
+        GetMonNickname(&gPlayerParty[gPartyMenu.slotId], gStringVar1);
+        StringExpandPlaceholders(gStringVar4, sText_NoMovesToRelearn);
+        DisplayPartyMenuMessage(gStringVar4, TRUE);
+        gTasks[taskId].func = Task_ReturnToChooseMonAfterText;
+        return;
+    }
     gLastViewedMonIndex = gPartyMenu.slotId;
     sPartyMenuInternal->exitCallback = CB2_OpenMoveRelearnerFromParty;
     Task_ClosePartyMenu(taskId);
