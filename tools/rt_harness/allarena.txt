@@ -1,0 +1,2044 @@
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 0
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v000.bin
+dump 05000000 0x200 /tmp/ar/p000.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s000.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 1
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v001.bin
+dump 05000000 0x200 /tmp/ar/p001.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s001.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 2
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v002.bin
+dump 05000000 0x200 /tmp/ar/p002.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s002.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 3
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v003.bin
+dump 05000000 0x200 /tmp/ar/p003.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s003.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 4
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v004.bin
+dump 05000000 0x200 /tmp/ar/p004.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s004.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 5
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v005.bin
+dump 05000000 0x200 /tmp/ar/p005.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s005.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 6
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v006.bin
+dump 05000000 0x200 /tmp/ar/p006.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s006.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 7
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v007.bin
+dump 05000000 0x200 /tmp/ar/p007.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s007.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 8
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v008.bin
+dump 05000000 0x200 /tmp/ar/p008.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s008.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 9
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v009.bin
+dump 05000000 0x200 /tmp/ar/p009.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s009.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} a
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v010.bin
+dump 05000000 0x200 /tmp/ar/p010.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s010.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} b
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v011.bin
+dump 05000000 0x200 /tmp/ar/p011.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s011.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} c
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v012.bin
+dump 05000000 0x200 /tmp/ar/p012.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s012.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} d
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v013.bin
+dump 05000000 0x200 /tmp/ar/p013.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s013.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} e
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v014.bin
+dump 05000000 0x200 /tmp/ar/p014.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s014.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} f
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v015.bin
+dump 05000000 0x200 /tmp/ar/p015.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s015.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 10
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v016.bin
+dump 05000000 0x200 /tmp/ar/p016.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s016.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 11
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v017.bin
+dump 05000000 0x200 /tmp/ar/p017.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s017.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 12
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v018.bin
+dump 05000000 0x200 /tmp/ar/p018.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s018.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 13
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v019.bin
+dump 05000000 0x200 /tmp/ar/p019.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s019.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 14
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v020.bin
+dump 05000000 0x200 /tmp/ar/p020.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s020.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 15
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v021.bin
+dump 05000000 0x200 /tmp/ar/p021.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s021.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 16
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v022.bin
+dump 05000000 0x200 /tmp/ar/p022.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s022.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 17
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v023.bin
+dump 05000000 0x200 /tmp/ar/p023.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s023.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 18
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v024.bin
+dump 05000000 0x200 /tmp/ar/p024.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s024.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 19
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v025.bin
+dump 05000000 0x200 /tmp/ar/p025.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s025.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 1a
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v026.bin
+dump 05000000 0x200 /tmp/ar/p026.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s026.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 1b
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v027.bin
+dump 05000000 0x200 /tmp/ar/p027.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s027.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 1c
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v028.bin
+dump 05000000 0x200 /tmp/ar/p028.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s028.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 1d
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v029.bin
+dump 05000000 0x200 /tmp/ar/p029.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s029.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 1e
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v030.bin
+dump 05000000 0x200 /tmp/ar/p030.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s030.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 1f
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v031.bin
+dump 05000000 0x200 /tmp/ar/p031.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s031.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 20
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v032.bin
+dump 05000000 0x200 /tmp/ar/p032.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s032.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 21
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v033.bin
+dump 05000000 0x200 /tmp/ar/p033.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s033.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 22
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v034.bin
+dump 05000000 0x200 /tmp/ar/p034.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s034.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 23
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v035.bin
+dump 05000000 0x200 /tmp/ar/p035.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s035.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 24
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v036.bin
+dump 05000000 0x200 /tmp/ar/p036.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s036.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 25
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v037.bin
+dump 05000000 0x200 /tmp/ar/p037.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s037.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 26
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v038.bin
+dump 05000000 0x200 /tmp/ar/p038.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s038.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 27
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v039.bin
+dump 05000000 0x200 /tmp/ar/p039.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s039.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 28
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v040.bin
+dump 05000000 0x200 /tmp/ar/p040.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s040.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 29
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v041.bin
+dump 05000000 0x200 /tmp/ar/p041.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s041.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 2a
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v042.bin
+dump 05000000 0x200 /tmp/ar/p042.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s042.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 2b
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v043.bin
+dump 05000000 0x200 /tmp/ar/p043.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s043.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 2c
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v044.bin
+dump 05000000 0x200 /tmp/ar/p044.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s044.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 2d
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v045.bin
+dump 05000000 0x200 /tmp/ar/p045.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s045.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 2e
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v046.bin
+dump 05000000 0x200 /tmp/ar/p046.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s046.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 2f
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v047.bin
+dump 05000000 0x200 /tmp/ar/p047.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s047.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 30
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v048.bin
+dump 05000000 0x200 /tmp/ar/p048.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s048.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 31
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v049.bin
+dump 05000000 0x200 /tmp/ar/p049.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s049.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 32
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v050.bin
+dump 05000000 0x200 /tmp/ar/p050.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s050.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 33
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v051.bin
+dump 05000000 0x200 /tmp/ar/p051.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s051.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 34
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v052.bin
+dump 05000000 0x200 /tmp/ar/p052.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s052.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 35
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v053.bin
+dump 05000000 0x200 /tmp/ar/p053.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s053.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 36
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v054.bin
+dump 05000000 0x200 /tmp/ar/p054.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s054.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 37
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v055.bin
+dump 05000000 0x200 /tmp/ar/p055.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s055.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 38
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v056.bin
+dump 05000000 0x200 /tmp/ar/p056.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s056.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 39
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v057.bin
+dump 05000000 0x200 /tmp/ar/p057.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s057.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 3a
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v058.bin
+dump 05000000 0x200 /tmp/ar/p058.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s058.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 3b
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v059.bin
+dump 05000000 0x200 /tmp/ar/p059.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s059.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 3c
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v060.bin
+dump 05000000 0x200 /tmp/ar/p060.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s060.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 3d
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v061.bin
+dump 05000000 0x200 /tmp/ar/p061.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s061.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 3e
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v062.bin
+dump 05000000 0x200 /tmp/ar/p062.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s062.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 3f
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v063.bin
+dump 05000000 0x200 /tmp/ar/p063.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s063.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 40
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v064.bin
+dump 05000000 0x200 /tmp/ar/p064.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s064.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 41
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v065.bin
+dump 05000000 0x200 /tmp/ar/p065.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s065.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 42
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v066.bin
+dump 05000000 0x200 /tmp/ar/p066.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s066.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 43
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v067.bin
+dump 05000000 0x200 /tmp/ar/p067.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s067.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 44
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v068.bin
+dump 05000000 0x200 /tmp/ar/p068.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s068.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 45
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v069.bin
+dump 05000000 0x200 /tmp/ar/p069.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s069.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 46
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v070.bin
+dump 05000000 0x200 /tmp/ar/p070.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s070.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 47
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v071.bin
+dump 05000000 0x200 /tmp/ar/p071.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s071.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 48
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v072.bin
+dump 05000000 0x200 /tmp/ar/p072.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s072.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 49
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v073.bin
+dump 05000000 0x200 /tmp/ar/p073.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s073.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 4a
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v074.bin
+dump 05000000 0x200 /tmp/ar/p074.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s074.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 4b
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v075.bin
+dump 05000000 0x200 /tmp/ar/p075.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s075.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 4c
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v076.bin
+dump 05000000 0x200 /tmp/ar/p076.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s076.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 4d
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v077.bin
+dump 05000000 0x200 /tmp/ar/p077.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s077.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 4e
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v078.bin
+dump 05000000 0x200 /tmp/ar/p078.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s078.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 4f
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v079.bin
+dump 05000000 0x200 /tmp/ar/p079.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s079.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 50
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v080.bin
+dump 05000000 0x200 /tmp/ar/p080.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s080.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 51
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v081.bin
+dump 05000000 0x200 /tmp/ar/p081.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s081.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 52
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v082.bin
+dump 05000000 0x200 /tmp/ar/p082.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s082.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 53
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v083.bin
+dump 05000000 0x200 /tmp/ar/p083.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s083.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 54
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v084.bin
+dump 05000000 0x200 /tmp/ar/p084.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s084.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 55
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v085.bin
+dump 05000000 0x200 /tmp/ar/p085.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s085.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 56
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v086.bin
+dump 05000000 0x200 /tmp/ar/p086.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s086.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 57
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v087.bin
+dump 05000000 0x200 /tmp/ar/p087.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s087.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 58
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v088.bin
+dump 05000000 0x200 /tmp/ar/p088.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s088.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 59
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v089.bin
+dump 05000000 0x200 /tmp/ar/p089.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s089.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 5a
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v090.bin
+dump 05000000 0x200 /tmp/ar/p090.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s090.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 5b
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v091.bin
+dump 05000000 0x200 /tmp/ar/p091.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s091.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 5c
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v092.bin
+dump 05000000 0x200 /tmp/ar/p092.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s092.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 5d
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v093.bin
+dump 05000000 0x200 /tmp/ar/p093.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s093.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 5e
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v094.bin
+dump 05000000 0x200 /tmp/ar/p094.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s094.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 5f
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v095.bin
+dump 05000000 0x200 /tmp/ar/p095.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s095.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 60
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v096.bin
+dump 05000000 0x200 /tmp/ar/p096.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s096.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 61
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v097.bin
+dump 05000000 0x200 /tmp/ar/p097.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s097.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 62
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v098.bin
+dump 05000000 0x200 /tmp/ar/p098.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s098.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 63
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v099.bin
+dump 05000000 0x200 /tmp/ar/p099.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s099.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 64
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v100.bin
+dump 05000000 0x200 /tmp/ar/p100.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s100.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 65
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v101.bin
+dump 05000000 0x200 /tmp/ar/p101.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s101.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 66
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v102.bin
+dump 05000000 0x200 /tmp/ar/p102.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s102.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 67
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v103.bin
+dump 05000000 0x200 /tmp/ar/p103.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s103.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 68
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v104.bin
+dump 05000000 0x200 /tmp/ar/p104.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s104.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 69
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v105.bin
+dump 05000000 0x200 /tmp/ar/p105.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s105.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 6a
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v106.bin
+dump 05000000 0x200 /tmp/ar/p106.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s106.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 6b
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v107.bin
+dump 05000000 0x200 /tmp/ar/p107.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s107.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 6c
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v108.bin
+dump 05000000 0x200 /tmp/ar/p108.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s108.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 6d
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v109.bin
+dump 05000000 0x200 /tmp/ar/p109.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s109.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 6e
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v110.bin
+dump 05000000 0x200 /tmp/ar/p110.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s110.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 6f
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v111.bin
+dump 05000000 0x200 /tmp/ar/p111.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s111.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 70
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v112.bin
+dump 05000000 0x200 /tmp/ar/p112.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s112.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 71
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v113.bin
+dump 05000000 0x200 /tmp/ar/p113.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s113.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 72
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v114.bin
+dump 05000000 0x200 /tmp/ar/p114.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s114.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 73
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v115.bin
+dump 05000000 0x200 /tmp/ar/p115.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s115.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 74
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v116.bin
+dump 05000000 0x200 /tmp/ar/p116.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s116.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 75
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v117.bin
+dump 05000000 0x200 /tmp/ar/p117.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s117.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 76
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v118.bin
+dump 05000000 0x200 /tmp/ar/p118.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s118.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 77
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v119.bin
+dump 05000000 0x200 /tmp/ar/p119.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s119.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 78
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v120.bin
+dump 05000000 0x200 /tmp/ar/p120.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s120.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 79
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v121.bin
+dump 05000000 0x200 /tmp/ar/p121.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s121.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 7a
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v122.bin
+dump 05000000 0x200 /tmp/ar/p122.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s122.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 7b
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v123.bin
+dump 05000000 0x200 /tmp/ar/p123.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s123.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 7c
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v124.bin
+dump 05000000 0x200 /tmp/ar/p124.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s124.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 7d
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v125.bin
+dump 05000000 0x200 /tmp/ar/p125.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s125.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 7e
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v126.bin
+dump 05000000 0x200 /tmp/ar/p126.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s126.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 7f
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v127.bin
+dump 05000000 0x200 /tmp/ar/p127.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s127.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 80
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v128.bin
+dump 05000000 0x200 /tmp/ar/p128.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s128.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 81
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v129.bin
+dump 05000000 0x200 /tmp/ar/p129.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s129.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 82
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v130.bin
+dump 05000000 0x200 /tmp/ar/p130.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s130.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 83
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v131.bin
+dump 05000000 0x200 /tmp/ar/p131.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s131.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 84
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v132.bin
+dump 05000000 0x200 /tmp/ar/p132.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s132.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 85
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v133.bin
+dump 05000000 0x200 /tmp/ar/p133.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s133.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 86
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v134.bin
+dump 05000000 0x200 /tmp/ar/p134.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s134.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 87
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v135.bin
+dump 05000000 0x200 /tmp/ar/p135.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s135.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 88
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v136.bin
+dump 05000000 0x200 /tmp/ar/p136.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s136.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 89
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v137.bin
+dump 05000000 0x200 /tmp/ar/p137.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s137.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 8a
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v138.bin
+dump 05000000 0x200 /tmp/ar/p138.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s138.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 8b
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v139.bin
+dump 05000000 0x200 /tmp/ar/p139.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s139.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 8c
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v140.bin
+dump 05000000 0x200 /tmp/ar/p140.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s140.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 8d
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v141.bin
+dump 05000000 0x200 /tmp/ar/p141.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s141.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 8e
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v142.bin
+dump 05000000 0x200 /tmp/ar/p142.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s142.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 8f
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v143.bin
+dump 05000000 0x200 /tmp/ar/p143.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s143.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 90
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v144.bin
+dump 05000000 0x200 /tmp/ar/p144.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s144.png
+loadst /home/claude/harness/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugWarpIdx} 91
+poke8 {gRtDebugCommand} c
+wait 220
+poke8 {gRtDebugCommand} 1
+waitp {gRt} 0 02 900
+wait 30
+dump 06000000 0x10000 /tmp/ar/v145.bin
+dump 05000000 0x200 /tmp/ar/p145.bin
+peekp {gRt} 1d6a 8
+shot /tmp/ar/s145.png

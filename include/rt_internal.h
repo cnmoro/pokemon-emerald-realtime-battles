@@ -652,6 +652,28 @@ struct RtBattle
 
     // arena props (rocks, cuttable trees, boulders, boxes)
     struct RtProp props[RT_MAX_PROPS];
+
+    // scratch memory of the arena builder and the AI path finder (kept off EWRAM statics)
+    struct
+    {
+        u8 hgt[80];
+        u8 ledge[ARENA_MH][ARENA_MW];
+        u32 cost[(ARENA_MH + 1) * (ARENA_MW + 1)];
+        u8 clean[ARENA_MH][ARENA_MW];
+        u8 objId[ARENA_MH][ARENA_MW];
+        u16 objSize[256];
+        u8 objEdge[256];
+        u8 objErase[256];
+        u16 objFill[256];  // ground that replaces an erased object (the one around it)
+        u8 objVote[256];
+        u8 erased[ARENA_MH][ARENA_MW];
+        u8 group[ARENA_MH * ARENA_MW];
+        u8 seen[ARENA_MH * ARENA_MW];
+        u8 pathDist[4][ARENA_MH * ARENA_MW];
+        u8 walkPad[(ARENA_MW + 2) * (ARENA_MH + 2)];
+        u16 pathQueue[ARENA_MH * ARENA_MW];
+        u8 pathPad[(ARENA_MW + 2) * (ARENA_MH + 2)];
+    } scr;
 };
 
 extern struct RtBattle *gRt;

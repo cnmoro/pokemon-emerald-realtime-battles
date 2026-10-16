@@ -50,18 +50,7 @@ static const struct DebugMon sDebugParty[] =
 
 static const struct { s8 group, num, x, y; } sDebugWarps[] =
 {
-    {MAP_GROUP(MAP_ROUTE101), MAP_NUM(MAP_ROUTE101), 3, 3},
-    {MAP_GROUP(MAP_PETALBURG_WOODS), MAP_NUM(MAP_PETALBURG_WOODS), 19, 26},
-    {MAP_GROUP(MAP_RUSTBORO_CITY_GYM), MAP_NUM(MAP_RUSTBORO_CITY_GYM), 6, 16},
-    {MAP_GROUP(MAP_METEOR_FALLS_1F_1R), MAP_NUM(MAP_METEOR_FALLS_1F_1R), 18, 19},
-    {MAP_GROUP(MAP_SLATEPORT_CITY), MAP_NUM(MAP_SLATEPORT_CITY), 19, 30},
-    {MAP_GROUP(MAP_ROUTE113), MAP_NUM(MAP_ROUTE113), 45, 5},
-    {MAP_GROUP(MAP_ROUTE119), MAP_NUM(MAP_ROUTE119), 11, 70},
-    {MAP_GROUP(MAP_LAVARIDGE_TOWN_GYM_1F), MAP_NUM(MAP_LAVARIDGE_TOWN_GYM_1F), 3, 4},
-    {MAP_GROUP(MAP_SOOTOPOLIS_CITY_GYM_1F), MAP_NUM(MAP_SOOTOPOLIS_CITY_GYM_1F), 7, 23},
-    {MAP_GROUP(MAP_EVER_GRANDE_CITY_SIDNEYS_ROOM), MAP_NUM(MAP_EVER_GRANDE_CITY_SIDNEYS_ROOM), 6, 7},
-    {MAP_GROUP(MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM), MAP_NUM(MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM), 12, 12},
-    {MAP_GROUP(MAP_FORTREE_CITY_GYM), MAP_NUM(MAP_FORTREE_CITY_GYM), 15, 9},
+#include "data/rt/debug_warps.h"
 };
 
 void RtDebug_NewGame(void)
@@ -148,9 +137,12 @@ bool8 RtDebug_FieldInput(void)
         HealPlayerParty();
         return FALSE;
     }
-    if (cmd == 3 || (gMain.newKeys & SELECT_BUTTON))
+    if (cmd == 3 || cmd == 12 || (gMain.newKeys & SELECT_BUTTON))
     {
-        gRtDebugWarpIdx = (gRtDebugWarpIdx + 1) % ARRAY_COUNT(sDebugWarps);
+        if (cmd != 12)
+            gRtDebugWarpIdx = (gRtDebugWarpIdx + 1) % ARRAY_COUNT(sDebugWarps);
+        else if (gRtDebugWarpIdx >= ARRAY_COUNT(sDebugWarps))
+            gRtDebugWarpIdx = 0;
         SetWarpDestination(sDebugWarps[gRtDebugWarpIdx].group, sDebugWarps[gRtDebugWarpIdx].num, WARP_ID_NONE, sDebugWarps[gRtDebugWarpIdx].x, sDebugWarps[gRtDebugWarpIdx].y);
         DoWarp();
         return TRUE;

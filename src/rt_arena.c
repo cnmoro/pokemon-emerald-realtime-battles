@@ -386,6 +386,38 @@ static bool8 IsLedgeMeta(u16 m)
         || MetatileBehavior_IsJumpNorth(b) || MetatileBehavior_IsJumpSouth(b);
 }
 
+// single-level maps (most rooms and gyms) mix elevation 0 ("any level") floor with the player's level
+static bool8 sZeroElevOk;
+
+// A cell that can be part of an untouched battle field: plain walkable ground of the player's level.
+static bool8 CellClean(s32 x, s32 y, bool8 water, u8 elev)
+{
+    u16 m = MapGridGetMetatileIdAt(x, y);
+    u8 b, e;
+    if (m >= NUM_METATILES_TOTAL || MapGridGetCollisionAt(x, y))
+        return FALSE;
+    // outside the map there is only the blank border (rooms, gyms) or a neighbour map of another look
+    if (x < MAP_OFFSET || y < MAP_OFFSET || x >= MAP_OFFSET + gMapHeader.mapLayout->width
+     || y >= MAP_OFFSET + gMapHeader.mapLayout->height)
+    {
+        if (gMapHeader.connections == NULL || gMapHeader.connections->count == 0)
+            return FALSE;
+    }
+    e = MapGridGetElevationAt(x, y);
+    // same level as the player (multi-level maps use 0/15 for stairs and transitions: those are excluded too)
+    if (elev != 0 && elev != 15 && e != elev && !(e == 0 && sZeroElevOk))
+        return FALSE;
+    b = BehaviorOf(m);
+    if (water)
+        return MetatileBehavior_IsSurfableWaterOrUnderwater(b) && !MetatileBehavior_IsWaterfall(b);
+    if (IsLedgeMeta(m))
+        return TRUE; // ledges are painted with the ground around them beforehand
+    return b == MB_NORMAL || b == MB_TALL_GRASS || b == MB_LONG_GRASS || b == MB_ASHGRASS || b == MB_SAND
+        || b == MB_DEEP_SAND || b == MB_SHORT_GRASS || b == MB_FOOTPRINTS || b == MB_CAVE
+        || b == MB_INDOOR_ENCOUNTER || b == MB_MOUNTAIN_TOP || b == MB_LONG_GRASS_SOUTH_EDGE || b == MB_ICE
+        || b == MB_NO_RUNNING || b == MB_TRICK_HOUSE_PUZZLE_8_FLOOR;
+}
+
 static u8 CellFlags(s32 x, s32 y, bool8 water)
 {
     u16 m = MapGridGetMetatileIdAt(x, y);
@@ -473,12 +505,12 @@ static u16 BestComponent(const u8 *grid, s32 ox, s32 oy, u8 *comp, u8 *tmp, u16 
 // 8-connected groups. Groups that do not touch the window edge are "islands" (rocks, signs,
 // lone trees, inner walls...) and get cleared from the arena. For border groups, counts how
 // many of their cells reach deep into the arena ("intrusion"), which makes a window worse.
-static EWRAM_DATA u8 sGroup[ARENA_MH * ARENA_MW] = {0}; // 0 = walkable, 1 = border group, 2 = island
+#define sGroup (gRt->scr.group) // 0 = walkable, 1 = border group, 2 = island
 static void ClassifyBlocked(const u8 *comp, u16 *queue, u16 *islands, u16 *intrusion)
 {
     s32 i;
-    static EWRAM_DATA u8 seen[ARENA_MH * ARENA_MW] = {0};
-    memset(seen, 0, sizeof(seen));
+    u8 *seen = gRt->scr.seen;
+    memset(seen, 0, ARENA_MH * ARENA_MW);
     *islands = 0;
     *intrusion = 0;
     for (i = 0; i < ARENA_MH * ARENA_MW; i++)
@@ -603,6 +635,7 @@ void RtArena_Build(void)
     u16 bestComp = 0;
     struct { s16 ox, oy; s32 score; } cand[8];
     u8 nCand = 0;
+    s32 cleanX = 0, cleanY = 0, cleanW = 0, cleanH = 0;
 
     sSpawnValid = FALSE;
     RtArena_ResetPaths();
@@ -698,6 +731,91 @@ void RtArena_Build(void)
             }
         }
     }
+    // is this a single-level place? (one elevation besides 0/15 among the walkable cells around)
+    {
+        u16 cnt[16];
+        s32 k, top = 0, second = 0;
+        memset(cnt, 0, sizeof(cnt));
+        for (y = 0; y < GRID_H; y++)
+            for (x = 0; x < GRID_W; x++)
+                if (MapGridGetCollisionAt(gx0 + x, gy0 + y) == 0)
+                    cnt[MapGridGetElevationAt(gx0 + x, gy0 + y)]++;
+        for (k = 1; k < 15; k++)
+        {
+            if (cnt[k] > top)
+            {
+                second = top;
+                top = cnt[k];
+            }
+            else if (cnt[k] > second)
+                second = cnt[k];
+        }
+        // (outdoors, elevation 0 is used by stairs between levels: never part of a field there)
+        sZeroElevOk = (second * 12 < top) && gMapHeader.mapType != MAP_TYPE_TOWN && gMapHeader.mapType != MAP_TYPE_CITY
+                   && gMapHeader.mapType != MAP_TYPE_ROUTE && gMapHeader.mapType != MAP_TYPE_OCEAN_ROUTE;
+    }
+    // 3b. best untouched field: the biggest rectangle made only of clean ground. When there is one,
+    // the arena is the real map as it is (nothing painted), just with the scenery around dimmed.
+    {
+        u8 *hgt = gRt->scr.hgt;
+        u8 pe = MapGridGetElevationAt(px, py);
+        s32 bestA = 0;
+        cleanW = 0;
+        memset(hgt, 0, GRID_W);
+        for (y = 1; y < GRID_H - 1; y++)
+        {
+            for (x = 1; x < GRID_W - 1; x++)
+            {
+                hgt[x] = CellClean(gx0 + x, gy0 + y, water, pe) ? (hgt[x] < 14 ? hgt[x] + 1 : 14) : 0;
+            }
+            for (x = 1; x < GRID_W - 1; x++)
+            {
+                s32 x2, mh = 14;
+                if (hgt[x] < 5)
+                    continue;
+                for (x2 = x; x2 < GRID_W - 1 && x2 - x < 30; x2++)
+                {
+                    s32 w = x2 - x + 1, a, dcx, dcy;
+                    if (hgt[x2] < mh)
+                        mh = hgt[x2];
+                    if (mh < 5)
+                        break;
+                    if (w < 7)
+                        continue;
+                    dcx = gx0 + x + w / 2 - px;
+                    dcy = gy0 + y - mh / 2 - py;
+                    if (dcx < 0) dcx = -dcx;
+                    if (dcy < 0) dcy = -dcy;
+                    a = (w > 22 ? 22 : w) * mh * 4 - (dcx + dcy) * 3;
+                    if (a > bestA)
+                    {
+                        bestA = a;
+                        cleanX = x;
+                        cleanY = y - mh + 1;
+                        cleanW = w;
+                        cleanH = mh;
+                    }
+                }
+            }
+        }
+    }
+    if (cleanW)
+    {
+        // the window: the clean rectangle, centred
+        s32 ox = cleanX - (ARENA_MW - cleanW) / 2, oy = cleanY - (ARENA_MH - cleanH) / 2;
+        if (ox > cleanX - 1) ox = cleanX - 1;
+        if (oy > cleanY - 1) oy = cleanY - 1;
+        if (ox + ARENA_MW < cleanX + cleanW + 1) ox = cleanX + cleanW + 1 - ARENA_MW;
+        if (oy + ARENA_MH < cleanY + cleanH + 1) oy = cleanY + cleanH + 1 - ARENA_MH;
+        if (ox < 0) ox = 0;
+        if (oy < 0) oy = 0;
+        if (ox > GRID_W - ARENA_MW) ox = GRID_W - ARENA_MW;
+        if (oy > GRID_H - ARENA_MH) oy = GRID_H - ARENA_MH;
+        nCand = 1;
+        cand[0].ox = ox;
+        cand[0].oy = oy;
+        cand[0].score = 0;
+    }
     // 4. exact check of the candidates: size of the largest connected open area
     for (i = 0; i < nCand; i++)
     {
@@ -766,7 +884,7 @@ void RtArena_Build(void)
             if (common == 0xFFFF || cnt[i] > cnt[common])
                 common = i;
         common = (common == 0xFFFF) ? 0xFFFF : ids[common];
-        static EWRAM_DATA u8 ledge[ARENA_MH][ARENA_MW] = {0};
+        u8 (*ledge)[ARENA_MW] = gRt->scr.ledge;
         for (y = 0; y < ARENA_MH; y++)
             for (x = 0; x < ARENA_MW; x++)
                 ledge[y][x] = IsLedgeMeta(gRt->arenaMeta[y][x]);
@@ -853,123 +971,277 @@ void RtArena_Build(void)
             }
         }
     }
-    // 5b. the playable field: the cleanest big rectangle of the window. Everything inside it is
-    // turned into walkable ground (rocks, walls, trees, water are painted over); everything
-    // outside is scenery, dimmed on screen and not walkable.
+    // 5b. the playable field: a rectangle of the window that is all plain ground of the player's level.
+    // Non-ground cells inside it ("dirt": rocks, signs, ladders, ledges, other levels...) are painted with
+    // the field's ground. Dirt is grouped into 8-connected objects: small objects are erased entirely
+    // (also their part outside the field, so nothing is left cut in half); big ones (cliffs, forests,
+    // buildings) make a rectangle very expensive, so the field avoids cutting through them.
+    // Everything outside the field is scenery: dimmed on screen and not walkable.
     {
         u16 floorMeta = 0xFFFF;
-        static EWRAM_DATA u16 bad[(ARENA_MH + 1) * (ARENA_MW + 1)] = {0};
+        u32 *cost = gRt->scr.cost;
+        u8 (*clean)[ARENA_MW] = gRt->scr.clean;
+        u8 (*objId)[ARENA_MW] = gRt->scr.objId;   // 0 clean, else object index
+        u16 *objSize = gRt->scr.objSize;
+        u8 *objEdge = gRt->scr.objEdge;
+        u8 *objErase = gRt->scr.objErase;
+        u16 *objFill = gRt->scr.objFill;
+        u8 *objVote = gRt->scr.objVote;
+        u8 pe = MapGridGetElevationAt(px, py);
         s32 w, h, bx0 = 1, by0 = 1, bw = ARENA_MW - 2, bh = ARENA_MH - 2, bestS = -0x7FFFFFFF;
-        // prefix sums of cells that would have to be painted over
+        u16 nObj = 0;
+        u16 *q = queue;
+        u16 *freq;
+        bool8 indoorField;
+
+        for (y = 0; y < ARENA_MH; y++)
+            for (x = 0; x < ARENA_MW; x++)
+            {
+                clean[y][x] = CellClean(gx0 + bestOx + x, gy0 + bestOy + y, water, pe);
+                objId[y][x] = 0;
+            }
+        // the field's ground: the most common clean metatile of the window (no tall grass on land)
+        {
+            freq = (u16 *)gRt->scr.cost; // temporary use (holds 1024 u16), rebuilt below
+            u16 bestN = 0;
+            memset(freq, 0, NUM_METATILES_TOTAL * sizeof(u16));
+            for (y = 0; y < ARENA_MH; y++)
+                for (x = 0; x < ARENA_MW; x++)
+                {
+                    u16 m = gRt->arenaMeta[y][x];
+                    u8 b;
+                    if (!clean[y][x] || m >= NUM_METATILES_TOTAL)
+                        continue;
+                    b = BehaviorOf(m);
+                    if (!water && (MetatileBehavior_IsTallGrass(b) || MetatileBehavior_IsLongGrass(b) || HasTopLayer(m)))
+                        continue;
+                    if (++freq[m] > bestN)
+                    {
+                        bestN = freq[m];
+                        floorMeta = m;
+                    }
+                }
+            if (floorMeta == 0xFFFF)
+                floorMeta = playerMeta;
+        }
+        indoorField = !water && (gMapHeader.mapType == MAP_TYPE_INDOOR || gMapHeader.mapType == MAP_TYPE_SECRET_BASE
+                                 || BehaviorOf(floorMeta) == MB_INDOOR_ENCOUNTER);
+        // classify: 0 = plain ground (kept as it is: grass, paths, sand...), 1 = ground that needs
+        // painting (under a tree crown or a roof, ledges), 2 = obstacle
+        for (y = 0; y < ARENA_MH; y++)
+            for (x = 0; x < ARENA_MW; x++)
+            {
+                u16 m = gRt->arenaMeta[y][x];
+                if (!clean[y][x])
+                    clean[y][x] = 2;
+                else if (HasTopLayer(m) || IsLedgeMeta(MetaAt(gx0 + bestOx + x, gy0 + bestOy + y)))
+                    clean[y][x] = 1;
+                else if (indoorField && m != floorMeta)
+                    clean[y][x] = 1; // rooms: one plain floor (rugs, stools and the like go with the furniture)
+                else if (m != floorMeta && freq[m] <= 16
+                      && (water || !(MetatileBehavior_IsTallGrass(BehaviorOf(m)) || MetatileBehavior_IsLongGrass(BehaviorOf(m)))))
+                    clean[y][x] = 1; // rare pieces (steps, odd stones, a lone plank): painted when in the field
+                else
+                    clean[y][x] = 0;
+            }
+        // decorations: tiny groups (up to 4 cells) of a rare walkable ground that is neither the field's ground
+        // nor grass, like a chair, a lone plank or steps cut in a cliff, are painted too
+        {
+            u8 (*vis)[ARENA_MW] = gRt->scr.erased; // scratch, rebuilt below
+            memset(vis, 0, sizeof(gRt->scr.erased));
+            for (y = 0; y < ARENA_MH; y++)
+                for (x = 0; x < ARENA_MW; x++)
+                {
+                    u16 head = 0, tail = 0, k;
+                    u16 m = gRt->arenaMeta[y][x];
+                    if (vis[y][x] || clean[y][x] != 0 || m == floorMeta
+                     || (!water && (MetatileBehavior_IsTallGrass(BehaviorOf(m)) || MetatileBehavior_IsLongGrass(BehaviorOf(m)))))
+                        continue;
+                    vis[y][x] = 1;
+                    q[tail++] = y * ARENA_MW + x;
+                    while (head < tail)
+                    {
+                        u16 c = q[head++];
+                        s32 cx = c % ARENA_MW, cy = c / ARENA_MW;
+                        for (k = 0; k < 4; k++)
+                        {
+                            s32 nx = cx + (k == 0) - (k == 1), ny = cy + (k == 2) - (k == 3);
+                            u16 nm;
+                            if (nx < 0 || ny < 0 || nx >= ARENA_MW || ny >= ARENA_MH || vis[ny][nx] || clean[ny][nx] != 0)
+                                continue;
+                            nm = gRt->arenaMeta[ny][nx];
+                            if (nm != m)
+                                continue;
+                            vis[ny][nx] = 1;
+                            q[tail++] = ny * ARENA_MW + nx;
+                        }
+                    }
+                    bool8 squeezed = TRUE;
+                    for (k = 0; k < tail; k++)
+                    {
+                        s32 cx = q[k] % ARENA_MW, cy = q[k] / ARENA_MW;
+                        bool8 h = cx > 0 && cx < ARENA_MW - 1 && clean[cy][cx - 1] == 2 && clean[cy][cx + 1] == 2;
+                        bool8 v = cy > 0 && cy < ARENA_MH - 1 && clean[cy - 1][cx] == 2 && clean[cy + 1][cx] == 2;
+                        if (!h && !v)
+                            squeezed = FALSE;
+                    }
+                    if (tail <= 4 && (freq[m] <= 6 || squeezed))
+                        for (k = 0; k < tail; k++)
+                            clean[q[k] / ARENA_MW][q[k] % ARENA_MW] = 1;
+                }
+        }
+        // label everything that is not field ground into 8-connected objects
+        for (y = 0; y < ARENA_MH; y++)
+            for (x = 0; x < ARENA_MW; x++)
+            {
+                u16 head = 0, tail = 0, id;
+                if (clean[y][x] == 0 || objId[y][x] || nObj >= 255)
+                    continue;
+                id = ++nObj;
+                objSize[id] = 0;
+                objEdge[id] = 0;       // bit0: touches the window edge, bit1: contains an obstacle
+                objId[y][x] = id;
+                q[tail++] = y * ARENA_MW + x;
+                while (head < tail)
+                {
+                    u16 c = q[head++];
+                    s32 cx = c % ARENA_MW, cy = c / ARENA_MW, k;
+                    objSize[id]++;
+                    if (cx == 0 || cy == 0 || cx == ARENA_MW - 1 || cy == ARENA_MH - 1)
+                        objEdge[id] |= 1;
+                    if (clean[cy][cx] == 2)
+                        objEdge[id] |= 2;
+                    for (k = 0; k < 8; k++)
+                    {
+                        static const s8 sDx[8] = {1, -1, 0, 0, 1, 1, -1, -1};
+                        static const s8 sDy[8] = {0, 0, 1, -1, 1, -1, 1, -1};
+                        s32 nx = cx + sDx[k], ny = cy + sDy[k];
+                        if (nx < 0 || ny < 0 || nx >= ARENA_MW || ny >= ARENA_MH || clean[ny][nx] == 0 || objId[ny][nx])
+                            continue;
+                        objId[ny][nx] = id;
+                        q[tail++] = ny * ARENA_MW + nx;
+                    }
+                }
+            }
+        // small things are erased completely; other ground is painted only inside the field;
+        // big obstacles (cliffs, buildings, forests) must stay out of the field
+        for (i = 1; i <= nObj; i++)
+        {
+            objErase[i] = (objSize[i] <= 9 && !(objEdge[i] & 1));
+            objFill[i] = floorMeta;
+            objVote[i] = 0;
+        }
+        // what replaces an object: the ground most found around it (majority vote)
+        for (y = 0; y < ARENA_MH; y++)
+            for (x = 0; x < ARENA_MW; x++)
+            {
+                s32 k;
+                u16 m = gRt->arenaMeta[y][x];
+                if (clean[y][x] != 0 || (!water && (MetatileBehavior_IsTallGrass(BehaviorOf(m)) || MetatileBehavior_IsLongGrass(BehaviorOf(m)))))
+                    continue;
+                for (k = 0; k < 8; k++)
+                {
+                    static const s8 sDx[8] = {1, -1, 0, 0, 1, 1, -1, -1};
+                    static const s8 sDy[8] = {0, 0, 1, -1, 1, -1, 1, -1};
+                    s32 nx = x + sDx[k], ny = y + sDy[k];
+                    u8 id;
+                    if (nx < 0 || ny < 0 || nx >= ARENA_MW || ny >= ARENA_MH || !(id = objId[ny][nx]))
+                        continue;
+                    if (objVote[id] == 0)
+                    {
+                        objFill[id] = m;
+                        objVote[id] = 1;
+                    }
+                    else if (objFill[id] == m)
+                    {
+                        if (objVote[id] < 255)
+                            objVote[id]++;
+                    }
+                    else
+                        objVote[id]--;
+                }
+            }
         for (y = 0; y <= ARENA_MH; y++)
             for (x = 0; x <= ARENA_MW; x++)
             {
                 if (x == 0 || y == 0)
-                    bad[y * (ARENA_MW + 1) + x] = 0;
+                    cost[y * (ARENA_MW + 1) + x] = 0;
                 else
                 {
-                    u8 g = grid[(bestOy + y - 1) * GRID_W + bestOx + x - 1];
-                    bool8 b0 = !(g & GF_WALK) || IsLedgeMeta(MetaAt(gx0 + bestOx + x - 1, gy0 + bestOy + y - 1));
-                    bad[y * (ARENA_MW + 1) + x] = b0 + bad[(y - 1) * (ARENA_MW + 1) + x] + bad[y * (ARENA_MW + 1) + x - 1]
-                                                 - bad[(y - 1) * (ARENA_MW + 1) + x - 1];
+                    u8 id = objId[y - 1][x - 1];
+                    u16 c0 = 0;
+                    if (id)
+                        c0 = objErase[id] ? 1 : ((clean[y - 1][x - 1] == 2) ? 400 : (indoorField ? 1 : 3));
+                    cost[y * (ARENA_MW + 1) + x] = c0 + cost[(y - 1) * (ARENA_MW + 1) + x] + cost[y * (ARENA_MW + 1) + x - 1]
+                                                  - cost[(y - 1) * (ARENA_MW + 1) + x - 1];
                 }
             }
-        for (h = 7; h <= ARENA_MH - 2; h++)
-            for (w = 12; w <= ARENA_MW - 2; w++)
+        // small rooms get a small field rather than one spilling over walls and void
+        // (a field needs some room to move around: in tight places it takes the least cluttered spot)
+        for (h = water ? 4 : 5; h <= ARENA_MH - 2; h++)
+            for (w = water ? 5 : 7; w <= ARENA_MW - 2; w++)
                 for (y = 1; y + h <= ARENA_MH - 1; y++)
                     for (x = 1; x + w <= ARENA_MW - 1; x++)
                     {
-                        s32 nb = bad[(y + h) * (ARENA_MW + 1) + x + w] - bad[y * (ARENA_MW + 1) + x + w]
-                               - bad[(y + h) * (ARENA_MW + 1) + x] + bad[y * (ARENA_MW + 1) + x];
-                        s32 sc = (w * h - nb) * 3 - nb * 9;
-                        if (w > 22) sc -= (w - 22) * 6; // beyond this, a wider field adds little
+                        s32 c = cost[(y + h) * (ARENA_MW + 1) + x + w] - cost[y * (ARENA_MW + 1) + x + w]
+                              - cost[(y + h) * (ARENA_MW + 1) + x] + cost[y * (ARENA_MW + 1) + x];
+                        s32 sc = (w > 22 ? 22 : w) * (h > 12 ? 12 : h) * 8 - c * 3;
                         if (sc > bestS)
                         {
                             bestS = sc;
                             bx0 = x; by0 = y; bw = w; bh = h;
                         }
                     }
-        // dominant plain ground inside the field
-        {
-            u16 cnt[16], ids[16];
-            u8 nIds = 0, best = 0;
-            for (y = by0; y < by0 + bh; y++)
-                for (x = bx0; x < bx0 + bw; x++)
-                {
-                    u16 m = gRt->arenaMeta[y][x];
-                    u8 b = BehaviorOf(m);
-                    s32 k;
-                    if (!(grid[(bestOy + y) * GRID_W + bestOx + x] & GF_WALK) || IsLedgeMeta(m))
-                        continue;
-                    if (!water && (MetatileBehavior_IsTallGrass(b) || MetatileBehavior_IsLongGrass(b)
-                     || MetatileBehavior_IsBridgeOverWater(b) || MetatileBehavior_IsSurfableWaterOrUnderwater(b)))
-                        continue;
-                    for (k = 0; k < nIds; k++)
-                        if (ids[k] == m)
-                            break;
-                    if (k < nIds)
-                        cnt[k]++;
-                    else if (nIds < 16)
-                    {
-                        ids[nIds] = m;
-                        cnt[nIds++] = 1;
-                    }
-                }
-            for (i = 1; i < nIds; i++)
-                if (cnt[i] > cnt[best])
-                    best = i;
-            floorMeta = nIds ? ids[best] : playerMeta;
-        }
         for (y = 0; y < ARENA_MH; y++)
         {
             for (x = 0; x < ARENA_MW; x++)
             {
                 bool8 inside = x >= bx0 && x < bx0 + bw && y >= by0 && y < by0 + bh;
-                if (!inside)
+                u8 id = objId[y][x];
+                if (id && (inside || objErase[id]))
                 {
-                    gRt->solid[y][x] = RT_SOLID_WALK | RT_SOLID_SHOT;
-                    continue;
+                    // erase: small objects completely, big ones only where they enter the field
+                    bool8 touchesField = inside;
+                    if (!inside)
+                    {
+                        // erase a small object only if part of it is inside the field
+                        s32 yy, xx;
+                        for (yy = by0; yy < by0 + bh && !touchesField; yy++)
+                            for (xx = bx0; xx < bx0 + bw && !touchesField; xx++)
+                                if (objId[yy][xx] == id)
+                                    touchesField = TRUE;
+                    }
+                    if (touchesField)
+                        gRt->arenaMeta[y][x] = objFill[id];
                 }
-                if (!(grid[(bestOy + y) * GRID_W + bestOx + x] & GF_WALK) || IsLedgeMeta(gRt->arenaMeta[y][x]))
-                    gRt->arenaMeta[y][x] = floorMeta;
-                gRt->solid[y][x] = 0;
+                // ledges inside the field (and what the ledge pass put in their place) become field ground
+                if (inside && IsLedgeMeta(MetaAt(gx0 + bestOx + x, gy0 + bestOy + y)))
+                    gRt->arenaMeta[y][x] = id ? objFill[id] : floorMeta;
+                gRt->solid[y][x] = inside ? 0 : (RT_SOLID_WALK | RT_SOLID_SHOT);
             }
         }
-        // shadows and edge pieces of the removed objects: plain ground cells touching a painted cell
+        // shadows and crowns left around erased objects: plain cells of another look touching them
         {
-            static EWRAM_DATA u8 painted[ARENA_MH][ARENA_MW] = {0};
+            u8 (*erased)[ARENA_MW] = gRt->scr.erased;
             for (y = 0; y < ARENA_MH; y++)
                 for (x = 0; x < ARENA_MW; x++)
-                    painted[y][x] = (x >= bx0 && x < bx0 + bw && y >= by0 && y < by0 + bh)
-                                 && !(grid[(bestOy + y) * GRID_W + bestOx + x] & GF_WALK);
-            for (y = by0; y < by0 + bh; y++)
-                for (x = bx0; x < bx0 + bw; x++)
+                    erased[y][x] = objId[y][x] && gRt->arenaMeta[y][x] == objFill[objId[y][x]];
+            for (y = 0; y < ARENA_MH; y++)
+                for (x = 0; x < ARENA_MW; x++)
                 {
                     u16 m = gRt->arenaMeta[y][x];
                     s32 j, k;
-                    bool8 near = FALSE;
-                    if (painted[y][x] || m == floorMeta || BehaviorOf(m) != BehaviorOf(floorMeta))
+                    u8 near = 0;
+                    if (erased[y][x] || clean[y][x] == 2 || !HasTopLayer(m))
                         continue;
                     for (j = -1; j <= 1 && !near; j++)
                         for (k = -1; k <= 1 && !near; k++)
-                            if (y + j >= 0 && y + j < ARENA_MH && x + k >= 0 && x + k < ARENA_MW && painted[y + j][x + k])
-                                near = TRUE;
+                            if (y + j >= 0 && y + j < ARENA_MH && x + k >= 0 && x + k < ARENA_MW && erased[y + j][x + k])
+                                near = objId[y + j][x + k];
                     if (near)
-                        gRt->arenaMeta[y][x] = floorMeta;
+                        gRt->arenaMeta[y][x] = objFill[near];
                 }
         }
-        // overhangs (tree crowns, roofs, awnings) drawn over walkable cells would look like obstacles
-        for (y = by0; y < by0 + bh; y++)
-            for (x = bx0; x < bx0 + bw; x++)
-            {
-                u16 m = gRt->arenaMeta[y][x];
-                u8 b = BehaviorOf(m);
-                if (m == floorMeta || MetatileBehavior_IsTallGrass(b) || MetatileBehavior_IsLongGrass(b)
-                 || MetatileBehavior_IsAshGrass(b) || MetatileBehavior_IsBridgeOverWater(b))
-                    continue;
-                if (HasTopLayer(m))
-                    gRt->arenaMeta[y][x] = floorMeta;
-            }
         gRt->playX0 = bx0 * 16;
         gRt->playY0 = by0 * 16;
         gRt->playX1 = (bx0 + bw) * 16;
@@ -1331,7 +1603,7 @@ void RtArena_FindSpawn(u8 side, u8 index, s32 *x, s32 *y)
 // Path guidance for the AI: breadth-first distance fields towards targets.
 // ---------------------------------------------------------------------------
 #define PATH_SLOTS 4
-static EWRAM_DATA u8 sPathDist[PATH_SLOTS][ARENA_MH * ARENA_MW] = {0};
+#define sPathDist (gRt->scr.pathDist)
 static EWRAM_DATA u16 sPathCell[PATH_SLOTS] = {0};
 static EWRAM_DATA u32 sPathFrame[PATH_SLOTS] = {0};
 static EWRAM_DATA u8 sPathUsed[PATH_SLOTS] = {0};
@@ -1345,12 +1617,12 @@ static bool8 CellWalk(s32 cx, s32 cy)
 
 #define PW (ARENA_MW + 2)
 #define PH (ARENA_MH + 2)
-static EWRAM_DATA u8 sWalkPad[PW * PH] = {0};
+#define sWalkPad (gRt->scr.walkPad)
 static EWRAM_DATA bool8 sWalkPadReady = FALSE;
 
 // big scratch buffers live in EWRAM: the IWRAM stack is tiny
-static EWRAM_DATA u16 sPathQueue[ARENA_MH * ARENA_MW] = {0};
-static EWRAM_DATA u8 sPathPad[PW * PH] = {0};
+#define sPathQueue (gRt->scr.pathQueue)
+#define sPathPad (gRt->scr.pathPad)
 
 static void BuildField(u8 slot, s32 tcx, s32 tcy)
 {
@@ -1362,7 +1634,7 @@ static void BuildField(u8 slot, s32 tcx, s32 tcy)
     if (!sWalkPadReady)
     {
         s32 x, y;
-        memset(sWalkPad, 0, sizeof(sWalkPad));
+        memset(sWalkPad, 0, PW * PH);
         for (y = 0; y < ARENA_MH; y++)
             for (x = 0; x < ARENA_MW; x++)
                 sWalkPad[(y + 1) * PW + x + 1] = !(gRt->solid[y][x] & RT_SOLID_WALK);
