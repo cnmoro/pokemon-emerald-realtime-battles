@@ -101,7 +101,7 @@ Lista gerada por `tools/rt/dexplan.py`. Os demais já existiam no Emerald origin
 
 | Pokémon | Como |
 |---|---|
-| Articuno, Zapdos, Moltres, Raikou, Entei, Suicune, Ho-Oh, Latias, Latios | Andam livres (roaming): podem aparecer em qualquer encontro em grama/caverna, em qualquer momento do jogo (~1 em 48 encontros). Fogem depois de alguns segundos e guardam o dano recebido. |
+| Articuno, Zapdos, Moltres, Raikou, Entei, Suicune, Ho-Oh, Latias, Latios | Andam livres (roaming): podem aparecer em qualquer encontro em grama/caverna, em qualquer momento do jogo (~1 em 48 encontros), sempre no nível 35. Fogem depois de alguns segundos e guardam o dano recebido. |
 | Lugia | Igual, mas só surfando no mar (rotas oceânicas e debaixo d'água). |
 | Celebi | Depois do Hall da Fama: raro na Petalburg Woods (nv. 30). |
 | Jirachi | Depois do Hall da Fama: raro em Meteor Falls (nv. 30). |

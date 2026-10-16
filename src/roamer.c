@@ -89,7 +89,7 @@ static void CreateInitialRoamerMon(bool16 createLatios)
         ROAMER->species = SPECIES_LATIOS;
 
     CreateMon(&gEnemyParty[0], ROAMER->species, 40, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
-    ROAMER->level = 40;
+    ROAMER->level = 35;
     ROAMER->status = 0;
     ROAMER->active = TRUE;
     ROAMER->ivs = GetMonData(&gEnemyParty[0], MON_DATA_IVS);
