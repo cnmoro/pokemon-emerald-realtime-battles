@@ -195,7 +195,7 @@ struct PartyMenuInternal
     u32 spriteIdCancelPokeball:7;
     u32 messageId:14;
     u8 windowId[3];
-    u8 actions[8];
+    u8 actions[10];
     u8 numActions;
     // In vanilla Emerald, only the first 0xB0 hwords (0x160 bytes) are actually used.
     // However, a full 0x100 hwords (0x200 bytes) are allocated.
@@ -2628,7 +2628,7 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
     }
 
     // MOVES: relearn level-up moves (up to the current level) and egg moves, like a TM
-    if (sPartyMenuInternal->numActions <= 4 && !GetMonData(&mons[slotId], MON_DATA_IS_EGG))
+    if (!GetMonData(&mons[slotId], MON_DATA_IS_EGG) && GetNumberOfRelearnableMoves(&mons[slotId]) != 0)
         AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_RELEARN);
 
     // HMs in the bag whose field move is used from this menu (FLASH in caves, STRENGTH for the
@@ -4738,15 +4738,9 @@ u16 ItemIdToBattleMoveId(u16 item)
     return sTMHMMoves[tmNumber];
 }
 
+// HMs can be forgotten / replaced like any other move (they are used from the bag)
 bool8 IsMoveHm(u16 move)
 {
-    u8 i;
-
-    for (i = 0; i < NUM_HIDDEN_MACHINES; i++)
-    {
-        if (sTMHMMoves[i + NUM_TECHNICAL_MACHINES] == move)
-            return TRUE;
-    }
     return FALSE;
 }
 

@@ -115,6 +115,16 @@ bool8 RtDebug_FieldInput(void)
         CreateMon(&gPlayerParty[0], SPECIES_MAGIKARP, 5, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
         return FALSE;
     }
+    if (cmd == 19)
+    {
+        // lead becomes a Lv20 Combusken knowing four HMs (MOVES with a full field-move list, egg moves)
+        CreateMon(&gPlayerParty[0], SPECIES_COMBUSKEN, 20, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+        SetMonMoveSlot(&gPlayerParty[0], MOVE_CUT, 0);
+        SetMonMoveSlot(&gPlayerParty[0], MOVE_FLASH, 1);
+        SetMonMoveSlot(&gPlayerParty[0], MOVE_ROCK_SMASH, 2);
+        SetMonMoveSlot(&gPlayerParty[0], MOVE_STRENGTH, 3);
+        return FALSE;
+    }
     if (cmd == 17)
     {
         // Wattson's Magneton as a wild battle

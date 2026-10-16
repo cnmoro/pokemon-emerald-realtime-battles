@@ -6559,14 +6559,9 @@ const struct CompressedSpritePalette *GetMonSpritePalStructFromOtIdPersonality(u
         return &gMonPaletteTable[species];
 }
 
+// HMs can be forgotten / replaced like any other move (they are used from the bag)
 bool32 IsHMMove2(u16 move)
 {
-    int i = 0;
-    while (sHMMoves[i] != HM_MOVES_END)
-    {
-        if (sHMMoves[i++] == move)
-            return TRUE;
-    }
     return FALSE;
 }
 
