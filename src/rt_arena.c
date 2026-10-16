@@ -361,6 +361,21 @@ static void RtArena_BuildSynthetic(void)
 static EWRAM_DATA u8 sSpawnCell[2][2][2] = {0}; // [side][index][x/y] in arena cells
 static EWRAM_DATA bool8 sSpawnValid = FALSE;
 
+static const u16 *GetMetatileTiles(u16 metatile);
+static bool8 HasTopLayer(u16 m)
+{
+    const u16 *t = GetMetatileTiles(m);
+    u8 layer = (GetMetatileAttributesById(m) & METATILE_ATTR_LAYER_MASK) >> METATILE_ATTR_LAYER_SHIFT;
+    s32 k;
+    // NORMAL: upper tiles go to the top layer; COVERED: both are under sprites
+    if (layer == METATILE_LAYER_TYPE_COVERED)
+        return FALSE;
+    for (k = 4; k < 8; k++)
+        if ((t[k] & 0x3FF) != 0)
+            return TRUE;
+    return FALSE;
+}
+
 static bool8 IsLedgeMeta(u16 m)
 {
     u8 b;
@@ -454,6 +469,65 @@ static u16 BestComponent(const u8 *grid, s32 ox, s32 oy, u8 *comp, u8 *tmp, u16 
     return best;
 }
 
+// Groups the blocked cells of a window (everything outside the main walkable area) into
+// 8-connected groups. Groups that do not touch the window edge are "islands" (rocks, signs,
+// lone trees, inner walls...) and get cleared from the arena. For border groups, counts how
+// many of their cells reach deep into the arena ("intrusion"), which makes a window worse.
+static EWRAM_DATA u8 sGroup[ARENA_MH * ARENA_MW] = {0}; // 0 = walkable, 1 = border group, 2 = island
+static void ClassifyBlocked(const u8 *comp, u16 *queue, u16 *islands, u16 *intrusion)
+{
+    s32 i;
+    static EWRAM_DATA u8 seen[ARENA_MH * ARENA_MW] = {0};
+    memset(seen, 0, sizeof(seen));
+    *islands = 0;
+    *intrusion = 0;
+    for (i = 0; i < ARENA_MH * ARENA_MW; i++)
+    {
+        u16 head = 0, tail = 0, n = 0, deep = 0;
+        bool8 border = FALSE;
+        s32 k;
+        sGroup[i] = 0;
+        if (comp[i] || seen[i])
+            continue;
+        seen[i] = 1;
+        queue[tail++] = i;
+        while (head < tail)
+        {
+            u16 c = queue[head++];
+            s32 cx = c % ARENA_MW, cy = c / ARENA_MW, d;
+            n++;
+            if (cx == 0 || cy == 0 || cx == ARENA_MW - 1 || cy == ARENA_MH - 1)
+                border = TRUE;
+            d = cx;
+            if (cy < d) d = cy;
+            if (ARENA_MW - 1 - cx < d) d = ARENA_MW - 1 - cx;
+            if (ARENA_MH - 1 - cy < d) d = ARENA_MH - 1 - cy;
+            if (d >= 3)
+                deep++;
+            for (k = 0; k < 8; k++)
+            {
+                static const s8 sDx[8] = {1, -1, 0, 0, 1, 1, -1, -1};
+                static const s8 sDy[8] = {0, 0, 1, -1, 1, -1, 1, -1};
+                s32 nx = cx + sDx[k], ny = cy + sDy[k], ni;
+                if (nx < 0 || ny < 0 || nx >= ARENA_MW || ny >= ARENA_MH)
+                    continue;
+                ni = ny * ARENA_MW + nx;
+                if (comp[ni] || seen[ni])
+                    continue;
+                seen[ni] = 1;
+                queue[tail++] = ni;
+            }
+        }
+        // mark the group
+        for (k = 0; k < tail; k++)
+            sGroup[queue[k]] = border ? 1 : 2;
+        if (border)
+            *intrusion += deep;
+        else
+            *islands += n;
+    }
+}
+
 static bool8 PickSpawn(const u8 *comp, const u8 *open, s32 tx, s32 ty, s32 avoidX, s32 avoidY, s32 minDist, u8 *outX, u8 *outY)
 {
     s32 x, y, best = 0x7FFFFFFF;
@@ -536,6 +610,10 @@ void RtArena_Build(void)
     gRt->viewY0 = 0;
     gRt->viewX1 = ARENA_W;
     gRt->viewY1 = ARENA_H;
+    gRt->playX0 = 16;
+    gRt->playY0 = 16;
+    gRt->playX1 = ARENA_W - 16;
+    gRt->playY1 = ARENA_H - 16;
     if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_UNDERWATER))
         water = FALSE; // underwater maps are walked normally
     if (!grid || !sum || !comp || !queue)
@@ -628,7 +706,13 @@ void RtArena_Build(void)
         s32 score;
         if (dcx < 0) dcx = -dcx;
         if (dcy < 0) dcy = -dcy;
-        score = n * 4 - (dcx + dcy * 2) * 3;
+        {
+            // cleared islands become playable area; walls reaching deep into the arena are bad
+            u16 isl, intr;
+            ClassifyBlocked(comp, queue, &isl, &intr);
+            n += isl;
+            score = n * 4 - intr * 8 - (dcx + dcy * 2) * 3;
+        }
         if (px < gx0 + cand[i].ox + 1 || px >= gx0 + cand[i].ox + ARENA_MW - 1 || py < gy0 + cand[i].oy + 1 || py >= gy0 + cand[i].oy + ARENA_MH - 1)
             score -= 120;
         if (score > bestScore)
@@ -769,6 +853,128 @@ void RtArena_Build(void)
             }
         }
     }
+    // 5b. the playable field: the cleanest big rectangle of the window. Everything inside it is
+    // turned into walkable ground (rocks, walls, trees, water are painted over); everything
+    // outside is scenery, dimmed on screen and not walkable.
+    {
+        u16 floorMeta = 0xFFFF;
+        static EWRAM_DATA u16 bad[(ARENA_MH + 1) * (ARENA_MW + 1)] = {0};
+        s32 w, h, bx0 = 1, by0 = 1, bw = ARENA_MW - 2, bh = ARENA_MH - 2, bestS = -0x7FFFFFFF;
+        // prefix sums of cells that would have to be painted over
+        for (y = 0; y <= ARENA_MH; y++)
+            for (x = 0; x <= ARENA_MW; x++)
+            {
+                if (x == 0 || y == 0)
+                    bad[y * (ARENA_MW + 1) + x] = 0;
+                else
+                {
+                    u8 g = grid[(bestOy + y - 1) * GRID_W + bestOx + x - 1];
+                    bool8 b0 = !(g & GF_WALK) || IsLedgeMeta(MetaAt(gx0 + bestOx + x - 1, gy0 + bestOy + y - 1));
+                    bad[y * (ARENA_MW + 1) + x] = b0 + bad[(y - 1) * (ARENA_MW + 1) + x] + bad[y * (ARENA_MW + 1) + x - 1]
+                                                 - bad[(y - 1) * (ARENA_MW + 1) + x - 1];
+                }
+            }
+        for (h = 7; h <= ARENA_MH - 2; h++)
+            for (w = 12; w <= ARENA_MW - 2; w++)
+                for (y = 1; y + h <= ARENA_MH - 1; y++)
+                    for (x = 1; x + w <= ARENA_MW - 1; x++)
+                    {
+                        s32 nb = bad[(y + h) * (ARENA_MW + 1) + x + w] - bad[y * (ARENA_MW + 1) + x + w]
+                               - bad[(y + h) * (ARENA_MW + 1) + x] + bad[y * (ARENA_MW + 1) + x];
+                        s32 sc = (w * h - nb) * 3 - nb * 9;
+                        if (w > 22) sc -= (w - 22) * 6; // beyond this, a wider field adds little
+                        if (sc > bestS)
+                        {
+                            bestS = sc;
+                            bx0 = x; by0 = y; bw = w; bh = h;
+                        }
+                    }
+        // dominant plain ground inside the field
+        {
+            u16 cnt[16], ids[16];
+            u8 nIds = 0, best = 0;
+            for (y = by0; y < by0 + bh; y++)
+                for (x = bx0; x < bx0 + bw; x++)
+                {
+                    u16 m = gRt->arenaMeta[y][x];
+                    u8 b = BehaviorOf(m);
+                    s32 k;
+                    if (!(grid[(bestOy + y) * GRID_W + bestOx + x] & GF_WALK) || IsLedgeMeta(m))
+                        continue;
+                    if (!water && (MetatileBehavior_IsTallGrass(b) || MetatileBehavior_IsLongGrass(b)
+                     || MetatileBehavior_IsBridgeOverWater(b) || MetatileBehavior_IsSurfableWaterOrUnderwater(b)))
+                        continue;
+                    for (k = 0; k < nIds; k++)
+                        if (ids[k] == m)
+                            break;
+                    if (k < nIds)
+                        cnt[k]++;
+                    else if (nIds < 16)
+                    {
+                        ids[nIds] = m;
+                        cnt[nIds++] = 1;
+                    }
+                }
+            for (i = 1; i < nIds; i++)
+                if (cnt[i] > cnt[best])
+                    best = i;
+            floorMeta = nIds ? ids[best] : playerMeta;
+        }
+        for (y = 0; y < ARENA_MH; y++)
+        {
+            for (x = 0; x < ARENA_MW; x++)
+            {
+                bool8 inside = x >= bx0 && x < bx0 + bw && y >= by0 && y < by0 + bh;
+                if (!inside)
+                {
+                    gRt->solid[y][x] = RT_SOLID_WALK | RT_SOLID_SHOT;
+                    continue;
+                }
+                if (!(grid[(bestOy + y) * GRID_W + bestOx + x] & GF_WALK) || IsLedgeMeta(gRt->arenaMeta[y][x]))
+                    gRt->arenaMeta[y][x] = floorMeta;
+                gRt->solid[y][x] = 0;
+            }
+        }
+        // shadows and edge pieces of the removed objects: plain ground cells touching a painted cell
+        {
+            static EWRAM_DATA u8 painted[ARENA_MH][ARENA_MW] = {0};
+            for (y = 0; y < ARENA_MH; y++)
+                for (x = 0; x < ARENA_MW; x++)
+                    painted[y][x] = (x >= bx0 && x < bx0 + bw && y >= by0 && y < by0 + bh)
+                                 && !(grid[(bestOy + y) * GRID_W + bestOx + x] & GF_WALK);
+            for (y = by0; y < by0 + bh; y++)
+                for (x = bx0; x < bx0 + bw; x++)
+                {
+                    u16 m = gRt->arenaMeta[y][x];
+                    s32 j, k;
+                    bool8 near = FALSE;
+                    if (painted[y][x] || m == floorMeta || BehaviorOf(m) != BehaviorOf(floorMeta))
+                        continue;
+                    for (j = -1; j <= 1 && !near; j++)
+                        for (k = -1; k <= 1 && !near; k++)
+                            if (y + j >= 0 && y + j < ARENA_MH && x + k >= 0 && x + k < ARENA_MW && painted[y + j][x + k])
+                                near = TRUE;
+                    if (near)
+                        gRt->arenaMeta[y][x] = floorMeta;
+                }
+        }
+        // overhangs (tree crowns, roofs, awnings) drawn over walkable cells would look like obstacles
+        for (y = by0; y < by0 + bh; y++)
+            for (x = bx0; x < bx0 + bw; x++)
+            {
+                u16 m = gRt->arenaMeta[y][x];
+                u8 b = BehaviorOf(m);
+                if (m == floorMeta || MetatileBehavior_IsTallGrass(b) || MetatileBehavior_IsLongGrass(b)
+                 || MetatileBehavior_IsAshGrass(b) || MetatileBehavior_IsBridgeOverWater(b))
+                    continue;
+                if (HasTopLayer(m))
+                    gRt->arenaMeta[y][x] = floorMeta;
+            }
+        gRt->playX0 = bx0 * 16;
+        gRt->playY0 = by0 * 16;
+        gRt->playX1 = (bx0 + bw) * 16;
+        gRt->playY1 = (by0 + bh) * 16;
+    }
     // maps without connections (rooms, caves...) end in a blank border: keep the camera on the map
     if (gMapHeader.connections == NULL || gMapHeader.connections->count == 0)
     {
@@ -796,6 +1002,12 @@ void RtArena_Build(void)
         gRt->solid[y][ARENA_MW - 1] |= RT_SOLID_WALK;
     }
 
+    // the camera may show a little of the dimmed scenery around the field
+    if (gRt->viewX0 < gRt->playX0 - 32) gRt->viewX0 = gRt->playX0 - 32;
+    if (gRt->viewY0 < gRt->playY0 - 24) gRt->viewY0 = gRt->playY0 - 24;
+    if (gRt->viewX1 > gRt->playX1 + 32) gRt->viewX1 = gRt->playX1 + 32;
+    if (gRt->viewY1 > gRt->playY1 + 24) gRt->viewY1 = gRt->playY1 + 24;
+
     // 6. spawn points inside the reachable area
     {
         u8 *walk = comp;
@@ -806,13 +1018,24 @@ void RtArena_Build(void)
             for (x = 0; x < ARENA_MW; x++)
             {
                 walk[y * ARENA_MW + x] = !(gRt->solid[y][x] & RT_SOLID_WALK);
-                open[y * ARENA_MW + x] = walk[y * ARENA_MW + x] && (grid[(bestOy + y) * GRID_W + bestOx + x] & GF_OPEN);
+                open[y * ARENA_MW + x] = 0;
                 if (walk[y * ARENA_MW + x])
                 {
                     cx += x;
                     cy += y;
                     n++;
                 }
+            }
+        for (y = 1; y < ARENA_MH - 1; y++)
+            for (x = 1; x < ARENA_MW - 1; x++)
+            {
+                s32 j, k;
+                bool8 o = walk[y * ARENA_MW + x];
+                for (j = -1; j <= 1 && o; j++)
+                    for (k = -1; k <= 1 && o; k++)
+                        if (!walk[(y + j) * ARENA_MW + x + k])
+                            o = FALSE;
+                open[y * ARENA_MW + x] = o;
             }
         if (n)
         {

@@ -737,7 +737,8 @@ def mk_shadow(w,h):
     c=Canvas(w,h)
     for y in range(h):
         for x in range(w):
-            if ((x+0.5-w/2)/(w/2-0.5))**2+((y+0.5-h/2)/(h/2-0.5))**2<=1: c.p[y][x]=15
+            # dithered (checkerboard) so it reads as a soft shadow without hardware blending
+            if ((x+0.5-w/2)/(w/2-0.5))**2+((y+0.5-h/2)/(h/2-0.5))**2<=1 and (x+y)%2==0: c.p[y][x]=15
     return [c]
 add('SHADOW16',16,8,mk_shadow(16,8),True)
 add('SHADOW32',32,8,mk_shadow(32,8),True)

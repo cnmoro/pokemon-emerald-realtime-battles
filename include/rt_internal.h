@@ -563,7 +563,8 @@ struct RtBattle
     u16 arenaMeta[ARENA_MH][ARENA_MW];
     u8 solid[ARENA_MH][ARENA_MW];
     u8 floorKind;        // 0 ground, 1 water, 2 tallgrass...
-    s16 viewX0, viewY0, viewX1, viewY1; // part of the arena with real map content (px)
+    s16 viewX0, viewY0, viewX1, viewY1; // camera limits (px)
+    s16 playX0, playY0, playX1, playY1; // the playable field (px); the rest is dimmed scenery
 
     // party bookkeeping
     struct Pokemon *playerParty;

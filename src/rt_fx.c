@@ -429,10 +429,11 @@ void RtFx_UpdateAll(void)
             p->vy = p->vy * 15 / 16;
         }
     }
-    // screen flash
+    // screen flash (whole screen) / otherwise: dim everything outside the playable field (window 0)
     if (gRt->flashTimer)
     {
         gRt->flashTimer--;
+        SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_ALL);
         SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_TGT1_BG2 | BLDCNT_TGT1_BG3 | BLDCNT_TGT1_OBJ | BLDCNT_TGT1_BD
                   | (gRt->flashColor ? BLDCNT_EFFECT_DARKEN : BLDCNT_EFFECT_LIGHTEN)
                   | BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2 | BLDCNT_TGT2_BG3 | BLDCNT_TGT2_BD);
@@ -440,8 +441,10 @@ void RtFx_UpdateAll(void)
     }
     else
     {
-        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2 | BLDCNT_TGT2_BG3 | BLDCNT_TGT2_BD);
-        SetGpuReg(REG_OFFSET_BLDY, 0);
+        // inside the field: no colour effect (semi-transparent sprites are drawn opaque/dithered)
+        SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_BG_ALL | WININ_WIN0_OBJ);
+        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_TGT1_BG2 | BLDCNT_TGT1_BG3 | BLDCNT_TGT1_BD | BLDCNT_EFFECT_DARKEN);
+        SetGpuReg(REG_OFFSET_BLDY, 7);
     }
     RtFx_WeatherUpdate();
 }
