@@ -748,6 +748,7 @@ void RtMove_StartCalled(struct RtActor *a, u16 move, u8 angle);
 void RtMove_UpdateCast(struct RtActor *a);
 void RtProj_UpdateAll(void);
 struct RtProj *RtProj_Alloc(void);
+bool8 RtMove_HasShotInFlight(u8 owner);
 u8 RtMove_TypeOf(struct RtActor *a, u16 move);
 u16 RtMove_Cooldown(u16 move, u8 ppBonuses, u8 slot);
 s32 RtMove_CalcDamage(struct RtActor *atk, struct RtActor *def, u16 move, u16 power, u8 *outEff, u8 *outCrit);

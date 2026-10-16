@@ -115,6 +115,12 @@ bool8 RtDebug_FieldInput(void)
         CreateMon(&gPlayerParty[0], SPECIES_MAGIKARP, 5, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
         return FALSE;
     }
+    if (cmd == 20 || cmd == 21 || cmd == 22)
+    {
+        // difficulty: 20 medium, 21 easy, 22 hard
+        gSaveBlock2Ptr->optionsRtDifficulty = cmd - 20;
+        return FALSE;
+    }
     if (cmd == 19)
     {
         // lead becomes a Lv20 Combusken knowing four HMs (MOVES with a full field-move list, egg moves)

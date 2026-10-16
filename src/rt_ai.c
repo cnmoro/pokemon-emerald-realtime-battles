@@ -552,8 +552,9 @@ void RtAi_Update(struct RtActor *a)
         a->aiDodgeCd = 30;
     }
 
-    // attack decision
-    if (a->aiThinkCd == 0 && a->state == AST_NORMAL && a->gcd == 0)
+    // attack decision (EASY / MEDIUM foes wait for their last shot to land or miss before the next one)
+    if (a->aiThinkCd == 0 && a->state == AST_NORMAL && a->gcd == 0
+     && !(a->side == RT_SIDE_ENEMY && gSaveBlock2Ptr->optionsRtDifficulty != 2 && RtMove_HasShotInFlight(a->id)))
     {
         u8 i, bestSlot = 0xFF;
         u16 best = 0;
@@ -578,10 +579,10 @@ void RtAi_Update(struct RtActor *a)
                 a->inSlot = bestSlot;
                 a->inAim = LeadAim(a, t, move);
                 // attack rhythm: foes leave a window to hit back between moves
-                // (EASY ~1.4 s, MEDIUM ~1.1 s, HARD ~0.85 s from one move to the next)
+                // (EASY ~1.8 s, MEDIUM ~1.3 s, HARD ~0.95 s from one move to the next)
                 if (a->side == RT_SIDE_ENEMY)
                 {
-                    static const u8 sPace[3] = {54, 72, 38}; // medium, easy, hard (option order)
+                    static const u8 sPace[3] = {72, 100, 50}; // medium, easy, hard (option order)
                     u8 dif = gSaveBlock2Ptr->optionsRtDifficulty;
                     a->aiThinkCd = sPace[dif < 3 ? dif : 1] + Random() % 16;
                 }

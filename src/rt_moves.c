@@ -541,6 +541,40 @@ struct RtProj *RtProj_Alloc(void)
     return NULL;
 }
 
+// ---------------------------------------------------------------------------
+// Difficulty tuning for the opponents' shots (OPTION -> DIFFICULTY)
+// level: 0 easy, 1 medium, 2 hard
+static u8 FoeLevel(struct RtActor *a)
+{
+    u8 d;
+    if (a->side != RT_SIDE_ENEMY)
+        return 3; // player side: untouched
+    d = gSaveBlock2Ptr->optionsRtDifficulty;
+    return d == 1 ? 0 : (d == 2 ? 2 : 1);
+}
+
+// foes' projectiles / rushes travel slower so they can be read and dodged
+static s32 FoeSpeed(struct RtActor *a, s32 sp)
+{
+    static const u8 sPct[4] = {60, 75, 90, 100};
+    sp = sp * sPct[FoeLevel(a)] / 100;
+    return sp < 16 ? 16 : sp;
+}
+
+// a foe's live shot still on its way (not yet hit anything)
+bool8 RtMove_HasShotInFlight(u8 owner)
+{
+    s32 i;
+    for (i = 0; i < RT_MAX_PROJ; i++)
+    {
+        struct RtProj *p = &gRt->proj[i];
+        if ((p->kind == PK_BULLET || p->kind == PK_WAVE) && p->owner == owner && !p->hitMask
+         && !(p->flags & RTMF_ARC) && p->age < p->life)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 static struct RtProj *NewProj(struct RtActor *a, u8 kind, u16 move)
 {
     struct RtProj *p = RtProj_Alloc();
@@ -738,7 +772,18 @@ static void UpdateBullet(struct RtProj *p)
         return;
     }
     if ((p->flags & RTMF_HOMING) || o->lockOn)
-        TurnTowards(p, (p->flags & RTMF_HOMING) ? (d->aux ? d->aux : 3) : 2);
+    {
+        u8 rate = (p->flags & RTMF_HOMING) ? (d->aux ? d->aux : 3) : 2;
+        switch (FoeLevel(o))
+        {
+        case 0: rate = rate / 3; break;      // easy: barely curves
+        case 1: rate = rate / 2; break;      // medium
+        case 2: rate = rate * 2 / 3; break;  // hard
+        }
+        if (rate == 0)
+            rate = 1;
+        TurnTowards(p, rate);
+    }
     p->x += p->vx;
     p->y += p->vy;
     p->age++;
@@ -2317,6 +2362,10 @@ bool8 RtMove_TryStart(struct RtActor *a, u8 slot, u8 angle)
         angle += (s8)((Random() % (1 - a->stages[STG_ACC] * 8)) - (-a->stages[STG_ACC] * 4));
 
     a->cd[slot] = a->cdMax[slot];
+    {
+        static const u8 sCdPct[4] = {160, 130, 110, 100}; // foes recharge slower on easier settings
+        a->cd[slot] = (u32)a->cd[slot] * sCdPct[FoeLevel(a)] / 100;
+    }
     if (FoeHasPressure(a))
         a->cd[slot] += a->cdMax[slot] / 2;
     if (a->holdEffect == HOLD_EFFECT_QUICK_CLAW && (Random() % 100) < a->holdParam)
@@ -2364,7 +2413,7 @@ static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot)
 
     {
         extern const u8 gRtDebugEnabled;
-        if (gRtDebugEnabled && gRtCastLogN < 64)
+        if (gRtDebugEnabled && gRtCastLogN < 64 && a->side == RT_SIDE_ENEMY)
         {
             gRtCastLog[gRtCastLogN][0] = gRt->frame;
             gRtCastLog[gRtCastLogN][1] = move | (a->id << 12);
@@ -2609,7 +2658,7 @@ static void SelfCastFx(struct RtActor *a, const struct RtMoveDef *d)
 static void SpawnBullet(struct RtActor *a, const struct RtMoveDef *d, u8 angle, u8 delay)
 {
     struct RtProj *p = NewProj(a, PK_BULLET, a->act.move);
-    s32 sp = d->speed ? d->speed : 48;
+    s32 sp = FoeSpeed(a, d->speed ? d->speed : 48);
     if (!p)
         return;
     p->angle = angle;
@@ -2806,7 +2855,7 @@ static void ExecuteMove(struct RtActor *a)
         p = NewProj(a, PK_WAVE, move);
         if (p)
         {
-            s32 sp = d->speed ? d->speed : 40;
+            s32 sp = FoeSpeed(a, d->speed ? d->speed : 40);
             p->angle = a->act.angle;
             p->x = a->x + RtCos(p->angle) * (a->radius + 6);
             p->y = a->y + RtSin(p->angle) * (a->radius + 6) / 2;
@@ -2864,7 +2913,7 @@ static void ExecuteMove(struct RtActor *a)
         break;
     case RTP_ZONE:
         {
-            s32 sp = d->speed ? d->speed : 40;
+            s32 sp = FoeSpeed(a, d->speed ? d->speed : 40);
             p = NewProj(a, PK_BULLET, move);
             if (p)
             {
@@ -3098,7 +3147,7 @@ void RtMove_UpdateCast(struct RtActor *a)
         {
         case RTP_RUSH:
             {
-                s32 sp = d->speed ? d->speed : 64;
+                s32 sp = FoeSpeed(a, d->speed ? d->speed : 64);
                 if (a->act.timer >= 0xFF00 || a->act.timer > d->duration)
                 {
                     a->act.phase = 2;
@@ -3135,7 +3184,7 @@ void RtMove_UpdateCast(struct RtActor *a)
                     struct RtProj *p = NewProj(a, PK_BULLET, a->act.move);
                     if (p)
                     {
-                        s32 sp = d->speed ? d->speed : 56;
+                        s32 sp = FoeSpeed(a, d->speed ? d->speed : 56);
                         s8 off = d->spread ? (s8)((Random() % (d->spread * 2 + 1)) - d->spread) : 0;
                         p->angle = a->act.angle + off;
                         p->x = a->x + RtCos(p->angle) * (a->radius + 2);
