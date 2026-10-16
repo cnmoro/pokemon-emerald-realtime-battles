@@ -28,7 +28,6 @@
 
 #include "data/rt/move_defs.h"
 
-#define RT_DMG_SCALE 220   // global damage multiplier (Q8) to tune fight length
 
 static void ExecuteMove(struct RtActor *a);
 void RtMove_CheckBerries(struct RtActor *a);
@@ -332,17 +331,6 @@ static u16 CalcPower(struct RtActor *a, struct RtActor *t, u16 move)
     return power;
 }
 
-static s32 ScaleForRealtime(u16 move, s32 dmg)
-{
-    u32 cd = RtMove_Cooldown(move, 0, 0);
-    u32 sc = cd * 256 / 120;  // Q8
-    if (sc < 100) sc = 100;   // ~0.4
-    if (sc > 330) sc = 330;   // ~1.3
-    dmg = dmg * sc / 256;
-    dmg = dmg * RT_DMG_SCALE / 256;
-    return dmg;
-}
-
 s32 RtMove_CalcDamage(struct RtActor *atk, struct RtActor *def, u16 move, u16 power, u8 *outEff, u8 *outCrit)
 {
     u8 type = RtMove_TypeOf(atk, move);
@@ -498,7 +486,6 @@ s32 RtMove_CalcDamage(struct RtActor *atk, struct RtActor *def, u16 move, u16 po
         dmg = dmg * 150 / 100;
     dmg = dmg * eff / 10;
     dmg = dmg * (85 + Random() % 16) / 100;
-    dmg = ScaleForRealtime(move, dmg);
     if (dmg < 1)
         dmg = 1;
     return dmg;
@@ -2301,7 +2288,6 @@ bool8 RtMove_TryStart(struct RtActor *a, u8 slot, u8 angle)
     if (a->confuse && (Random() % 3) == 0)
     {
         s32 dmg = ((2 * a->level / 5 + 2) * 40 * a->atk / (a->def ? a->def : 1)) / 50 + 2;
-        dmg = dmg * RT_DMG_SCALE / 256 / 2;
         RtUi_Toast(sText_HurtItself, 50);
         RtActor_Damage(a, dmg ? dmg : 1, a->id, FALSE);
         a->state = AST_STUN;

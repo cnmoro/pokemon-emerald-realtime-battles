@@ -195,8 +195,8 @@ O script lê `species_info.h`, `evolution.h` e `wild_encounters.json`, calcula o
 ### Combate
 
 - **Posições em ponto fixo Q8**, ângulos de 0–255, colisão círculo-contra-grade com preservação de sub-pixel.
-- **Cooldown** = `1560 / PP máximo` quadros, limitado a 0,5–5,5 s (PP Ups contam). Golpes de cooldown longo dão proporcionalmente mais dano (`escala = clamp(cooldown/120, 0,39..1,29)`), com um multiplicador global de ajuste de ritmo.
-- **Dano**: fórmula da 3ª geração completa (nível, Atk/Def ou SpA/SpD, estágios, STAB, tipos, crítico, clima, habilidades, itens), aplicada quando a hitbox encosta no alvo.
+- **Cooldown** = `1560 / PP máximo` quadros, limitado a 0,5–5,5 s (PP Ups contam).
+- **Dano**: fórmula da 3ª geração completa (nível, Atk/Def ou SpA/SpD, estágios, STAB, tipos, crítico, clima, habilidades, itens), aplicada quando a hitbox encosta no alvo. Cada acerto tira exatamente o mesmo que no jogo original (sem escala extra).
 - **Padrões de golpe** (cada um dos 354 golpes tem uma especificação em `src/data/rt/move_defs.h` com padrão, forma do efeito, paleta, velocidade, alcance, raio, quantidade, dispersão, tempos, impacto e som):
 
   | Padrão | Golpes | Exemplos |
