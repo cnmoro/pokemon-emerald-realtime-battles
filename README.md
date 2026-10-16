@@ -5,8 +5,8 @@ Um mod de **Pokémon Emerald** (feito sobre a decompilação [pret/pokeemerald](
 Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas duplas, Safari e Battle Frontier. Você anda pela arena, mira os golpes, desvia com um dash, e cada golpe tem animação, hitbox e cooldown próprios.
 
 <p align="center">
+  <img src="docs/screenshots/trainer_thunder.png" width="400">
   <img src="docs/screenshots/trainer_fire_blast.png" width="400">
-  <img src="docs/screenshots/double_surf.png" width="400">
 </p>
 
 > **Aviso legal.** Este repositório **não contém nenhuma ROM**. Pokémon é marca e propriedade da Nintendo / Game Freak / Creatures. Os gráficos dos Pokémon em batalha vêm do [PMD SpriteCollab](https://sprites.pmdcollab.org) (licença **CC BY-NC 4.0**). Projeto pessoal, sem fins comerciais. Não distribua ROMs geradas a partir dele.
@@ -29,7 +29,7 @@ Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas dupla
 ## Recursos
 
 - **Combate em tempo real** em todas as batalhas suportadas: selvagens, treinadores, duplas (2×2, com aliado controlado por IA), batalhas com parceiro (Steven), Safari Zone, Battle Frontier e Battle Pyramid.
-- **Arena = o lugar onde a batalha começou.** A arena é recortada do mapa real ao redor do jogador (árvores, prédios, cavernas, água, animações de tileset), escolhendo automaticamente a região mais aberta e conectada por perto.
+- **Arena = o lugar onde a batalha começou.** A arena é recortada do mapa real ao redor do jogador (árvores, prédios, cavernas, água, animações de tileset). Dentro dela, um **campo retangular limpo** é a área de luta: tudo que fica dentro dele (rochas, paredes, placas, árvores soltas, ledges) é pintado com o chão do lugar, e o cenário em volta aparece escurecido — o que está claro é onde dá para andar, o que está escuro não.
 - **Os 354 golpes da 3ª geração** têm comportamento, animação e efeitos próprios: projéteis, raios, ondas em cone, golpes corpo a corpo, áreas, zonas persistentes, ataques que caem do céu, Fly/Dig/Dive, clima e mais.
 - **Mira e esquiva:** tocar o botão dispara para a frente (com uma leve mira automática), segurar abre uma mira girável; SELECT faz um dash com quadros de invencibilidade.
 - **Cooldown no lugar de PP:** golpe com pouco PP no jogo original tem cooldown longo. PP Up / PP Max reduzem o cooldown, e a tela de resumo mostra o tempo em segundos.
@@ -42,11 +42,16 @@ Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas dupla
 
 | | |
 |---|---|
-| ![](docs/screenshots/trainer_intro.png) Início de batalha contra treinador | ![](docs/screenshots/trainer_thunder.png) Thunder |
-| ![](docs/screenshots/trainer_hit.png) Números de dano, "RESIST", status | ![](docs/screenshots/aim_reticle.png) Mira manual (segurando o botão do golpe) |
-| ![](docs/screenshots/double_battle.png) Batalha dupla (Tate & Liza) | ![](docs/screenshots/double_switch_menu.png) Escolha do próximo Pokémon |
-| ![](docs/screenshots/bag_menu.png) Bolsa durante a batalha | ![](docs/screenshots/party_menu.png) Escolha do alvo do item |
-| ![](docs/screenshots/safari.png) Safari Zone | ![](docs/screenshots/summary_cooldown.png) Cooldown em segundos no resumo |
+| ![](docs/screenshots/trainer_intro.png) Início de batalha contra treinador | ![](docs/screenshots/trainer_thunder.png) Thunderbolt (com "RESIST" e número de dano) |
+| ![](docs/screenshots/trainer_hit.png) Thunder: marcador no chão antes do raio cair; status PAR/PSN | ![](docs/screenshots/trainer_fire_blast.png) Flamethrower do Blaziken |
+| ![](docs/screenshots/double_battle.png) Batalha dupla (Tate & Liza), aliado com barra de HP | ![](docs/screenshots/double_surf.png) Batalha dupla: Sunny Day e Flamethrower |
+| ![](docs/screenshots/aim_reticle.png) Mira manual (segurando o botão do golpe) | ![](docs/screenshots/bag_menu.png) Bolsa durante a batalha |
+| ![](docs/screenshots/party_menu.png) Escolha do alvo do item | ![](docs/screenshots/safari.png) Safari Zone |
+| ![](docs/screenshots/summary_cooldown.png) Cooldown em segundos no resumo | |
+
+**Quadros de animação** (Thunderbolt, Thunder, Earthquake, Shadow Ball): carga de energia, disparo, rastro e impacto
+
+![](docs/screenshots/move_animation_frames.png)
 
 **Surf: a onda sai estreita e se abre em cone**
 
@@ -56,11 +61,11 @@ Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas dupla
 
 ![](docs/screenshots/moves_sheet.png)
 
-**Arenas geradas a partir do mapa** — Route 101, Petalburg Woods, ginásio de Rustboro, Meteor Falls, Slateport, Route 113 (cinzas), Route 119, ginásio de Lavaridge, ginásio de Sootopolis, sala da Elite Four (Sidney), Shoal Cave e ginásio de Fortree:
+**Arenas geradas a partir do mapa** (o campo claro é a área de luta; o cenário escurecido em volta não é caminhável) — Route 101, Petalburg Woods, ginásio de Rustboro, Meteor Falls, Slateport, Route 113 (cinzas), Route 119, ginásio de Lavaridge, ginásio de Sootopolis, sala da Elite Four (Sidney), Shoal Cave e ginásio de Fortree:
 
 ![](docs/screenshots/arenas_ingame.png)
 
-Arena inteira (512×256 px) gerada para Route 101, Meteor Falls, Slateport, Route 113, Shoal Cave e ginásio de Fortree:
+Arena inteira (512×256 px), com o campo de luta em destaque, gerada para Route 101, Meteor Falls, Slateport, Route 113, Shoal Cave e ginásio de Fortree:
 
 ![](docs/screenshots/arenas_full_maps.png)
 
@@ -94,7 +99,7 @@ A primeira compilação também compila as ferramentas auxiliares do pret (`gbag
 
 ### 3. Pegue a ROM
 
-O resultado é **`pokeemerald_modern.gba`** na raiz do repositório. A compilação é reprodutível: no commit inicial deste repositório a ROM sai com SHA-1 `097759df2f6aefa73549a64debaf38e552e86cff`. Abra no emulador (recomendado: **[mGBA](https://mgba.io)**; o save Flash 128K é detectado automaticamente).
+O resultado é **`pokeemerald_modern.gba`** na raiz do repositório. A compilação é reprodutível (mesmo código → mesma ROM, byte a byte). Abra no emulador (recomendado: **[mGBA](https://mgba.io)**; o save Flash 128K é detectado automaticamente).
 
 Opcional: a ROM sai com 32 MB por causa do preenchimento final. Para reduzir para ~17 MB (cabe em mais flashcarts e transfere mais rápido), corte o preenchimento:
 
@@ -152,11 +157,12 @@ Mudanças em arquivos do jogo original (pequenas): `battle_main.c` (desvio para 
 
 ### Arena a partir do mapa
 
-1. Uma grade de 80×48 metatiles ao redor do jogador é classificada em *caminhável*, *bloqueia projéteis* (árvores, paredes, rochas) ou *aberta* (caminhável com os 8 vizinhos caminháveis). Se o jogador está surfando, a água vira o chão.
+1. Uma grade de 80×48 metatiles ao redor do jogador é classificada em *caminhável*, *bloqueia projéteis* ou *aberta* (caminhável com os 8 vizinhos caminháveis). Se o jogador está surfando, a água vira o chão.
 2. Com somas de prefixo, todas as janelas de 32×16 metatiles (512×256 px, o tamanho de um mapa de BG) são pontuadas por área aberta e proximidade do jogador; as melhores candidatas passam por uma busca em largura que mede a maior região conectada.
-3. A janela vencedora é copiada como está (layers *normal/covered/split* idênticas às do overworld, com animações de tileset). Células fora da região conectada viram parede invisível; a câmera fica presa aos limites do mapa em salas sem conexões.
-4. **Ledges** são pintados por cima com o chão mais comum da arena (com as pontas que sobram), porque no jogo eles indicam uma barreira e confundiriam o jogador.
-5. Os pontos de spawn são escolhidos dentro da região conectada (jogador embaixo, inimigo em cima, aliados ao lado).
+3. A janela vencedora é copiada como está (layers *normal/covered/split* idênticas às do overworld, com animações de tileset).
+4. **Campo de luta:** dentro da janela é escolhido o maior retângulo (mínimo 12×7 metatiles) com o menor número de células bloqueadas (somas de prefixo + busca exaustiva). Tudo dentro dele que não for chão caminhável — rochas, paredes, placas, água, árvores, ledges — é pintado com o chão predominante do próprio campo; sombras e copas de árvore que sobravam por cima também são limpas. O campo é 100% caminhável e não tem obstáculos.
+5. Fora do campo fica o cenário real, **escurecido** por hardware: a janela 0 do GBA cobre o campo (atualizada a cada quadro com o scroll da câmera) e o efeito de escurecimento (`BLDCNT`/`BLDY`) só vale fora dela. Assim fica óbvio onde dá e onde não dá para andar.
+6. Os pontos de spawn ficam dentro do campo, na diagonal (jogador embaixo à esquerda, inimigo em cima à direita), porque a tela é larga e baixa; a câmera enquadra os dois.
 
 ### Combate
 
@@ -189,6 +195,15 @@ Mudanças em arquivos do jogo original (pequenas): `battle_main.c` (desvio para 
 - **Sprites**: os sprites do PMD SpriteCollab (animações Walk/Idle/Attack/Shoot/Hurt/Sleep/Charge, 5 direções + espelhamento) foram quantizados para 15 cores, recortados em formatos de OAM válidos, deduplicados e comprimidos em LZ77 (~3,8 MB para os 386 Pokémon). O quadro de impacto de cada animação de ataque é guardado para sincronizar a hitbox corpo a corpo. Paletas shiny são derivadas mapeando a paleta normal→shiny dos sprites originais do Emerald.
 - **Efeitos**: um atlas procedural (81 formas, 34 paletas) gerado por script: chamas, raios, gotas, folhas, rochas, cristais, notas, anéis, feixes, ondas, números, palavras…
 - **VRAM**: tileset do mapa no charblock 0 (igual ao overworld, para as animações funcionarem), três camadas de mapa 512×256 nos BG1–3, HUD no BG0; OBJ: 4 slots de 64 tiles para os atores, barras de UI, atlas de efeitos; paletas OBJ 5–15 alocadas dinamicamente (LRU) para efeitos.
+- **Efeitos dos golpes** (por cima dos padrões):
+  - golpes com tempo de preparação mostram energia **convergindo** para o usuário (partículas que vêm de fora para dentro, brilho que cresce e anel no chão);
+  - golpes de status/buff em si mesmo têm aura: anel que se expande no chão, o emblema do golpe (escudo, espada, aura…) crescendo sobre o Pokémon e partículas subindo em coluna;
+  - projéteis deixam um rastro de faíscas na cor do golpe, e os pequenos são desenhados maiores (matriz afim);
+  - jatos (Flamethrower, Hydro Pump…) começam pequenos e crescem enquanto avançam;
+  - raios soltam faíscas ao longo do feixe e na ponta;
+  - golpes que caem do céu (Thunder, Blizzard, Rock Slide…) acumulam energia sobre o marcador no chão antes de cair; o Thunder é um raio de 4 segmentos com anel de choque;
+  - todo impacto gera uma onda de choque em anel, além das partículas do tipo.
+- **Sombras** em xadrez (dither) em vez de transparência por hardware, que agora fica reservada para escurecer o cenário fora do campo.
 
 ### Desempenho
 
@@ -251,6 +266,7 @@ Usado para testes e prints. Requer o mGBA compilado como biblioteca estática (`
 - Continuam no sistema por turnos original: batalhas por cabo/link, gravações (Battle Frontier recorded battles), e-Reader e o tutorial do Wally.
 - Em salas internas mais estreitas que a tela aparecem faixas pretas nas laterais (como no overworld).
 - Objetos do mapa que não são metatiles (NPCs, árvores cortáveis, pedras de Rock Smash) não aparecem na arena.
+- O campo de luta é sempre retangular; em mapas muito estreitos ele pode ser pequeno.
 - Balanceamento (ritmo de dano, cooldowns) foi ajustado por testes, mas é subjetivo; o multiplicador global fica em `RT_DMG_SCALE` (`src/rt_moves.c`).
 
 ## Créditos e licenças
