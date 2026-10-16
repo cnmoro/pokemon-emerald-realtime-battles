@@ -181,7 +181,7 @@ D.update({
 'FIRE_BLAST':BULLET('FLAME32',pal='FIRE',spd=48,rng=100,r=14,trail='FLAME16',wind=12,imp='BURN',sfx='SE_M_FLAME_WHEEL2'),
 'WATERFALL':RUSH(spd=80,dur=14,r=12,trail='DROP8',imp='SPLASH',sfx='SE_M_WATERFALL'),
 'CLAMP':MELEE('FANG32',pal='WATER',imp='SPLASH',sfx='SE_M_VICEGRIP'),
-'SWIFT':BULLET('STAR16',pal='GOLD',spd=56,rng=100,r=7,n=5,spread=4,aux=4,flags='HOMING',imp='STAR',sfx='SE_M_SWIFT'),
+'SWIFT':BULLET('STAR16',pal='GOLD',spd=56,rng=100,r=7,n=5,spread=4,aux=2,flags='HOMING',imp='STAR',sfx='SE_M_SWIFT'),
 'SKULL_BASH':RUSH(spd=96,dur=14,r=13,wind=40,imp='HIT',sfx='SE_M_TAKE_DOWN'),
 'SPIKE_CANNON':BULLET('NEEDLE8',pal='WHITE',spd=80,rng=85,r=5,n=0,spread=5,aux=6,imp='HIT',sfx='SE_M_STRING_SHOT'),
 'CONSTRICT':MELEE('RING16',pal='NORMAL',r=11,imp='HIT',sfx='SE_M_BIND'),

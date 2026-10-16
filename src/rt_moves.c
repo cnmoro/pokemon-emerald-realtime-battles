@@ -691,8 +691,16 @@ static void TurnTowards(struct RtProj *p, u8 rate)
     u8 want;
     s8 diff;
     s32 sp;
+    if (p->homingTarget == 0xFE)
+        return; // lost its target: flies straight on
     if (p->homingTarget < RT_MAX_ACTORS)
         t = &gRt->actors[p->homingTarget];
+    // a well-timed dash shakes off homing shots: they lose track and fly straight
+    if (t && t->state == AST_DASH)
+    {
+        p->homingTarget = 0xFE;
+        return;
+    }
     if (!t || !RtActor_IsAlive(t) || t->state == AST_GONE || t->invuln)
     {
         t = Rt_NearestFoe(o);
