@@ -1543,6 +1543,19 @@ static void Rt_StartOutro(u8 outcome)
     // clear projectiles
     for (i = 0; i < RT_MAX_PROJ; i++)
         gRt->proj[i].kind = PK_NONE;
+    // anyone still flying / underground comes back
+    for (i = 0; i < RT_MAX_ACTORS; i++)
+    {
+        struct RtActor *a = &gRt->actors[i];
+        if (a->active && a->state != AST_GONE && a->state != AST_FAINT && a->state != AST_CAUGHT && a->invuln)
+        {
+            a->invuln = 0;
+            a->hidden = FALSE;
+            a->z = 0;
+            if (a->state == AST_CAST)
+                a->state = AST_NORMAL;
+        }
+    }
     m4aSongNumStop(SE_LOW_HEALTH);
 }
 
@@ -1869,6 +1882,14 @@ static void CB2_RtEvolutionLoop(void)
 
 static void Rt_Exit(void)
 {
+    // drop the field window / dimming before going back to the overworld
+    SetGpuReg(REG_OFFSET_DISPCNT, GetGpuReg(REG_OFFSET_DISPCNT) & ~(DISPCNT_WIN0_ON | DISPCNT_WIN1_ON));
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    SetGpuReg(REG_OFFSET_WIN0H, 0);
+    SetGpuReg(REG_OFFSET_WIN0V, 0);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
     if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
         gNumSafariBalls = gRt->safariBalls;
     TryPutPokemonTodayOnAir();

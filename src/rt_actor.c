@@ -399,6 +399,9 @@ static const u16 sWhitePal[16] = {
 
 static void UpdatePaletteFx(struct RtActor *a)
 {
+    // never touch palettes while the screen fades (it would pop the sprite back to full colour)
+    if (gPaletteFade.active || gRt->state == RTS_EXIT || (gRt->state == RTS_OUTRO && gRt->subState == 6))
+        return;
     if (a->flash)
     {
         a->flash--;
