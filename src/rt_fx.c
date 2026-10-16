@@ -1,12 +1,14 @@
 // Real-time battle visual effects: OAM management, particles, palettes, projectile rendering, weather.
 #include "global.h"
 #include "rt_internal.h"
+#include "rt_vfx.h"
 #include "decompress.h"
 #include "gpu_regs.h"
 #include "main.h"
 #include "palette.h"
 #include "random.h"
 #include "sound.h"
+#include "trig.h"
 #include "constants/moves.h"
 #include "constants/songs.h"
 
@@ -15,8 +17,11 @@
 // ---------------------------------------------------------------------------
 // OAM buckets
 // ---------------------------------------------------------------------------
-#define BUCKETS 4
+#define BUCKETS 5
 #define BUCKET_MAX 96
+// commit order: HUD, effects in front, actors/props, effects behind (streams, beams, trails), ground marks
+static const u8 sBucketOrder[BUCKETS] = {0, 1, 2, 4, 3};
+#define FRONT_MAX 36
 
 struct OamEntry
 {
@@ -69,10 +74,24 @@ struct OamData *RtOam_Next(u8 bucket)
 void RtOam_Commit(void)
 {
     s32 b, i, n = 0;
+    s32 room, k;
     FlushScratch();
-    for (b = 0; b < BUCKETS; b++)
+    // the GBA draws sprites in OAM order and drops whatever goes past its per-scanline budget, so the HUD and
+    // the actors come before the bulk of the effects; front effects (impacts, numbers) are capped
+    for (k = 0; k < BUCKETS; k++)
     {
-        for (i = 0; i < sBucketCount[b] && n < 128; i++, n++)
+        s32 lim;
+        b = sBucketOrder[k];
+        lim = sBucketCount[b];
+        if (b == 1 && lim > FRONT_MAX)
+            lim = FRONT_MAX;
+        if (b == 4)
+        {
+            room = 128 - n - sBucketCount[3];
+            if (lim > room)
+                lim = room < 0 ? 0 : room;
+        }
+        for (i = 0; i < lim && n < 128; i++, n++)
         {
             u16 *o = (u16 *)&gMain.oamBuffer[n];
             o[0] = sBucket[b][i].a0;
@@ -107,13 +126,38 @@ void RtFx_ResetAffine(void)
     gRt->affineUsed = 0;
 }
 
+static EWRAM_DATA u16 sAffKey[32] = {0};
+
 u8 RtFx_AllocAffine(u8 angle, u8 scaleQ4, bool8 hflip)
 {
     u8 idx;
     s32 c, s, sc;
+    u16 key = angle | ((scaleQ4 & 0x7F) << 8) | (hflip ? 0x8000 : 0);
+    // sprites sharing rotation and scale share a matrix
+    for (idx = 0; idx < gRt->affineUsed; idx++)
+        if (sAffKey[idx] == key)
+            return idx;
     if (gRt->affineUsed >= 32)
-        return 0xFF;
+    {
+        // out of matrices: reuse the closest angle with the same scale
+        u8 best = 0xFF, bd = 255;
+        for (idx = 0; idx < 32; idx++)
+        {
+            u8 d;
+            if ((sAffKey[idx] & 0xFF00) != (key & 0xFF00))
+                continue;
+            d = (u8)((sAffKey[idx] & 0xFF) - angle);
+            if (d > 128) d = 256 - d;
+            if (d < bd)
+            {
+                bd = d;
+                best = idx;
+            }
+        }
+        return bd <= 12 ? best : 0xFF;
+    }
     idx = gRt->affineUsed++;
+    sAffKey[idx] = key;
     if (scaleQ4 == 0)
         scaleQ4 = 1;
     // inverse matrix: rotate by -angle, scale by 1/scale
@@ -185,6 +229,7 @@ void RtFx_Init(void)
     LoadPalette(gRtUiPalette, OBJ_PLTT_ID(4), PLTT_SIZE_4BPP);
     for (i = 0; i < FX_PAL_SLOTS; i++)
         gRt->fxPalOwner[i] = 0;
+    RtFx_DynReset();
     for (i = 0; i < RT_MAX_PART; i++)
         gRt->parts[i].life = 0;
 }
@@ -215,6 +260,11 @@ struct RtPart *RtFx_Spawn(u8 shape, u8 pal, s32 x, s32 y, u8 life)
     if (p == NULL)
         return NULL;
     memset(p, 0, sizeof(*p));
+    {
+        struct RtPartX *x = &gRt->partsX[p - gRt->parts];
+        memset(x, 0, sizeof(*x));
+        x->pal2 = x->pal3 = 0xFF;
+    }
     p->shape = shape;
     p->pal = pal;
     p->x = x;
@@ -230,6 +280,11 @@ struct RtPart *RtFx_Spawn(u8 shape, u8 pal, s32 x, s32 y, u8 life)
             p->frameRate = 6;
     }
     return p;
+}
+
+struct RtPartX *RtFx_X(struct RtPart *p)
+{
+    return &gRt->partsX[p - gRt->parts];
 }
 
 void RtFx_Burst(u8 shape, u8 pal, s32 x, s32 y, u8 n, u8 speed, u8 life)
@@ -404,15 +459,166 @@ void RtFx_Flash(u8 color, u8 frames)
     gRt->flashColor = color;
 }
 
+// ---------------------------------------------------------------------------
+// Per-scanline brightness (HBlank DMA into BLDY): soft dimming around the playable field,
+// whole-screen flashes and dramatic darkening of the arena. Windows are not used, so
+// semi-transparent sprites (glows, shadows) are alpha blended everywhere.
+// ---------------------------------------------------------------------------
+static EWRAM_DATA u16 sLineBldy[2][DISPLAY_HEIGHT + 2] = {0};
+static EWRAM_DATA u8 sLineFront = 0;
+static EWRAM_DATA s16 sLineHofs[3] = {0};
+
+#define EDGE_DIM   8    // BLDY of the scenery outside the field (matches the EVB of the dark edge sprites)
+#define EDGE_GRAD  8   // px of soft transition (half inside the field)
+
+void RtFx_LineVBlank(void)
+{
+    u16 *b = sLineBldy[sLineFront];
+    REG_DMA0CNT_H = 0;
+    REG_BLDY = b[0];
+    REG_DMA0SAD = (u32)&b[1];
+    REG_DMA0DAD = (u32)&REG_BLDY;
+    REG_DMA0CNT = 1 | ((u32)(DMA_DEST_RELOAD | DMA_SRC_INC | DMA_REPEAT | DMA_16BIT | DMA_START_HBLANK | DMA_ENABLE) << 16);
+}
+
+void RtFx_LineStop(void)
+{
+    REG_DMA0CNT_H = 0;
+    REG_BLDY = 0;
+    SetHBlankCallback(NULL);
+    DisableInterrupts(INTR_FLAG_HBLANK);
+}
+
+// heat-haze / psychic distortion: each scanline of the arena is shifted sideways
+static void HBlankCB_Wave(void)
+{
+    u16 v = REG_VCOUNT;
+    if (v >= DISPLAY_HEIGHT - 1)
+        v = 0;
+    else
+        v++;
+    if (v >= HUD_TOP && v < DISPLAY_HEIGHT - HUD_BOTTOM)
+    {
+        s16 o = (gSineTable[(u8)(v * 6 + gRt->frame * 5)] * gRt->waveAmp) >> 8;
+        REG_BG1HOFS = sLineHofs[0] + o;
+        REG_BG2HOFS = sLineHofs[0] + o;
+        REG_BG3HOFS = sLineHofs[0] + o;
+    }
+    else
+    {
+        REG_BG1HOFS = sLineHofs[0];
+        REG_BG2HOFS = sLineHofs[0];
+        REG_BG3HOFS = sLineHofs[0];
+    }
+}
+
+void RtFx_Dim(u8 level, u8 hold)
+{
+    if (level > 10)
+        level = 10;
+    if (level >= gRt->dimLevel)
+    {
+        gRt->dimLevel = level;
+        if (hold > gRt->dimHold)
+            gRt->dimHold = hold;
+    }
+}
+
+void RtFx_Wave(u8 amp, u8 frames)
+{
+    if (amp > gRt->waveAmp)
+        gRt->waveAmp = amp;
+    if (frames > gRt->waveTimer)
+        gRt->waveTimer = frames;
+}
+
+static void BuildLineTable(void)
+{
+    u8 back = sLineFront ^ 1;
+    u16 *b = sLineBldy[back];
+    s32 y;
+    if (gRt->flashTimer)
+    {
+        u16 v = gRt->flashTimer > 8 ? 8 : gRt->flashTimer;
+        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_TGT1_BG2 | BLDCNT_TGT1_BG3 | BLDCNT_TGT1_OBJ | BLDCNT_TGT1_BD
+                  | (gRt->flashColor ? BLDCNT_EFFECT_DARKEN : BLDCNT_EFFECT_LIGHTEN)
+                  | BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2 | BLDCNT_TGT2_BG3 | BLDCNT_TGT2_BD);
+        for (y = 0; y < DISPLAY_HEIGHT + 2; y++)
+            b[y] = v;
+    }
+    else
+    {
+        s32 top = gRt->playY0 - gRt->camY, bot = gRt->playY1 - gRt->camY;
+        u16 dim = gRt->dimLevel > 8 ? 8 : gRt->dimLevel;
+        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_TGT1_BG2 | BLDCNT_TGT1_BG3 | BLDCNT_TGT1_BD | BLDCNT_EFFECT_DARKEN
+                  | BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2 | BLDCNT_TGT2_BG3 | BLDCNT_TGT2_BD);
+        for (y = 0; y < DISPLAY_HEIGHT + 2; y++)
+        {
+            s32 d;
+            u16 v;
+            // signed distance past the field edge, the ramp starts a few px inside the field
+            d = top - y;
+            if (y - bot + 1 > d)
+                d = y - bot + 1;
+            d += EDGE_GRAD / 2;
+            v = d <= 0 ? 0 : (d >= EDGE_GRAD ? EDGE_DIM : (d * EDGE_DIM + EDGE_GRAD / 2) / EDGE_GRAD);
+            if (v < dim)
+                v = dim;
+            b[y] = v;
+        }
+    }
+    sLineFront = back;
+}
+
 void RtFx_UpdateAll(void)
 {
     s32 i;
     for (i = 0; i < RT_MAX_PART; i++)
     {
         struct RtPart *p = &gRt->parts[i];
+        struct RtPartX *x;
         if (p->life == 0)
             continue;
+        x = &gRt->partsX[i];
         p->life--;
+        if (x->pal2 != 0xFF && p->life <= x->at2)
+        {
+            p->pal = x->pal2;
+            x->pal2 = 0xFF;
+        }
+        if (x->pal3 != 0xFF && p->life <= x->at3)
+        {
+            p->pal = x->pal3;
+            x->pal3 = 0xFF;
+        }
+        if (x->flags & (PX_ORBIT | PX_FOLLOW | PX_HOMEIN))
+        {
+            struct RtActor *o = &gRt->actors[x->owner < RT_MAX_ACTORS ? x->owner : 0];
+            if (x->flags & PX_ORBIT)
+            {
+                // ay = angular speed, ax = radial speed (px per 4 frames)
+                s32 r = x->orbit;
+                x->orbitAng += x->ay;
+                if (x->ax && (gRt->frame & 3) == 0)
+                {
+                    r += x->ax;
+                    x->orbit = r < 0 ? 0 : (r > 250 ? 250 : r);
+                }
+                p->x = o->x + RtCos(x->orbitAng) * x->orbit;
+                p->y = o->y - TO_FX(o->height / 2) + RtSin(x->orbitAng) * x->orbit / 2;
+                goto anim;
+            }
+            if (x->flags & PX_HOMEIN)
+            {
+                s32 tx = o->x, ty = o->y - TO_FX(o->height / 2);
+                p->vx += (tx - p->x) / 24 / 16;
+                p->vy += (ty - p->y) / 24 / 16;
+                if (RtDist(FROM_FX(tx - p->x), FROM_FX(ty - p->y)) < 6)
+                    p->life = p->life > 2 ? 2 : p->life;
+            }
+        }
+        p->vx += x->ax * 4;
+        p->vy += x->ay * 4;
         p->x += p->vx;
         p->y += p->vy;
         if (p->vz || p->grav)
@@ -425,6 +631,17 @@ void RtFx_UpdateAll(void)
                 p->vz = 0;
             }
         }
+        // drag on bursts
+        if (!(p->flags & PF_FIXED))
+        {
+            u8 dr = x->drag ? x->drag : 15;
+            if (dr < 16)
+            {
+                p->vx = p->vx * dr / 16;
+                p->vy = p->vy * dr / 16;
+            }
+        }
+anim:
         if (p->flags & PF_SCALE)
         {
             s32 sc = p->scale + p->dscale;
@@ -432,33 +649,131 @@ void RtFx_UpdateAll(void)
             if (sc > 64) sc = 64;
             p->scale = sc;
         }
-        if (p->flags & PF_ROTATE)
+        if (x->spin)
+            p->angle += x->spin;
+        else if (p->flags & PF_ROTATE)
             p->angle += 8;
-        // drag on bursts
-        if (!(p->flags & PF_FIXED))
+    }
+    if (gRt->flashTimer)
+        gRt->flashTimer--;
+    if (gRt->dimHold)
+        gRt->dimHold--;
+    else if (gRt->dimLevel && (gRt->frame & 1))
+        gRt->dimLevel--;
+    // distortion wave
+    if (gRt->waveTimer)
+    {
+        gRt->waveTimer--;
+        if (gRt->waveTimer < 16 && gRt->waveAmp > 0 && (gRt->frame & 3) == 0)
+            gRt->waveAmp--;
+        sLineHofs[0] = gRt->camX;
+        if (gRt->waveAmp)
         {
-            p->vx = p->vx * 15 / 16;
-            p->vy = p->vy * 15 / 16;
+            SetHBlankCallback(HBlankCB_Wave);
+            EnableInterrupts(INTR_FLAG_HBLANK);
+            SetGpuRegBits(REG_OFFSET_DISPSTAT, DISPSTAT_HBLANK_INTR);
         }
     }
-    // screen flash (whole screen) / otherwise: dim everything outside the playable field (window 0)
-    if (gRt->flashTimer)
+    if (!gRt->waveTimer || !gRt->waveAmp)
     {
-        gRt->flashTimer--;
-        SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_ALL);
-        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_TGT1_BG2 | BLDCNT_TGT1_BG3 | BLDCNT_TGT1_OBJ | BLDCNT_TGT1_BD
-                  | (gRt->flashColor ? BLDCNT_EFFECT_DARKEN : BLDCNT_EFFECT_LIGHTEN)
-                  | BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2 | BLDCNT_TGT2_BG3 | BLDCNT_TGT2_BD);
-        SetGpuReg(REG_OFFSET_BLDY, gRt->flashTimer > 8 ? 8 : gRt->flashTimer);
+        gRt->waveAmp = 0;
+        SetHBlankCallback(NULL);
+        DisableInterrupts(INTR_FLAG_HBLANK);
     }
-    else
-    {
-        // inside the field: no colour effect (semi-transparent sprites are drawn opaque/dithered)
-        SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_BG_ALL | WININ_WIN0_OBJ);
-        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_TGT1_BG2 | BLDCNT_TGT1_BG3 | BLDCNT_TGT1_BD | BLDCNT_EFFECT_DARKEN);
-        SetGpuReg(REG_OFFSET_BLDY, 7);
-    }
+    SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(9, 16)); // additive light: glows only brighten
+    BuildLineTable();
     RtFx_WeatherUpdate();
+}
+
+// ---------------------------------------------------------------------------
+// Streamed FX shapes: a VRAM cache after the static atlas, LRU-evicted
+// ---------------------------------------------------------------------------
+extern const u32 gRtFxDynGfx[];
+#define DYN_BASE  (RT_FX_TILE_BASE + RT_FX_ATLAS_TILES)
+#define DYN_END   1024
+static EWRAM_DATA u16 sDynStart[FX_COUNT] = {0};   // 0 = not resident, else VRAM tile + 1
+static EWRAM_DATA u16 sDynUse[FX_COUNT] = {0};     // frame of last use
+static EWRAM_DATA u8 sDynList[FX_COUNT] = {0};     // resident shapes
+static EWRAM_DATA u8 sDynCount = 0;
+
+void RtFx_DynReset(void)
+{
+    s32 i;
+    for (i = 0; i < FX_COUNT; i++)
+        sDynStart[i] = 0;
+    sDynCount = 0;
+}
+
+static u16 DynFindGap(u16 len)
+{
+    // resident intervals sorted by start (insertion sort, the list is short)
+    u16 st[FX_COUNT], en[FX_COUNT];
+    s32 i, j, n = 0;
+    u16 pos = DYN_BASE;
+    for (i = 0; i < sDynCount; i++)
+    {
+        u8 sh = sDynList[i];
+        u16 a = sDynStart[sh] - 1;
+        u16 b = a + gRtFxShapes[sh].frames * gRtFxShapes[sh].tilesPerFrame;
+        for (j = n; j > 0 && st[j - 1] > a; j--)
+        {
+            st[j] = st[j - 1];
+            en[j] = en[j - 1];
+        }
+        st[j] = a;
+        en[j] = b;
+        n++;
+    }
+    for (i = 0; i < n; i++)
+    {
+        if (st[i] >= pos + len)
+            return pos;
+        if (en[i] > pos)
+            pos = en[i];
+    }
+    if (pos + len <= DYN_END)
+        return pos;
+    return 0;
+}
+
+static u16 DynTile(u8 shape)
+{
+    const struct RtFxShape *s = &gRtFxShapes[shape];
+    u16 len, at;
+    if (sDynStart[shape])
+    {
+        sDynUse[shape] = gRt->frame;
+        return sDynStart[shape] - 1;
+    }
+    len = s->frames * s->tilesPerFrame;
+    for (;;)
+    {
+        s32 i, victim = -1;
+        u16 oldest = 0;
+        at = DynFindGap(len);
+        if (at)
+            break;
+        // evict the least recently used shape not drawn this frame or the previous one
+        for (i = 0; i < sDynCount; i++)
+        {
+            u8 sh = sDynList[i];
+            u16 age = (u16)gRt->frame - sDynUse[sh];
+            if (age >= 2 && age >= oldest)
+            {
+                oldest = age;
+                victim = i;
+            }
+        }
+        if (victim < 0)
+            return 0xFFFF;
+        sDynStart[sDynList[victim]] = 0;
+        sDynList[victim] = sDynList[--sDynCount];
+    }
+    CpuFastCopy(gRtFxDynGfx + (s->tile & 0x7FFF) * 8, (void *)(OBJ_VRAM0 + at * TILE_SIZE_4BPP), len * TILE_SIZE_4BPP);
+    sDynStart[shape] = at + 1;
+    sDynUse[shape] = gRt->frame;
+    sDynList[sDynCount++] = shape;
+    return at;
 }
 
 static const u8 sShapeW[3][4] = {{8, 16, 32, 64}, {16, 32, 32, 64}, {8, 8, 16, 32}};
@@ -481,7 +796,17 @@ static bool8 DrawShape(u8 shape, u8 frame, u8 fxPal, s32 sx, s32 sy, u8 bucket, 
     h = sShapeH[shp][size];
     if (frame >= s->frames)
         frame = s->frames - 1;
-    tile = RT_FX_TILE_BASE + s->tile + frame * s->tilesPerFrame;
+    if (s->tile & 0x8000)
+    {
+        tile = DynTile(shape);
+        if (tile == 0xFFFF)
+            return FALSE;
+        tile += frame * s->tilesPerFrame;
+    }
+    else
+    {
+        tile = RT_FX_TILE_BASE + s->tile + frame * s->tilesPerFrame;
+    }
     if (useAffine)
     {
         if (sx + w < 0 || sx - w > DISPLAY_WIDTH || sy + h < 0 || sy - h > DISPLAY_HEIGHT)
@@ -507,6 +832,14 @@ static bool8 DrawShape(u8 shape, u8 frame, u8 fxPal, s32 sx, s32 sy, u8 bucket, 
         {
             useAffine = FALSE;
         }
+        else if (angle == 0 && scaleQ4 <= 16)
+        {
+            s32 x = sx - w / 2, y = sy - h / 2; // normal size: half the scanline cost
+            oam[0] = (y & 0xFF) | (1 << 8) | (blend ? (1 << 10) : 0) | (shp << 14);
+            oam[1] = (x & 0x1FF) | (m << 9) | (size << 14);
+            oam[2] = tile | (hwPrio << 10) | (palSlot << 12);
+            return TRUE;
+        }
         else
         {
             s32 x = sx - w, y = sy - h; // double size
@@ -523,6 +856,12 @@ static bool8 DrawShape(u8 shape, u8 frame, u8 fxPal, s32 sx, s32 sy, u8 bucket, 
         oam[2] = tile | (hwPrio << 10) | (palSlot << 12);
     }
     return TRUE;
+}
+
+bool8 RtFx_Draw(u8 shape, u8 frame, u8 pal, s32 sx, s32 sy, u8 bucket, u8 angle, u8 scale, u8 flags)
+{
+    return DrawShape(shape, frame, pal, sx, sy, bucket, 2, angle, scale ? scale : 16, (flags & RFD_BLEND) != 0,
+                     (flags & RFD_HFLIP) != 0, (flags & RFD_AFFINE) != 0 || (scale && scale != 16));
 }
 
 void RtFx_DrawAll(void)
@@ -555,9 +894,56 @@ void RtFx_DrawAll(void)
             frame = ((p->maxLife - p->life) / p->frameRate) % gRtFxShapes[p->shape].frames;
         else
             frame = p->frame;
-        aff = (p->flags & (PF_ROTATE | PF_SCALE)) != 0;
-        DrawShape(p->shape, frame, p->pal, sx, sy, (p->flags & PF_GROUND) ? 3 : p->prio,
-                  (p->flags & PF_HUD) ? 0 : 2, p->angle, p->scale, (p->flags & PF_BLEND) != 0, (p->flags & PF_HFLIP) != 0, aff);
+        {
+            struct RtPartX *x = &gRt->partsX[i];
+            bool8 blend = (p->flags & PF_BLEND) != 0;
+            u8 ang = p->angle;
+            aff = (p->flags & (PF_ROTATE | PF_SCALE)) != 0 || x->spin;
+            if (x->flags & PX_STRETCH)
+            {
+                ang = RtAtan2(p->vx, p->vy);
+                aff = TRUE;
+            }
+            if ((x->flags & PX_FADE) && p->life * 3 < p->maxLife)
+                blend = TRUE;
+            DrawShape(p->shape, frame, p->pal, sx, sy, (p->flags & PF_GROUND) ? 3 : p->prio,
+                      (p->flags & PF_HUD) ? 0 : 2, ang, p->scale, blend, (p->flags & PF_HFLIP) != 0, aff);
+        }
+    }
+}
+
+// dark, dithered, semi-transparent columns over the scenery left/right of the field (the rows above and
+// below are dimmed per scanline)
+void RtFx_DrawEdges(void)
+{
+    const struct RtFxShape *s = &gRtFxShapes[FX_EDGEDIM];
+    s32 l = gRt->playX0 - gRt->camX, r = gRt->playX1 - gRt->camX, y;
+    u16 tile = RT_FX_TILE_BASE + s->tile;
+    for (y = HUD_TOP - 8; y < DISPLAY_HEIGHT - HUD_BOTTOM; y += 64)
+    {
+        u16 *oam;
+        if (l > -4)
+        {
+            // left of the field: ramp faces right (flipped)
+            oam = (u16 *)RtOam_Next(3);
+            if (oam)
+            {
+                s32 x = l - 28; // the ramp starts 4 px inside the field
+                oam[0] = (y & 0xFF) | (2 << 14);
+                oam[1] = (x & 0x1FF) | (1 << 12) | (3 << 14);
+                oam[2] = tile | (1 << 10) | (4 << 12);
+            }
+        }
+        if (r < DISPLAY_WIDTH + 4)
+        {
+            oam = (u16 *)RtOam_Next(3);
+            if (oam)
+            {
+                oam[0] = (y & 0xFF) | (2 << 14);
+                oam[1] = ((r - 4) & 0x1FF) | (3 << 14);
+                oam[2] = tile | (1 << 10) | (4 << 12);
+            }
+        }
     }
 }
 
@@ -605,7 +991,7 @@ static void DrawBeam(struct RtProj *p)
     {
         s32 x = ox + RtCos(p->angle) * d / 256 - gRt->camX;
         s32 y = oy + RtSin(p->angle) * d / 256 - gRt->camY - p->z;
-        DrawShape(p->shape, (fr + d / step) % (gRtFxShapes[p->shape].frames), p->pal, x, y, 1, 2, p->angle, 16,
+        DrawShape(p->shape, (fr + d / step) % (gRtFxShapes[p->shape].frames), p->pal, x, y, 4, 2, p->angle, 16,
                   (p->flags & RTMF_BLEND) != 0, FALSE, rot);
     }
     // glowing head
@@ -645,7 +1031,7 @@ static void DrawWave(struct RtProj *p)
         {
             s32 x = cx + RtCos(perp) * k / 256;
             s32 y = cy + RtSin(perp) * k / 256;
-            DrawShape(p->shape, fr, p->pal, x, y, 1, 2, p->angle + 64, scale, (p->flags & RTMF_BLEND) != 0, FALSE, rot || scale != 16);
+            DrawShape(p->shape, fr, p->pal, x, y, 4, 2, p->angle + 64, scale, (p->flags & RTMF_BLEND) != 0, FALSE, rot || scale != 16);
         }
     }
 }
@@ -661,6 +1047,14 @@ void RtFx_DrawProjectiles(void)
             continue;
         sx = FROM_FX(p->x) - gRt->camX;
         sy = FROM_FX(p->y) - gRt->camY;
+        if (RtVfx_DrawProj(p, sx, sy))
+            continue;
+        if ((p->kind == PK_STRIKE || p->kind == PK_FUTURE) && p->delay && RtVfx_StrikeWarn(p))
+        {
+            if (p->delay > 20 || (p->age & 2))
+                DrawShape(FX_TARGET32, (p->age >> 3) & 1, p->kind == PK_FUTURE ? FXP_PSYCHIC : FXP_BLOOD, sx, sy, 3, 2, 0, 16, TRUE, FALSE, FALSE);
+            continue;
+        }
         switch (p->kind)
         {
         case PK_BULLET:
@@ -669,7 +1063,7 @@ void RtFx_DrawProjectiles(void)
             if (p->flags & RTMF_ARC)
             {
                 // shadow on the ground
-                DrawShape(FX_SHADOW16, 0, FXP_UI, sx, sy + 2, 3, 2, 0, 16, TRUE, FALSE, FALSE);
+                DrawShape(FX_SHADOW16, 0, FXP_UI, sx, sy + 2, 3, 2, 0, 16, FALSE, FALSE, FALSE);
             }
             {
                 // small projectiles are drawn a bit bigger; stream particles grow as they travel
@@ -686,17 +1080,17 @@ void RtFx_DrawProjectiles(void)
                     sc = 24;
                     aff = TRUE;
                 }
-                DrawShape(p->shape, (p->param & 16) ? 0 : AnimFrame(p->shape, p->age, 4), p->pal, sx, sy - p->z, 1, 2,
+                DrawShape(p->shape, (p->param & 16) ? 0 : AnimFrame(p->shape, p->age, 4), p->pal, sx, sy - p->z, 4, 2,
                           IsDirectional(p->shape) ? p->angle : 0, sc, (p->flags & RTMF_BLEND) != 0, FALSE, aff);
             }
             break;
         case PK_SAFARI:
-            DrawShape(FX_SHADOW16, 0, FXP_UI, sx, sy + 2, 3, 2, 0, 16, TRUE, FALSE, FALSE);
-            DrawShape(p->shape, AnimFrame(p->shape, p->age, 4), p->pal, sx, sy - p->z, 1, 2, 0, 16, FALSE, FALSE, FALSE);
+            DrawShape(FX_SHADOW16, 0, FXP_UI, sx, sy + 2, 3, 2, 0, 16, FALSE, FALSE, FALSE);
+            DrawShape(p->shape, AnimFrame(p->shape, p->age, 4), p->pal, sx, sy - p->z, 4, 2, 0, 16, FALSE, FALSE, FALSE);
             break;
         case PK_BALL:
-            DrawShape(FX_SHADOW16, 0, FXP_UI, sx, sy + 2, 3, 2, 0, 16, TRUE, FALSE, FALSE);
-            DrawShape(FX_BALL16, p->frame, FXP_UI, sx, sy - p->z, 1, 2, 0, 16, FALSE, FALSE, FALSE);
+            DrawShape(FX_SHADOW16, 0, FXP_UI, sx, sy + 2, 3, 2, 0, 16, FALSE, FALSE, FALSE);
+            DrawShape(FX_BALL16, p->frame, FXP_UI, sx, sy - p->z, 4, 2, 0, 16, FALSE, FALSE, FALSE);
             break;
         case PK_MELEE:
         case PK_RUSHBOX:
@@ -706,7 +1100,7 @@ void RtFx_DrawProjectiles(void)
                 u8 frames = gRtFxShapes[p->shape].frames;
                 u8 fr = frames > 1 ? (p->age * frames / total) : 0;
                 bool8 rot = IsDirectional(p->shape);
-                DrawShape(p->shape, fr, p->pal, sx, sy - p->z, 1, 2, p->angle, 16 + (p->age < 3 ? -4 : 0), FALSE,
+                DrawShape(p->shape, fr, p->pal, sx, sy - p->z, 4, 2, p->angle, 16 + (p->age < 3 ? -4 : 0), FALSE,
                           FALSE, rot);
             }
             break;

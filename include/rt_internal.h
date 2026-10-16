@@ -454,7 +454,7 @@ struct RtProj
 // ---------------------------------------------------------------------------
 // Particles (visual only)
 // ---------------------------------------------------------------------------
-#define RT_MAX_PART 80
+#define RT_MAX_PART 128
 
 struct RtPart
 {
@@ -484,6 +484,25 @@ struct RtPart
 #define PF_FLICKER (1 << 5)
 #define PF_HFLIP   (1 << 6)
 #define PF_FIXED   (1 << 7)  // screen space
+
+// extra particle parameters (gRt->partsX[i] mirrors gRt->parts[i])
+struct RtPartX
+{
+    u8 pal2, pal3;   // palette changes over life (0xFF = none)
+    u8 at2, at3;     // ...when life drops to these values
+    u8 flags;        // PX_*
+    s8 spin;         // affine angle per frame
+    u8 drag;         // 0 = default (15/16); else velocity *= drag/16
+    s8 ax, ay;       // acceleration Q8 px/frame^2 (/16)
+    u8 orbit;        // orbit radius for PX_ORBIT
+    u8 orbitAng;
+    u8 owner;        // actor id for PX_ORBIT / PX_FOLLOW
+};
+#define PX_ORBIT    (1 << 0)  // circles around its owner
+#define PX_FOLLOW   (1 << 1)  // position is relative to its owner
+#define PX_HOMEIN   (1 << 2)  // drifts toward its owner (absorb effects)
+#define PX_STRETCH  (1 << 3)  // oriented along its velocity
+#define PX_FADE     (1 << 4)  // semi-transparent in the last third of its life
 
 // ---------------------------------------------------------------------------
 // Global battle state
@@ -680,6 +699,14 @@ struct RtBattle
 
     u32 expStart[PARTY_SIZE]; // party EXP when the battle started (for the EXP panel at the end)
     u8 expPanelDone;
+
+    // --- visual layer (keep new fields at the end: test scripts use fixed offsets above) ---
+    struct RtPartX partsX[RT_MAX_PART]; // extra per-particle parameters (same index as parts[])
+    u8 dimLevel;         // dramatic darkening of the arena (0..10), decays
+    u8 dimHold;          // frames to hold dimLevel before it decays
+    u8 waveAmp;          // psychic heat-haze distortion amplitude (px)
+    u8 waveTimer;        // frames left
+    u8 vfxPalCycle;      // misc frame counter for palette flicker
 };
 
 extern struct RtBattle *gRt;
@@ -771,6 +798,17 @@ void RtFx_Impact(u8 style, u8 pal, s32 x, s32 y);
 void RtFx_Number(s32 x, s32 y, u16 value, u8 color);
 void RtFx_Word(s32 x, s32 y, u8 word);
 void RtFx_UpdateAll(void);
+void RtFx_LineVBlank(void);
+void RtFx_DynReset(void);
+void RtFx_LineStop(void);
+void RtFx_DrawEdges(void);
+#define RFD_BLEND  1
+#define RFD_HFLIP  2
+#define RFD_AFFINE 4
+bool8 RtFx_Draw(u8 shape, u8 frame, u8 pal, s32 sx, s32 sy, u8 bucket, u8 angle, u8 scale, u8 flags);
+void RtFx_Dim(u8 level, u8 hold);
+void RtFx_Wave(u8 amp, u8 frames);
+struct RtPartX *RtFx_X(struct RtPart *p);
 void RtFx_DrawAll(void);
 u8 RtFx_GetPalSlot(u8 fxPal);
 void RtFx_ReleaseUnused(void);

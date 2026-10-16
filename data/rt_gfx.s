@@ -8,3 +8,7 @@ gRtSpriteGfx:
 gRtFxAtlasGfx:
 	.incbin "graphics/rt/fx_atlas.bin"
 	.balign 4
+	.global gRtFxDynGfx
+gRtFxDynGfx:
+	.incbin "graphics/rt/fx_dyn.bin"
+	.balign 4

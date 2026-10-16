@@ -359,9 +359,9 @@ static void CB2_RtSetup(void)
         break;
     case 5:
         SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_0 | DISPCNT_OBJ_1D_MAP | DISPCNT_OBJ_ON
-                  | DISPCNT_BG0_ON | DISPCNT_BG1_ON | DISPCNT_BG2_ON | DISPCNT_BG3_ON | DISPCNT_WIN0_ON);
-        SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_ALL);
-        SetGpuReg(REG_OFFSET_WINOUT, WINOUT_WIN01_ALL);
+                  | DISPCNT_BG0_ON | DISPCNT_BG1_ON | DISPCNT_BG2_ON | DISPCNT_BG3_ON);
+        SetGpuReg(REG_OFFSET_WININ, 0);
+        SetGpuReg(REG_OFFSET_WINOUT, 0);
         SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2 | BLDCNT_TGT2_BG3 | BLDCNT_TGT2_OBJ | BLDCNT_TGT2_BD);
         SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(8, 10));
         ShowBg(0);
@@ -502,18 +502,8 @@ static void VBlankCB_Rt(void)
     SetGpuReg(REG_OFFSET_BG2VOFS, sy);
     SetGpuReg(REG_OFFSET_BG3HOFS, sx);
     SetGpuReg(REG_OFFSET_BG3VOFS, sy);
-    // window 0 = the playable field (full brightness); outside it the scenery is dimmed
-    {
-        s32 l = gRt->playX0 - sx, r = gRt->playX1 - sx, t = gRt->playY0 - sy, b = gRt->playY1 - sy;
-        if (l < 0) l = 0;
-        if (r > DISPLAY_WIDTH) r = DISPLAY_WIDTH;
-        if (t < 0) t = 0;
-        if (b > DISPLAY_HEIGHT) b = DISPLAY_HEIGHT;
-        if (r <= l || b <= t)
-            l = r = t = b = 0;
-        SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(l, r));
-        SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(t, b));
-    }
+    // per-scanline brightness (soft dimming around the field, flashes)
+    RtFx_LineVBlank();
     LoadOam();
     TransferPlttBuffer();
     TransferTilesetAnimsBuffer();
@@ -582,6 +572,7 @@ static void Rt_RenderFrame(void)
     RtFx_DrawProjectiles();
     PROF(8);
     RtFx_DrawAll();
+    RtFx_DrawEdges();
     PROF(10);
     for (i = 0; i < n; i++)
     {
@@ -2026,6 +2017,7 @@ static void Rt_Exit(void)
     SetGpuReg(REG_OFFSET_WIN0V, 0);
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
     SetGpuReg(REG_OFFSET_BLDY, 0);
+    RtFx_LineStop();
     if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
         gNumSafariBalls = gRt->safariBalls;
     TryPutPokemonTodayOnAir();

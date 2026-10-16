@@ -1338,7 +1338,7 @@ void RtActor_Draw(struct RtActor *a)
             if (o)
             {
                 oam = (u16 *)o;
-                oam[0] = (y & 0xFF) | ((s->shapeSize >> 2) << 14) | (1 << 10);
+                oam[0] = (y & 0xFF) | ((s->shapeSize >> 2) << 14);
                 oam[1] = (x & 0x1FF) | ((s->shapeSize & 3) << 14);
                 oam[2] = (RT_FX_TILE_BASE + s->tile) | (2 << 10) | (4 << 12);
             }

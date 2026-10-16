@@ -1,6 +1,7 @@
 // Real-time battle moves: cooldowns, casting patterns, hitboxes, damage and every move effect.
 #include "global.h"
 #include "rt_internal.h"
+#include "rt_vfx.h"
 #include "battle.h"
 #include "battle_main.h"
 #include "battle_setup.h"
@@ -682,6 +683,8 @@ static bool8 IsValidTarget(struct RtProj *p, struct RtActor *t)
 
 static void SpawnTrail(struct RtProj *p)
 {
+    if (RtVfx_ProjTrail(p))
+        return;
     if (p->trail == FX_NONE)
     {
         // every projectile leaves a faint trail of sparks in its colour
@@ -710,7 +713,7 @@ static void SpawnTrail(struct RtProj *p)
 
 static void ProjImpact(struct RtProj *p, s32 x, s32 y)
 {
-    RtFx_Impact(Def(p->move)->impact == RTI_NONE ? RTI_HIT : Def(p->move)->impact, p->pal, x, y);
+    RtVfx_Impact(p->move, Def(p->move)->impact == RTI_NONE ? RTI_HIT : Def(p->move)->impact, p->pal, x, y);
 }
 
 static void KillProj(struct RtProj *p)
@@ -1084,7 +1087,9 @@ static void UpdateBeam(struct RtProj *p)
         }
     }
     // sparkles along the beam and at its tip
-    if ((p->age & 1) == 0 && p->len > 16)
+    if (RtVfx_BeamTick(p))
+        ;
+    else if ((p->age & 1) == 0 && p->len > 16)
     {
         s32 k = 8 + Random() % (p->len - 8);
         struct RtPart *sp = RtFx_Spawn(FX_SPARK8, p->pal, p->x + RtCos(p->angle) * k, p->y + RtSin(p->angle) * k + TO_FX(o->height / 2), 10);
@@ -1096,7 +1101,7 @@ static void UpdateBeam(struct RtProj *p)
             sp->z = o->height / 2;
         }
     }
-    if ((p->age & 3) == 2)
+    if ((p->age & 3) == 2 && gRtVfxDefs[p->move].style == VS_NONE)
     {
         s32 tx = p->x + RtCos(p->angle) * p->len, ty = p->y + RtSin(p->angle) * p->len + TO_FX(o->height / 2);
         RtFx_Burst(FX_SPARK8, p->pal, tx, ty - TO_FX(o->height / 2), 2, 3, 10);
@@ -1133,7 +1138,9 @@ static void UpdateWave(struct RtProj *p)
         s32 len = start + (p->maxRadius - start) * p->age / p->param2;
         p->len = len > p->maxRadius ? p->maxRadius : len;
     }
-    if ((p->age & 3) == 0)
+    if (RtVfx_WaveTick(p))
+        ;
+    else if ((p->age & 3) == 0)
     {
         s32 k = (Random() % (p->len * 2 + 1)) - p->len;
         u8 perp = p->angle + 64;
@@ -1198,7 +1205,9 @@ static void UpdateArea(struct RtProj *p)
         }
     }
     // particles along the ring
-    if ((p->age % 2) == 0)
+    if (RtVfx_AreaTick(p))
+        ;
+    else if ((p->age % 2) == 0)
     {
         u8 n = 3, k;
         for (k = 0; k < n; k++)
@@ -1237,6 +1246,12 @@ static void StrikeAt(struct RtProj *p)
     s32 i;
     struct RtActor *o = &gRt->actors[p->owner];
     const struct RtMoveDef *d = Def(p->move);
+    if (RtVfx_Strike(p))
+    {
+        PlaySE(d->sfx);
+        RtProps_HitAt(p->x, p->y - TO_FX(6), p->radius, 3);
+        goto hits;
+    }
     if (p->shape == FX_BOLTV)
     {
         s32 k;
@@ -1255,10 +1270,11 @@ static void StrikeAt(struct RtProj *p)
         struct RtPart *b = RtFx_Spawn(FX_COLUMN16, p->pal, p->x, p->y - TO_FX(14), 18);
         if (b) b->vy = -64;
     }
-    RtFx_Impact(d->impact, p->pal, p->x, p->y);
+    RtVfx_Impact(p->move, d->impact, p->pal, p->x, p->y);
     RtFx_Shake(2, 8);
     PlaySE(d->sfx);
     RtProps_HitAt(p->x, p->y - TO_FX(6), p->radius, 3);
+hits:
     for (i = 0; i < RT_MAX_ACTORS; i++)
     {
         struct RtActor *t = &gRt->actors[i];
@@ -1960,7 +1976,7 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
     if (bm->power == 0)
     {
         bool8 ok = StatusEffectOnTarget(atk, t, move);
-        RtFx_Impact(Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
+        RtVfx_Impact(move, Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
         return ok || TRUE;
     }
 
@@ -2070,7 +2086,7 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
             t->substituteHp -= dmg;
         }
         RtFx_Word(t->x, t->y - TO_FX(t->height + 8), FX_W_BLOCK);
-        RtFx_Impact(Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
+        RtVfx_Impact(move, Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
         return TRUE;
     }
 
@@ -2094,7 +2110,7 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
     t->lastDamageCat = IS_TYPE_PHYSICAL(type) ? 0 : 1;
     if (t->side == RT_SIDE_PLAYER)
         gBattleResults.playerMonWasDamaged = TRUE;
-    RtFx_Impact(Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
+    RtVfx_Impact(move, Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
     if (crit)
         RtFx_Word(t->x, t->y - TO_FX(t->height + 20), FX_W_CRIT);
     ShowEffectiveness(t, eff);
@@ -2715,6 +2731,7 @@ static void ExecuteMove(struct RtActor *a)
         PlaySE(d->sfx);
     if (d->anim != RTA_WALK)
         RtActor_SetAnim(a, d->anim, FALSE);
+    RtVfx_Execute(a, move);
 
     switch (d->pattern)
     {
@@ -2935,7 +2952,7 @@ static void ExecuteMove(struct RtActor *a)
         break;
     case RTP_SELF:
     case RTP_FIELD:
-        if (d->pattern == RTP_SELF)
+        if (d->pattern == RTP_SELF && !RtVfx_SelfCast(a, move))
             SelfCastFx(a, d);
         RtMove_ApplySelfEffect(a, move);
         if (d->pattern == RTP_FIELD)
@@ -3124,7 +3141,7 @@ void RtMove_UpdateCast(struct RtActor *a)
             }
             return;
         }
-        if (windup > 12)
+        if (windup > 12 && !RtVfx_Charge(a, a->act.move, a->act.timer, windup))
             ChargeVisual(a, d);
         if (d->pattern == RTP_MELEE && d->aux && a->act.timer <= windup)
         {
@@ -3166,7 +3183,9 @@ void RtMove_UpdateCast(struct RtActor *a)
                     a->act.timer = 0xFF00;
                     RtFx_Shake(1, 4);
                 }
-                if ((a->act.timer & 1) == 0)
+                if (RtVfx_RushTick(a, a->act.move))
+                    ;
+                else if ((a->act.timer & 1) == 0)
                 {
                     struct RtPart *pt = RtFx_Spawn(d->trail != FX_NONE ? d->trail : FX_SMOKE16, d->trail != FX_NONE ? d->pal : FXP_SMOKE,
                                                    a->x, a->y - TO_FX(d->trail != FX_NONE ? a->height / 2 : 0), 10);
@@ -3179,6 +3198,7 @@ void RtMove_UpdateCast(struct RtActor *a)
                 u8 rate = d->aux ? d->aux : 3;
                 if (d->flags & RTMF_ROOT)
                     SteerChannel(a, 2);
+                RtVfx_StreamTick(a, a->act.move, a->act.timer);
                 if ((a->act.timer % rate) == 0)
                 {
                     struct RtProj *p = NewProj(a, PK_BULLET, a->act.move);
