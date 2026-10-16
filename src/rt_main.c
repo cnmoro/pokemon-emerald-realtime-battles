@@ -1612,7 +1612,7 @@ static void Rt_UpdateOutro(void)
     {
     case 0:
         Rt_SyncAllToParty();
-        // after a win, the Pokemon that fought catch their breath: +30% of their max HP (fainted ones stay down)
+        // after a win, the Pokemon that fought catch their breath: +30% of their max HP (fainted ones get back up)
         if (gRt->outcome == B_OUTCOME_WON || gRt->outcome == B_OUTCOME_CAUGHT)
         {
             for (i = 0; i < PARTY_SIZE; i++)
@@ -1624,7 +1624,7 @@ static void Rt_UpdateOutro(void)
                     continue;
                 hp = GetMonData(mon, MON_DATA_HP);
                 maxHp = GetMonData(mon, MON_DATA_MAX_HP);
-                if (hp == 0 || hp >= maxHp)
+                if (hp >= maxHp)
                     continue;
                 hp += (maxHp * 30 + 99) / 100;
                 if (hp > maxHp)
