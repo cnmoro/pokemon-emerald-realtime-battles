@@ -643,8 +643,9 @@ static void Rt_UpdateCamera(void)
         {
             // frame both the player and the nearest foe, favouring the player
             s32 fx = FROM_FX(f->x), fy = FROM_FX(f->y) - 12;
-            cx = px + (fx - px) * 2 / 5;
-            cy = py + (fy - py) * 2 / 5;
+            // frame both: centred between them (the clamps below keep the player on screen)
+            cx = (px + fx) / 2;
+            cy = (py + fy) / 2;
         }
         // view area between the HUD bars: y in [16, 128)
         tx = cx - DISPLAY_WIDTH / 2;

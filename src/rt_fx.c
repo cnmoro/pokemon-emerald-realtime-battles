@@ -263,6 +263,18 @@ void RtFx_Ring(u8 shape, u8 pal, s32 x, s32 y, u8 n, u8 radius, u8 life)
 void RtFx_Impact(u8 style, u8 pal, s32 x, s32 y)
 {
     struct RtPart *p;
+    if (style != RTI_NONE)
+    {
+        // shockwave ring
+        p = RtFx_Spawn(FX_RING32, pal, x, y, 10);
+        if (p)
+        {
+            p->flags |= PF_SCALE;
+            p->scale = 6;
+            p->dscale = 3;
+            p->prio = 1;
+        }
+    }
     switch (style)
     {
     case RTI_NONE:
@@ -656,8 +668,24 @@ void RtFx_DrawProjectiles(void)
                 // shadow on the ground
                 DrawShape(FX_SHADOW16, 0, FXP_UI, sx, sy + 2, 3, 2, 0, 16, TRUE, FALSE, FALSE);
             }
-            DrawShape(p->shape, AnimFrame(p->shape, p->age, 4), p->pal, sx, sy - p->z, 1, 2, p->angle,
-                      16, (p->flags & RTMF_BLEND) != 0, FALSE, IsDirectional(p->shape));
+            {
+                // small projectiles are drawn a bit bigger; stream particles grow as they travel
+                u8 sc = 16;
+                bool8 aff = IsDirectional(p->shape);
+                if (p->param & 8)
+                {
+                    sc = 9 + (p->age * 12) / (p->len ? p->len : 1);
+                    if (sc > 22) sc = 22;
+                    aff = TRUE;
+                }
+                else if (gRtFxShapes[p->shape].w <= 8)
+                {
+                    sc = 24;
+                    aff = TRUE;
+                }
+                DrawShape(p->shape, AnimFrame(p->shape, p->age, 4), p->pal, sx, sy - p->z, 1, 2,
+                          IsDirectional(p->shape) ? p->angle : 0, sc, (p->flags & RTMF_BLEND) != 0, FALSE, aff);
+            }
             break;
         case PK_SAFARI:
             DrawShape(FX_SHADOW16, 0, FXP_UI, sx, sy + 2, 3, 2, 0, 16, TRUE, FALSE, FALSE);

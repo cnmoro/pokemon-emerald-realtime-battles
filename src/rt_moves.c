@@ -628,7 +628,20 @@ static bool8 IsValidTarget(struct RtProj *p, struct RtActor *t)
 static void SpawnTrail(struct RtProj *p)
 {
     if (p->trail == FX_NONE)
+    {
+        // every projectile leaves a faint trail of sparks in its colour
+        if ((p->age % 3) == 1 && p->kind == PK_BULLET && !(p->param & 8))
+        {
+            struct RtPart *pt = RtFx_Spawn(FX_SPARK8, p->pal, p->x, p->y, 8);
+            if (pt)
+            {
+                pt->z = p->z;
+                pt->vx = -p->vx / 8;
+                pt->vy = -p->vy / 8;
+            }
+        }
         return;
+    }
     if ((p->age & 3) == 0)
     {
         struct RtPart *pt = RtFx_Spawn(p->trail, p->pal, p->x, p->y, 12);
@@ -971,6 +984,24 @@ static void UpdateBeam(struct RtProj *p)
             }
         }
     }
+    // sparkles along the beam and at its tip
+    if ((p->age & 1) == 0 && p->len > 16)
+    {
+        s32 k = 8 + Random() % (p->len - 8);
+        struct RtPart *sp = RtFx_Spawn(FX_SPARK8, p->pal, p->x + RtCos(p->angle) * k, p->y + RtSin(p->angle) * k + TO_FX(o->height / 2), 10);
+        if (sp)
+        {
+            u8 perp = p->angle + ((Random() & 1) ? 64 : 192);
+            sp->vx = RtCos(perp) / 2;
+            sp->vy = RtSin(perp) / 2;
+            sp->z = o->height / 2;
+        }
+    }
+    if ((p->age & 3) == 2)
+    {
+        s32 tx = p->x + RtCos(p->angle) * p->len, ty = p->y + RtSin(p->angle) * p->len + TO_FX(o->height / 2);
+        RtFx_Burst(FX_SPARK8, p->pal, tx, ty - TO_FX(o->height / 2), 2, 3, 10);
+    }
     for (i = 0; i < RT_MAX_ACTORS; i++)
     {
         struct RtActor *t = &gRt->actors[i];
@@ -1093,11 +1124,16 @@ static void StrikeAt(struct RtProj *p)
     const struct RtMoveDef *d = Def(p->move);
     if (p->shape == FX_BOLTV)
     {
-        struct RtPart *b = RtFx_Spawn(FX_BOLTV, p->pal, p->x, p->y - TO_FX(16), 10);
-        if (b) b->prio = 1;
-        b = RtFx_Spawn(FX_BOLTV, p->pal, p->x, p->y - TO_FX(44), 10);
-        if (b) b->prio = 1;
-        RtFx_Flash(0, 6);
+        s32 k;
+        struct RtPart *b;
+        for (k = 0; k < 4; k++)
+        {
+            b = RtFx_Spawn(FX_BOLTV, k & 1 ? FXP_WHITE : p->pal, p->x + TO_FX((k & 1) ? 2 : 0), p->y - TO_FX(16 + k * 28), 12);
+            if (b) b->prio = 1;
+        }
+        b = RtFx_Spawn(FX_RING32, p->pal, p->x, p->y, 14);
+        if (b) { b->flags |= PF_SCALE | PF_GROUND; b->scale = 10; b->dscale = 3; }
+        RtFx_Flash(0, 8);
     }
     else if (p->shape == FX_COLUMN16)
     {
@@ -1149,6 +1185,20 @@ static void UpdateStrike(struct RtProj *p)
     p->age++;
     if (p->delay)
     {
+        // the attack builds up over the marked spot
+        if (p->delay <= 30 && (p->age & 3) == 0 && p->kind == PK_STRIKE)
+        {
+            u8 ang = Random();
+            s32 r = p->radius + 10;
+            u8 shp = (p->shape == FX_BOLTV) ? FX_SPARK8 : (p->shape == FX_COLUMN16 ? FX_ORB8 : FX_SPARK8);
+            struct RtPart *pt = RtFx_Spawn(shp, p->pal, p->x + RtCos(ang) * r, p->y + RtSin(ang) * r / 2, 12);
+            if (pt)
+            {
+                pt->vx = -RtCos(ang) * r / 12;
+                pt->vy = -RtSin(ang) * r / 24;
+                pt->prio = 3;
+            }
+        }
         p->delay--;
         if (p->delay == 0)
         {
@@ -2387,19 +2437,84 @@ static void FinishCast(struct RtActor *a, u16 recovery)
 
 static void ChargeVisual(struct RtActor *a, const struct RtMoveDef *d)
 {
-    if ((a->act.timer & 3) == 0)
+    // energy gathering into the user: particles converge, a glow grows, a ring on the ground
+    u16 t = a->act.timer;
+    s32 cy = a->y - TO_FX(a->height / 2);
+    if (t == 1)
     {
-        u8 ang = Random();
-        s32 r = 22;
-        struct RtPart *p = RtFx_Spawn(FX_SPARK8, d->pal, a->x + RtCos(ang) * r, a->y - TO_FX(a->height / 2) + RtSin(ang) * r / 2, 12);
-        if (p)
+        struct RtPart *r = RtFx_Spawn(FX_RING32, d->pal, a->x, a->y, 16);
+        PlaySE(SE_M_CHARGE);
+        if (r)
         {
-            p->vx = -RtCos(ang) * 2 / 2;
-            p->vy = -RtSin(ang) / 2;
+            r->flags |= PF_SCALE | PF_GROUND;
+            r->scale = 26;
+            r->dscale = -1;
         }
     }
-    if (a->act.timer == 1)
-        PlaySE(SE_M_CHARGE);
+    if ((t & 1) == 0)
+    {
+        u8 ang = Random();
+        s32 r = 26 + (Random() & 7);
+        u8 life = 12;
+        struct RtPart *p = RtFx_Spawn((t & 2) ? FX_SPARK8 : FX_ORB8, d->pal, a->x + RtCos(ang) * r, cy + RtSin(ang) * r / 2, life);
+        if (p)
+        {
+            p->vx = -RtCos(ang) * r / life;
+            p->vy = -RtSin(ang) * r / 2 / life;
+        }
+    }
+    if ((t & 7) == 4)
+    {
+        struct RtPart *g = RtFx_Spawn(FX_GLOW16, d->pal, a->x, cy, 8);
+        if (g)
+        {
+            g->flags |= PF_SCALE;
+            g->scale = 8 + (t > 40 ? 16 : t * 2 / 5);
+            g->dscale = 1;
+        }
+    }
+}
+
+// Visual for self-targeted moves (buffs, heals, barriers...)
+static void SelfCastFx(struct RtActor *a, const struct RtMoveDef *d)
+{
+    s32 cy = a->y - TO_FX(a->height / 2);
+    s32 k;
+    struct RtPart *p;
+    // ring expanding on the ground
+    p = RtFx_Spawn(FX_RING32, d->pal, a->x, a->y, 18);
+    if (p)
+    {
+        p->flags |= PF_SCALE | PF_GROUND;
+        p->scale = 6;
+        p->dscale = 2;
+    }
+    // the move's emblem pops up over the user
+    if (d->shape == FX_SHIELD32 || d->shape == FX_AURA32 || d->shape == FX_SLASH32 || d->shape == FX_DOLL16
+     || d->shape == FX_PSYRING16 || d->shape == FX_GLOW16 || d->shape == FX_MUD16)
+    {
+        p = RtFx_Spawn(d->shape, d->pal, a->x, cy, 26);
+        if (p)
+        {
+            p->flags |= PF_SCALE | PF_FLICKER;
+            p->scale = 6;
+            p->dscale = 1;
+            p->prio = 1;
+        }
+    }
+    // a column of rising particles around the user
+    for (k = 0; k < 8; k++)
+    {
+        u8 ang = k * 32 + (Random() & 15);
+        u8 shape = (d->shape == FX_SHIELD32 || d->shape == FX_AURA32 || d->shape == FX_SLASH32 || d->shape == FX_GLOW16
+                    || d->shape == FX_PSYRING16 || d->shape == FX_DOLL16) ? ((k & 1) ? FX_SPARK8 : FX_ORB8) : d->shape;
+        p = RtFx_Spawn(shape, d->pal, a->x + RtCos(ang) * (a->radius + 4) / 1, a->y + RtSin(ang) * (a->radius + 4) / 2 - TO_FX(2), 22 + (k & 3) * 4);
+        if (p)
+        {
+            p->vy = -80 - (Random() & 63);
+        }
+    }
+    a->flash = 6;
 }
 
 static void SpawnBullet(struct RtActor *a, const struct RtMoveDef *d, u8 angle, u8 delay)
@@ -2675,6 +2790,8 @@ static void ExecuteMove(struct RtActor *a)
         break;
     case RTP_SELF:
     case RTP_FIELD:
+        if (d->pattern == RTP_SELF)
+            SelfCastFx(a, d);
         RtMove_ApplySelfEffect(a, move);
         if (d->pattern == RTP_FIELD)
             RtFx_Flash(0, 6);
@@ -2862,7 +2979,7 @@ void RtMove_UpdateCast(struct RtActor *a)
             }
             return;
         }
-        if (windup > 16)
+        if (windup > 12)
             ChargeVisual(a, d);
         if (d->pattern == RTP_MELEE && d->aux && a->act.timer <= windup)
         {
@@ -2932,7 +3049,7 @@ void RtMove_UpdateCast(struct RtActor *a)
                         p->radius = d->radius;
                         p->life = ProjLife(d->range, sp);
                         p->len = p->life;
-                        p->param |= 1;
+                        p->param |= 1 | 8; // 8: stream particle (drawn growing)
                         p->flags |= RTMF_PIERCE;
                         p->flags &= ~RTMF_ARC;
                     }

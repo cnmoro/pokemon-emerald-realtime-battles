@@ -1048,12 +1048,13 @@ void RtArena_Build(void)
                 cx = (cx + pxl) / 2;
                 cy = (cy + pyl) / 2;
             }
-            PickSpawn(walk, open, cx, cy + 2, -1, -1, 0, &sx, &sy);
+            // the screen is wide and short: put the sides diagonally apart so both stay in view
+            PickSpawn(walk, open, cx - 4, cy + 1, -1, -1, 0, &sx, &sy);
             sSpawnCell[RT_SIDE_PLAYER][0][0] = sx;
             sSpawnCell[RT_SIDE_PLAYER][0][1] = sy;
-            PickSpawn(walk, open, cx, cy - 3, sx, sy, 5, &sSpawnCell[RT_SIDE_ENEMY][0][0], &sSpawnCell[RT_SIDE_ENEMY][0][1]);
-            PickSpawn(walk, open, sx + 2, sy, sx, sy, 2, &sSpawnCell[RT_SIDE_PLAYER][1][0], &sSpawnCell[RT_SIDE_PLAYER][1][1]);
-            PickSpawn(walk, open, sSpawnCell[RT_SIDE_ENEMY][0][0] - 2, sSpawnCell[RT_SIDE_ENEMY][0][1],
+            PickSpawn(walk, open, cx + 4, cy - 1, sx, sy, 5, &sSpawnCell[RT_SIDE_ENEMY][0][0], &sSpawnCell[RT_SIDE_ENEMY][0][1]);
+            PickSpawn(walk, open, sx, sy + 2, sx, sy, 2, &sSpawnCell[RT_SIDE_PLAYER][1][0], &sSpawnCell[RT_SIDE_PLAYER][1][1]);
+            PickSpawn(walk, open, sSpawnCell[RT_SIDE_ENEMY][0][0], sSpawnCell[RT_SIDE_ENEMY][0][1] - 2,
                       sSpawnCell[RT_SIDE_ENEMY][0][0], sSpawnCell[RT_SIDE_ENEMY][0][1], 2,
                       &sSpawnCell[RT_SIDE_ENEMY][1][0], &sSpawnCell[RT_SIDE_ENEMY][1][1]);
             sSpawnValid = TRUE;
