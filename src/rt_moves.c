@@ -2298,6 +2298,9 @@ bool8 RtMove_TryStart(struct RtActor *a, u8 slot, u8 angle)
         s32 dmg = ((2 * a->level / 5 + 2) * 40 * a->atk / (a->def ? a->def : 1)) / 50 + 2;
         RtUi_Toast(sText_HurtItself, 50);
         RtActor_Damage(a, dmg ? dmg : 1, a->id, FALSE);
+        a->cd[slot] = a->cdMax[slot] / 2;
+        if (!RtActor_IsAlive(a))
+            return TRUE; // knocked itself out: keep the faint state
         a->state = AST_STUN;
         a->stateTimer = 30;
         a->flash = 6;
@@ -2491,7 +2494,9 @@ static void FinishCast(struct RtActor *a, u16 recovery)
         a->charge = 0;
     a->act.move = MOVE_NONE;
     a->gcd = recovery;
-    if (a->mstatus == MST_SLP || a->mstatus == MST_FRZ)
+    if (a->state == AST_FAINT || a->state == AST_GONE)
+        ;
+    else if (a->mstatus == MST_SLP || a->mstatus == MST_FRZ)
     {
         a->state = AST_STUN;
         RtActor_SetAnim(a, a->mstatus == MST_SLP ? RTA_SLEEP : RTA_HURT, TRUE);

@@ -1086,6 +1086,10 @@ void RtActor_Update(struct RtActor *a)
 {
     if (!a->active)
         return;
+    // safety net: an actor at 0 HP must always go through the faint sequence
+    if (a->hp == 0 && a->state != AST_FAINT && a->state != AST_GONE && a->state != AST_NONE
+     && a->state != AST_CAUGHT && a->state != AST_ENTER && a->state != AST_RETURN)
+        RtActor_Faint(a);
 
     switch (a->state)
     {

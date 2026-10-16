@@ -799,6 +799,13 @@ static void Rt_UpdateFight(void)
             return;
         }
     }
+    if (gRtDebugEnabled && gRtDebugCommand == 16)
+    {
+        // lead at 1 HP and confused (self-hit faint test)
+        gRtDebugCommand = 0;
+        Rt_PlayerActor()->hp = 1;
+        Rt_PlayerActor()->confuse = 200;
+    }
     if (gRtDebugEnabled && gRtDebugCommand == 9)
     {
         gRtDebugCommand = 0;

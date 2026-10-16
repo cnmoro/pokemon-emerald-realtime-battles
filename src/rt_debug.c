@@ -144,6 +144,19 @@ bool8 RtDebug_FieldInput(void)
         DoWarp();
         return TRUE;
     }
+    if (cmd == 14 || cmd == 15)
+    {
+        // lead at 1 HP and poisoned (15: also faint the rest of the party)
+        u16 hp = GetMonData(&gPlayerParty[0], MON_DATA_MAX_HP) / (gRtDebugAutoplay ? 3 : 1000); u32 st = STATUS1_POISON; u8 k;
+        if (hp == 0) hp = 1;
+        SetMonData(&gPlayerParty[0], MON_DATA_HP, &hp);
+        SetMonData(&gPlayerParty[0], MON_DATA_STATUS, &st);
+        if (cmd == 15)
+            for (k = 1, hp = 0; k < PARTY_SIZE; k++)
+                if (GetMonData(&gPlayerParty[k], MON_DATA_SPECIES) != SPECIES_NONE)
+                    SetMonData(&gPlayerParty[k], MON_DATA_HP, &hp);
+        return FALSE;
+    }
     if (cmd == 7)
     {
         HealPlayerParty();
