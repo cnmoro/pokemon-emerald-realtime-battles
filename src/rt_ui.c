@@ -2049,6 +2049,8 @@ bool8 RtUi_ExpPanelStart(void)
         return FALSE;
     sExpTimer = 0;
     DrawExpPanel(0);
+    // as in the original: one rising tone while the bars fill, cut when they stop
+    PlaySE(SE_EXP);
     return TRUE;
 }
 
@@ -2060,18 +2062,24 @@ bool8 RtUi_ExpPanelUpdate(void)
         // A while the bars fill: jump to the end
         sExpTimer = 60;
         DrawExpPanel(60);
-        PlaySE(SE_EXP);
+        m4aSongNumStop(SE_EXP);
+        return FALSE;
+    }
+    if (sExpTimer < 60)
+    {
+        sExpTimer += (gMain.heldKeys & A_BUTTON) ? 3 : 1;
+        if (sExpTimer >= 60)
+        {
+            sExpTimer = 60;
+            m4aSongNumStop(SE_EXP);
+        }
+        DrawExpPanel(sExpTimer);
         return FALSE;
     }
     sExpTimer += (gMain.heldKeys & A_BUTTON) ? 3 : 1;
-    if (sExpTimer <= 62)
-    {
-        DrawExpPanel(sExpTimer > 60 ? 60 : sExpTimer);
-        if ((sExpTimer & 7) == 0)
-            PlaySE(SE_EXP);
-    }
     if ((sExpTimer > 60 && press) || sExpTimer > 150)
     {
+        m4aSongNumStop(SE_EXP);
         ClearWindowTilemap(WIN_EXP);
         CopyWindowToVram(WIN_EXP, COPYWIN_MAP);
         return TRUE;
