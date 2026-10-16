@@ -193,6 +193,12 @@ void NewGameInitData(void)
     ResetFanClub();
     ResetLotteryCorner();
     WarpToTruck();
+    {
+        extern const u8 gRtDebugEnabled;
+        extern void RtDebug_NewGame(void);
+        if (gRtDebugEnabled)
+            RtDebug_NewGame();
+    }
     RunScriptImmediately(EventScript_ResetAllMapFlags);
     ResetMiniGamesRecords();
     InitUnionRoomChatRegisteredTexts();

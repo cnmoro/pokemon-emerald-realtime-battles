@@ -3524,6 +3524,19 @@ static void Task_PrintBattleMoves(u8 taskId)
     data[0]++;
 }
 
+// Real-time battles use cooldowns instead of PP: show the cooldown in seconds.
+#include "rt_battle.h"
+static u8 *FormatCooldown(u8 *dst, u16 frames)
+{
+    u32 tenths = (frames * 10 + 30) / 60;
+    dst = ConvertIntToDecimalStringN(dst, tenths / 10, STR_CONV_MODE_LEFT_ALIGN, 2);
+    *dst++ = CHAR_PERIOD;
+    dst = ConvertIntToDecimalStringN(dst, tenths % 10, STR_CONV_MODE_LEFT_ALIGN, 1);
+    *dst++ = CHAR_s;
+    *dst = EOS;
+    return dst;
+}
+
 static void PrintMoveNameAndPP(u8 moveIndex)
 {
     u8 pp;
@@ -3537,15 +3550,11 @@ static void PrintMoveNameAndPP(u8 moveIndex)
     if (move != 0)
     {
         pp = CalculatePPWithBonus(move, summary->ppBonuses, moveIndex);
+        (void)pp;
         PrintTextOnWindow(moveNameWindowId, gMoveNames[move], 0, moveIndex * 16 + 1, 0, 1);
-        ConvertIntToDecimalStringN(gStringVar1, summary->pp[moveIndex], STR_CONV_MODE_RIGHT_ALIGN, 2);
-        ConvertIntToDecimalStringN(gStringVar2, pp, STR_CONV_MODE_RIGHT_ALIGN, 2);
-        DynamicPlaceholderTextUtil_Reset();
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1);
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, gStringVar2);
-        DynamicPlaceholderTextUtil_ExpandPlaceholders(gStringVar4, sMovesPPLayout);
+        FormatCooldown(gStringVar4, RtBattle_GetMoveCooldownFrames(move, summary->ppBonuses, moveIndex));
         text = gStringVar4;
-        ppState = GetCurrentPPToMaxPPState(summary->pp[moveIndex], pp) + 9;
+        ppState = 9;
         x = GetStringRightAlignXOffset(FONT_NORMAL, text, 44);
     }
     else
@@ -3701,11 +3710,7 @@ static void PrintNewMoveDetailsOrCancelText(void)
         else
             PrintTextOnWindow(windowId1, gMoveNames[move], 0, 65, 0, 5);
 
-        ConvertIntToDecimalStringN(gStringVar1, gBattleMoves[move].pp, STR_CONV_MODE_RIGHT_ALIGN, 2);
-        DynamicPlaceholderTextUtil_Reset();
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1);
-        DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, gStringVar1);
-        DynamicPlaceholderTextUtil_ExpandPlaceholders(gStringVar4, sMovesPPLayout);
+        FormatCooldown(gStringVar4, RtBattle_GetMoveCooldownFrames(move, 0, 0));
         PrintTextOnWindow(windowId2, gStringVar4, GetStringRightAlignXOffset(FONT_NORMAL, gStringVar4, 44), 65, 0, 12);
     }
 }

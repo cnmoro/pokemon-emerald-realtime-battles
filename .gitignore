@@ -45,3 +45,11 @@ prefabs.json
 /pokeemerald-*.png
 /pokeemerald_modern-*.png
 .porydaw/
+
+# real-time battle mod: generated / local files
+tools/rt/lzc
+tools/rt_harness/run
+tools/rt_harness/debug.gba
+tools/rt_harness/syms.txt
+tools/rt_harness/field.ss
+build/rt_work/

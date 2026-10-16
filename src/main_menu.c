@@ -1264,6 +1264,16 @@ static void HighlightSelectedMainMenuItem(u8 menuType, u8 selectedMenuItem, s16 
 
 static void Task_NewGameBirchSpeech_Init(u8 taskId)
 {
+    {
+        extern const u8 gRtDebugEnabled;
+        if (gRtDebugEnabled)
+        {
+            gSaveBlock2Ptr->playerGender = MALE;
+            DestroyTask(taskId);
+            SetMainCallback2(CB2_NewGame);
+            return;
+        }
+    }
     SetGpuReg(REG_OFFSET_DISPCNT, 0);
     SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_OBJ_ON | DISPCNT_OBJ_1D_MAP);
     InitBgFromTemplate(&sBirchBgTemplate);

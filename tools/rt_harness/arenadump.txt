@@ -1,0 +1,112 @@
+loadst {HARNESS}/field.ss
+poke8 {gRtDebugAutoplay} 0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 5
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v00.bin
+dump 05000000 0x200 {OUT}/ar/p00.bin
+shot {OUT}/ar/s00.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v01.bin
+dump 05000000 0x200 {OUT}/ar/p01.bin
+shot {OUT}/ar/s01.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v02.bin
+dump 05000000 0x200 {OUT}/ar/p02.bin
+shot {OUT}/ar/s02.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v03.bin
+dump 05000000 0x200 {OUT}/ar/p03.bin
+shot {OUT}/ar/s03.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v04.bin
+dump 05000000 0x200 {OUT}/ar/p04.bin
+shot {OUT}/ar/s04.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v05.bin
+dump 05000000 0x200 {OUT}/ar/p05.bin
+shot {OUT}/ar/s05.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v06.bin
+dump 05000000 0x200 {OUT}/ar/p06.bin
+shot {OUT}/ar/s06.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v07.bin
+dump 05000000 0x200 {OUT}/ar/p07.bin
+shot {OUT}/ar/s07.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v08.bin
+dump 05000000 0x200 {OUT}/ar/p08.bin
+shot {OUT}/ar/s08.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v09.bin
+dump 05000000 0x200 {OUT}/ar/p09.bin
+shot {OUT}/ar/s09.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v10.bin
+dump 05000000 0x200 {OUT}/ar/p10.bin
+shot {OUT}/ar/s10.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200
+poke8 {gRtDebugCommand} 1
+wait 260
+dump 06000000 0x10000 {OUT}/ar/v11.bin
+dump 05000000 0x200 {OUT}/ar/p11.bin
+shot {OUT}/ar/s11.png
+poke8 {gRtDebugCommand} 9
+wait 330
+poke8 {gRtDebugCommand} 3
+wait 200

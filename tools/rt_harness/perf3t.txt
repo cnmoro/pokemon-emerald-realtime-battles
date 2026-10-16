@@ -1,0 +1,41 @@
+loadst {HARNESS}/field.ss
+poke16 {gRtDebugTrainer} 10f
+poke8 {gRtDebugAutoplay} 1
+poke8 {gRtDebugCommand} 2
+wait 500
+poke32 {gRtProf+0} 0
+poke32 {gRtProf+4} 0
+poke32 {gRtProf+8} 0
+poke32 {gRtProf+c} 0
+poke32 {gRtProf+10} 0
+poke32 {gRtProf+14} 0
+poke32 {gRtProf+18} 0
+poke32 {gRtProf+1c} 0
+poke32 {gRtProf+20} 0
+poke32 {gRtProf+24} 0
+poke32 {gRtProf+28} 0
+poke32 {gRtProf+2c} 0
+poke32 {gRtProf+30} 0
+poke32 {gRtProf+34} 0
+poke32 {gRtProf+38} 0
+poke32 {gRtProf+3c} 0
+poke32 {gRtProf+40} 0
+poke32 {gRtProf+44} 0
+poke32 {gRtProf+48} 0
+poke32 {gRtProf+4c} 0
+poke32 {gRtProf+50} 0
+poke32 {gRtProf+54} 0
+poke32 {gRtProf+58} 0
+poke32 {gRtProf+5c} 0
+poke32 {gRtProf+60} 0
+poke32 {gRtProf+64} 0
+poke32 {gRtProf+68} 0
+poke32 {gRtProf+6c} 0
+poke32 {gRtProf+70} 0
+poke32 {gRtProf+74} 0
+poke32 {gRtProf+78} 0
+poke32 {gRtProf+7c} 0
+wait 600
+peek {gRtProf} 128
+peekp {gRt} 0 4
+shot {OUT}/p3.png

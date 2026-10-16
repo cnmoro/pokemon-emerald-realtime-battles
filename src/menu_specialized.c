@@ -782,7 +782,16 @@ static void MoveRelearnerLoadBattleMoveDescription(u32 chosenMove)
     AddTextPrinterParameterized(RELEARNERWIN_DESC_BATTLE, FONT_NORMAL, str, 4, 25, TEXT_SKIP_DRAW, NULL);
 
     x = 4 + GetStringWidth(FONT_NORMAL, gText_MoveRelearnerPP, 0);
-    ConvertIntToDecimalStringN(buffer, move->pp, STR_CONV_MODE_LEFT_ALIGN, 2);
+    {
+        // cooldown in seconds instead of PP (real-time battles)
+        extern u16 RtBattle_GetMoveCooldownFrames(u16 move, u8 ppBonuses, u8 slot);
+        u32 tenths = (RtBattle_GetMoveCooldownFrames(chosenMove, 0, 0) * 10 + 30) / 60;
+        u8 *p = ConvertIntToDecimalStringN(buffer, tenths / 10, STR_CONV_MODE_LEFT_ALIGN, 2);
+        *p++ = CHAR_PERIOD;
+        p = ConvertIntToDecimalStringN(p, tenths % 10, STR_CONV_MODE_LEFT_ALIGN, 1);
+        *p++ = CHAR_s;
+        *p = EOS;
+    }
     AddTextPrinterParameterized(RELEARNERWIN_DESC_BATTLE, FONT_NORMAL, buffer, x, 41, TEXT_SKIP_DRAW, NULL);
 
     if (move->power < 2)

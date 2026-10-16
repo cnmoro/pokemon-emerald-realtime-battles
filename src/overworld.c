@@ -1540,6 +1540,11 @@ void CB2_NewGame(void)
     ScriptContext_Init();
     UnlockPlayerFieldControls();
     gFieldCallback = ExecuteTruckSequence;
+    {
+        extern const u8 gRtDebugEnabled;
+        if (gRtDebugEnabled)
+            gFieldCallback = NULL;
+    }
     gFieldCallback2 = NULL;
     DoMapLoadLoop(&gMain.state);
     SetFieldVBlankCallback();
