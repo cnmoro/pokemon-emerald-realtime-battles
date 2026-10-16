@@ -57,6 +57,21 @@ void RtAi_Init(struct RtActor *a)
     {
         skill = 6;
     }
+    // difficulty (OPTIONS menu): easy/hard shift how sharp the opponents are
+    if (a->side == RT_SIDE_ENEMY)
+    {
+        if (gSaveBlock2Ptr->optionsRtDifficulty == 1)
+        {
+            skill = skill > 3 ? skill - 3 : 1;
+            if (skill > 4) skill = 4;
+        }
+        else if (gSaveBlock2Ptr->optionsRtDifficulty == 2)
+        {
+            skill += 3;
+            if (skill < 5) skill = 5;
+            if (skill > 10) skill = 10;
+        }
+    }
     a->aiSkill = skill;
     a->aiThinkCd = 30 + Random() % 30;
     a->aiStrafe = (Random() & 1) ? 1 : -1;

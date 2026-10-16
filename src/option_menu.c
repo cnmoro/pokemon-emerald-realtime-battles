@@ -18,7 +18,7 @@
 
 #define tMenuSelection data[0]
 #define tTextSpeed data[1]
-#define tBattleSceneOff data[2]
+#define tDifficulty data[2]   // replaces the battle scene option (battles are real-time): 0 easy, 1 medium, 2 hard
 #define tBattleStyle data[3]
 #define tSound data[4]
 #define tButtonMode data[5]
@@ -56,8 +56,8 @@ static void Task_OptionMenuFadeOut(u8 taskId);
 static void HighlightOptionMenuItem(u8 selection);
 static u8 TextSpeed_ProcessInput(u8 selection);
 static void TextSpeed_DrawChoices(u8 selection);
-static u8 BattleScene_ProcessInput(u8 selection);
-static void BattleScene_DrawChoices(u8 selection);
+
+static void Difficulty_DrawChoices(u8 selection);
 static u8 BattleStyle_ProcessInput(u8 selection);
 static void BattleStyle_DrawChoices(u8 selection);
 static u8 Sound_ProcessInput(u8 selection);
@@ -79,7 +79,7 @@ static const u8 sEqualSignGfx[] = INCGFX_U8("graphics/interface/option_menu_equa
 static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
 {
     [MENUITEM_TEXTSPEED]   = gText_TextSpeed,
-    [MENUITEM_BATTLESCENE] = gText_BattleScene,
+    [MENUITEM_BATTLESCENE] = gText_RtDifficulty,
     [MENUITEM_BATTLESTYLE] = gText_BattleStyle,
     [MENUITEM_SOUND]       = gText_Sound,
     [MENUITEM_BUTTONMODE]  = gText_ButtonMode,
@@ -229,14 +229,15 @@ void CB2_InitOptionMenu(void)
 
         gTasks[taskId].tMenuSelection = 0;
         gTasks[taskId].tTextSpeed = gSaveBlock2Ptr->optionsTextSpeed;
-        gTasks[taskId].tBattleSceneOff = gSaveBlock2Ptr->optionsBattleSceneOff;
+        // saved 0 medium / 1 easy / 2 hard -> menu 0 easy / 1 medium / 2 hard
+        gTasks[taskId].tDifficulty = gSaveBlock2Ptr->optionsRtDifficulty == 1 ? 0 : (gSaveBlock2Ptr->optionsRtDifficulty == 2 ? 2 : 1);
         gTasks[taskId].tBattleStyle = gSaveBlock2Ptr->optionsBattleStyle;
         gTasks[taskId].tSound = gSaveBlock2Ptr->optionsSound;
         gTasks[taskId].tButtonMode = gSaveBlock2Ptr->optionsButtonMode;
         gTasks[taskId].tWindowFrameType = gSaveBlock2Ptr->optionsWindowFrameType;
 
         TextSpeed_DrawChoices(gTasks[taskId].tTextSpeed);
-        BattleScene_DrawChoices(gTasks[taskId].tBattleSceneOff);
+        Difficulty_DrawChoices(gTasks[taskId].tDifficulty);
         BattleStyle_DrawChoices(gTasks[taskId].tBattleStyle);
         Sound_DrawChoices(gTasks[taskId].tSound);
         ButtonMode_DrawChoices(gTasks[taskId].tButtonMode);
@@ -302,11 +303,11 @@ static void Task_OptionMenuProcessInput(u8 taskId)
                 TextSpeed_DrawChoices(gTasks[taskId].tTextSpeed);
             break;
         case MENUITEM_BATTLESCENE:
-            previousOption = gTasks[taskId].tBattleSceneOff;
-            gTasks[taskId].tBattleSceneOff = BattleScene_ProcessInput(gTasks[taskId].tBattleSceneOff);
+            previousOption = gTasks[taskId].tDifficulty;
+            gTasks[taskId].tDifficulty = TextSpeed_ProcessInput(gTasks[taskId].tDifficulty);
 
-            if (previousOption != gTasks[taskId].tBattleSceneOff)
-                BattleScene_DrawChoices(gTasks[taskId].tBattleSceneOff);
+            if (previousOption != gTasks[taskId].tDifficulty)
+                Difficulty_DrawChoices(gTasks[taskId].tDifficulty);
             break;
         case MENUITEM_BATTLESTYLE:
             previousOption = gTasks[taskId].tBattleStyle;
@@ -351,7 +352,7 @@ static void Task_OptionMenuProcessInput(u8 taskId)
 static void Task_OptionMenuSave(u8 taskId)
 {
     gSaveBlock2Ptr->optionsTextSpeed = gTasks[taskId].tTextSpeed;
-    gSaveBlock2Ptr->optionsBattleSceneOff = gTasks[taskId].tBattleSceneOff;
+    gSaveBlock2Ptr->optionsRtDifficulty = gTasks[taskId].tDifficulty == 0 ? 1 : (gTasks[taskId].tDifficulty == 2 ? 2 : 0);
     gSaveBlock2Ptr->optionsBattleStyle = gTasks[taskId].tBattleStyle;
     gSaveBlock2Ptr->optionsSound = gTasks[taskId].tSound;
     gSaveBlock2Ptr->optionsButtonMode = gTasks[taskId].tButtonMode;
@@ -393,6 +394,22 @@ static void DrawOptionMenuChoice(const u8 *text, u8 x, u8 y, u8 style)
 
     dst[i] = EOS;
     AddTextPrinterParameterized(WIN_OPTIONS, FONT_NORMAL, dst, x, y + 1, TEXT_SKIP_DRAW, NULL);
+}
+
+static void Difficulty_DrawChoices(u8 selection)
+{
+    u8 styles[3] = {0, 0, 0};
+    s32 wEasy, wMed, wHard, xMed;
+    styles[selection] = 1;
+    wEasy = GetStringWidth(FONT_NORMAL, gText_RtDifficultyEasy, 0);
+    wMed = GetStringWidth(FONT_NORMAL, gText_RtDifficultyMedium, 0);
+    wHard = GetStringWidth(FONT_NORMAL, gText_RtDifficultyHard, 0);
+    // the middle choice centred in the gap between the outer two
+    xMed = 104 + wEasy + ((198 - wHard) - (104 + wEasy) - wMed) / 2;
+    FillWindowPixelRect(WIN_OPTIONS, PIXEL_FILL(1), 104, YPOS_BATTLESCENE, 198 - 104, 16);
+    DrawOptionMenuChoice(gText_RtDifficultyEasy, 104, YPOS_BATTLESCENE, styles[0]);
+    DrawOptionMenuChoice(gText_RtDifficultyMedium, xMed, YPOS_BATTLESCENE, styles[1]);
+    DrawOptionMenuChoice(gText_RtDifficultyHard, GetStringRightAlignXOffset(FONT_NORMAL, gText_RtDifficultyHard, 198), YPOS_BATTLESCENE, styles[2]);
 }
 
 static u8 TextSpeed_ProcessInput(u8 selection)
@@ -439,29 +456,6 @@ static void TextSpeed_DrawChoices(u8 selection)
     DrawOptionMenuChoice(gText_TextSpeedMid, xMid, YPOS_TEXTSPEED, styles[1]);
 
     DrawOptionMenuChoice(gText_TextSpeedFast, GetStringRightAlignXOffset(FONT_NORMAL, gText_TextSpeedFast, 198), YPOS_TEXTSPEED, styles[2]);
-}
-
-static u8 BattleScene_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
-    {
-        selection ^= 1;
-        sArrowPressed = TRUE;
-    }
-
-    return selection;
-}
-
-static void BattleScene_DrawChoices(u8 selection)
-{
-    u8 styles[2];
-
-    styles[0] = 0;
-    styles[1] = 0;
-    styles[selection] = 1;
-
-    DrawOptionMenuChoice(gText_BattleSceneOn, 104, YPOS_BATTLESCENE, styles[0]);
-    DrawOptionMenuChoice(gText_BattleSceneOff, GetStringRightAlignXOffset(FONT_NORMAL, gText_BattleSceneOff, 198), YPOS_BATTLESCENE, styles[1]);
 }
 
 static u8 BattleStyle_ProcessInput(u8 selection)
