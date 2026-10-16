@@ -19,7 +19,7 @@
 #define tMenuSelection data[0]
 #define tTextSpeed data[1]
 #define tDifficulty data[2]   // replaces the battle scene option (battles are real-time): 0 easy, 1 medium, 2 hard
-#define tBattleStyle data[3]
+#define tBattleStyle data[3]  // shows the AUTO AIM toggle (battles are real-time): 0 off, 1 on
 #define tSound data[4]
 #define tButtonMode data[5]
 #define tWindowFrameType data[6]
@@ -80,7 +80,7 @@ static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
 {
     [MENUITEM_TEXTSPEED]   = gText_TextSpeed,
     [MENUITEM_BATTLESCENE] = gText_RtDifficulty,
-    [MENUITEM_BATTLESTYLE] = gText_BattleStyle,
+    [MENUITEM_BATTLESTYLE] = gText_RtAutoAim,
     [MENUITEM_SOUND]       = gText_Sound,
     [MENUITEM_BUTTONMODE]  = gText_ButtonMode,
     [MENUITEM_FRAMETYPE]   = gText_Frame,
@@ -231,7 +231,7 @@ void CB2_InitOptionMenu(void)
         gTasks[taskId].tTextSpeed = gSaveBlock2Ptr->optionsTextSpeed;
         // saved 0 medium / 1 easy / 2 hard -> menu 0 easy / 1 medium / 2 hard
         gTasks[taskId].tDifficulty = gSaveBlock2Ptr->optionsRtDifficulty == 1 ? 0 : (gSaveBlock2Ptr->optionsRtDifficulty == 2 ? 2 : 1);
-        gTasks[taskId].tBattleStyle = gSaveBlock2Ptr->optionsBattleStyle;
+        gTasks[taskId].tBattleStyle = gSaveBlock2Ptr->optionsRtAutoAim;
         gTasks[taskId].tSound = gSaveBlock2Ptr->optionsSound;
         gTasks[taskId].tButtonMode = gSaveBlock2Ptr->optionsButtonMode;
         gTasks[taskId].tWindowFrameType = gSaveBlock2Ptr->optionsWindowFrameType;
@@ -353,7 +353,7 @@ static void Task_OptionMenuSave(u8 taskId)
 {
     gSaveBlock2Ptr->optionsTextSpeed = gTasks[taskId].tTextSpeed;
     gSaveBlock2Ptr->optionsRtDifficulty = gTasks[taskId].tDifficulty == 0 ? 1 : (gTasks[taskId].tDifficulty == 2 ? 2 : 0);
-    gSaveBlock2Ptr->optionsBattleStyle = gTasks[taskId].tBattleStyle;
+    gSaveBlock2Ptr->optionsRtAutoAim = gTasks[taskId].tBattleStyle;
     gSaveBlock2Ptr->optionsSound = gTasks[taskId].tSound;
     gSaveBlock2Ptr->optionsButtonMode = gTasks[taskId].tButtonMode;
     gSaveBlock2Ptr->optionsWindowFrameType = gTasks[taskId].tWindowFrameType;
@@ -477,8 +477,8 @@ static void BattleStyle_DrawChoices(u8 selection)
     styles[1] = 0;
     styles[selection] = 1;
 
-    DrawOptionMenuChoice(gText_BattleStyleShift, 104, YPOS_BATTLESTYLE, styles[0]);
-    DrawOptionMenuChoice(gText_BattleStyleSet, GetStringRightAlignXOffset(FONT_NORMAL, gText_BattleStyleSet, 198), YPOS_BATTLESTYLE, styles[1]);
+    DrawOptionMenuChoice(gText_BattleSceneOff, 104, YPOS_BATTLESTYLE, styles[0]);
+    DrawOptionMenuChoice(gText_BattleSceneOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_BattleSceneOn, 198), YPOS_BATTLESTYLE, styles[1]);
 }
 
 static u8 Sound_ProcessInput(u8 selection)

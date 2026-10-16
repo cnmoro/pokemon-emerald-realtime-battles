@@ -312,6 +312,7 @@ extern const u8 gText_OptionMenu[];
 extern const u8 gText_TextSpeed[];
 extern const u8 gText_BattleScene[];
 extern const u8 gText_RtDifficulty[];
+extern const u8 gText_RtAutoAim[];
 extern const u8 gText_RtDifficultyEasy[];
 extern const u8 gText_RtDifficultyMedium[];
 extern const u8 gText_RtDifficultyHard[];

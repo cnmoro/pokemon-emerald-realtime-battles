@@ -1476,6 +1476,7 @@ const u8 gText_Option[] = _("OPTION");
 const u8 gText_TextSpeed[] = _("TEXT SPEED");
 const u8 gText_BattleScene[] = _("BATTLE SCENE");
 const u8 gText_RtDifficulty[] = _("DIFFICULTY");
+const u8 gText_RtAutoAim[] = _("AUTO AIM");
 const u8 gText_RtDifficultyEasy[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}EASY");
 const u8 gText_RtDifficultyMedium[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}MEDIUM");
 const u8 gText_RtDifficultyHard[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HARD");

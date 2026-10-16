@@ -2054,14 +2054,23 @@ bool8 RtUi_ExpPanelStart(void)
 
 bool8 RtUi_ExpPanelUpdate(void)
 {
-    sExpTimer++;
-    if (sExpTimer <= 60 && (sExpTimer & 1) == 0)
+    bool8 press = (gMain.newKeys & (A_BUTTON | B_BUTTON)) != 0;
+    if (press && sExpTimer < 60)
     {
-        DrawExpPanel(sExpTimer);
+        // A while the bars fill: jump to the end
+        sExpTimer = 60;
+        DrawExpPanel(60);
+        PlaySE(SE_EXP);
+        return FALSE;
+    }
+    sExpTimer += (gMain.heldKeys & A_BUTTON) ? 3 : 1;
+    if (sExpTimer <= 62)
+    {
+        DrawExpPanel(sExpTimer > 60 ? 60 : sExpTimer);
         if ((sExpTimer & 7) == 0)
             PlaySE(SE_EXP);
     }
-    if ((sExpTimer > 70 && (gMain.newKeys & (A_BUTTON | B_BUTTON))) || sExpTimer > 240)
+    if ((sExpTimer > 60 && press) || sExpTimer > 150)
     {
         ClearWindowTilemap(WIN_EXP);
         CopyWindowToVram(WIN_EXP, COPYWIN_MAP);

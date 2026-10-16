@@ -746,7 +746,7 @@ static void Rt_UpdateIntro(void)
             PlayCry_Normal(e0->species, 25);
         }
     }
-    if (gRt->timer == 50 && !gRt->isSafari)
+    if (gRt->timer == 20 && !gRt->isSafari)
     {
         struct RtActor *p = Rt_PlayerActor();
         GetMonData(p->mon, MON_DATA_NICKNAME, gStringVar1);
@@ -757,7 +757,7 @@ static void Rt_UpdateIntro(void)
     for (i = 0; i < RT_MAX_ACTORS; i++)
         if (gRt->actors[i].active)
             RtActor_Update(&gRt->actors[i]);
-    if (gRt->timer >= 90)
+    if (gRt->timer >= 45)
     {
         gRt->state = RTS_FIGHT;
         gRt->timer = 0;
@@ -925,6 +925,30 @@ static u8 Rt_AssistAim(struct RtActor *a, u8 angle)
     return best;
 }
 
+// AUTO AIM option: the angle to the closest foe on the field (FALSE when there is none)
+static bool8 Rt_AutoAimAngle(struct RtActor *a, u8 *angle)
+{
+    s32 i, bestD = 0x7FFFFFFF;
+    bool8 found = FALSE;
+    for (i = 0; i < RT_MAX_ACTORS; i++)
+    {
+        struct RtActor *b = &gRt->actors[i];
+        s32 dx, dy, d;
+        if (!b->active || b->side == a->side || !RtActor_IsAlive(b) || !Rt_IsActorOnField(b) || b->hidden)
+            continue;
+        dx = FROM_FX(b->x - a->x);
+        dy = FROM_FX(b->y - a->y);
+        d = dx * dx + dy * dy;
+        if (d < bestD)
+        {
+            bestD = d;
+            *angle = RtAtan2(dx, dy);
+            found = TRUE;
+        }
+    }
+    return found;
+}
+
 static void Rt_HandlePlayerInput(struct RtActor *a)
 {
     u16 held = gMain.heldKeysRaw;
@@ -985,6 +1009,15 @@ static void Rt_HandlePlayerInput(struct RtActor *a)
     {
         for (i = 0; i < MAX_MON_MOVES; i++)
         {
+            u8 autoAng;
+            if ((pressed & sMoveButtons[i]) && a->moves[i] != MOVE_NONE
+             && gSaveBlock2Ptr->optionsRtAutoAim && Rt_AutoAimAngle(a, &autoAng))
+            {
+                // AUTO AIM: fire right away, straight at the closest foe
+                a->inSlot = i;
+                a->inAim = autoAng;
+                break;
+            }
             if ((pressed & sMoveButtons[i]) && a->moves[i] != MOVE_NONE)
             {
                 a->aiming = i + 1;
@@ -1608,7 +1641,8 @@ static void Rt_SyncAllToParty(void)
 static void Rt_UpdateOutro(void)
 {
     s32 i;
-    gRt->timer++;
+    // holding A speeds the whole ending up
+    gRt->timer += (gMain.heldKeys & A_BUTTON) ? 3 : 1;
     // keep animating actors lightly
     for (i = 0; i < RT_MAX_ACTORS; i++)
     {
