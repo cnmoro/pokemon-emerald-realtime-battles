@@ -1979,6 +1979,22 @@ void RtUi_SafariInput(void)
 static EWRAM_DATA u8 sExpSlots[PARTY_SIZE] = {0};
 static EWRAM_DATA u8 sExpCount = 0;
 static EWRAM_DATA u16 sExpTimer = 0;
+static EWRAM_DATA u16 sExpDur = 0;   // frames the bars take to fill: one per pixel, like the original
+
+// position of a POKeMON's EXP bar in pixels, counting a full bar per level (so level-ups add up)
+static u32 ExpBarPixels(u16 species, u32 exp)
+{
+    u8 growth = gSpeciesInfo[species].growthRate;
+    u8 lv = 1;
+    u32 lo, hi;
+    while (lv < MAX_LEVEL && gExperienceTables[growth][lv + 1] <= exp)
+        lv++;
+    if (lv >= MAX_LEVEL)
+        return lv * 46;
+    lo = gExperienceTables[growth][lv];
+    hi = gExperienceTables[growth][lv + 1];
+    return lv * 46 + (exp - lo) * 46 / (hi - lo);
+}
 
 static const u8 sText_ExpTitle[] = _("EXP. POINTS");
 static const u8 sText_ExpPlus[] = _("+{STR_VAR_1}");
@@ -2004,7 +2020,7 @@ static void DrawExpPanel(u16 t)
         u16 species = GetMonData(mon, MON_DATA_SPECIES);
         u8 growth = gSpeciesInfo[species].growthRate;
         u32 e0 = gRt->expStart[slot], e1 = GetMonData(mon, MON_DATA_EXP);
-        u32 shown = e0 + (e1 - e0) * (t > 60 ? 60 : t) / 60;
+        u32 shown = (t >= sExpDur) ? e1 : e0 + (e1 - e0) * t / sExpDur;
         u8 lv = 1;
         u32 lo, hi, fill;
         s32 y = 13 + i * 10;
@@ -2048,6 +2064,17 @@ bool8 RtUi_ExpPanelStart(void)
     if (sExpCount == 0)
         return FALSE;
     sExpTimer = 0;
+    sExpDur = 4;
+    for (i = 0; i < sExpCount; i++)
+    {
+        struct Pokemon *mon = &gPlayerParty[sExpSlots[i]];
+        u16 species = GetMonData(mon, MON_DATA_SPECIES);
+        u32 px = ExpBarPixels(species, GetMonData(mon, MON_DATA_EXP)) - ExpBarPixels(species, gRt->expStart[sExpSlots[i]]);
+        if (px > sExpDur)
+            sExpDur = px;
+    }
+    if (sExpDur > 120)
+        sExpDur = 120;
     DrawExpPanel(0);
     // as in the original: one rising tone while the bars fill, cut when they stop
     PlaySE(SE_EXP);
@@ -2057,27 +2084,27 @@ bool8 RtUi_ExpPanelStart(void)
 bool8 RtUi_ExpPanelUpdate(void)
 {
     bool8 press = (gMain.newKeys & (A_BUTTON | B_BUTTON)) != 0;
-    if (press && sExpTimer < 60)
+    if (press && sExpTimer < sExpDur)
     {
         // A while the bars fill: jump to the end
-        sExpTimer = 60;
-        DrawExpPanel(60);
+        sExpTimer = sExpDur;
+        DrawExpPanel(sExpDur);
         m4aSongNumStop(SE_EXP);
         return FALSE;
     }
-    if (sExpTimer < 60)
+    if (sExpTimer < sExpDur)
     {
         sExpTimer += (gMain.heldKeys & A_BUTTON) ? 3 : 1;
-        if (sExpTimer >= 60)
+        if (sExpTimer >= sExpDur)
         {
-            sExpTimer = 60;
+            sExpTimer = sExpDur;
             m4aSongNumStop(SE_EXP);
         }
         DrawExpPanel(sExpTimer);
         return FALSE;
     }
     sExpTimer += (gMain.heldKeys & A_BUTTON) ? 3 : 1;
-    if ((sExpTimer > 60 && press) || sExpTimer > 150)
+    if ((sExpTimer > sExpDur && press) || sExpTimer > sExpDur + 90)
     {
         m4aSongNumStop(SE_EXP);
         ClearWindowTilemap(WIN_EXP);
