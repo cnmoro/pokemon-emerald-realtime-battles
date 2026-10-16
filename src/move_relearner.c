@@ -157,7 +157,7 @@ enum {
 #define GFXTAG_UI       5525
 #define PALTAG_UI       5526
 
-#define MAX_RELEARNER_MOVES max(MAX_LEVEL_UP_MOVES, 25)
+#define MAX_RELEARNER_MOVES MAX_RELEARNABLE_MOVES
 
 static EWRAM_DATA struct
 {
@@ -369,9 +369,20 @@ static void VBlankCB_MoveRelearner(void)
     TransferPlttBuffer();
 }
 
+// set when the relearner is opened from the party menu (MOVES): where to go back to
+static EWRAM_DATA MainCallback sRelearnerReturnCB = NULL;
+
+void OpenMoveRelearnerFromParty(u8 partySlot, MainCallback returnCB)
+{
+    gSpecialVar_0x8004 = partySlot;
+    sRelearnerReturnCB = returnCB;
+    SetMainCallback2(CB2_InitLearnMove);
+}
+
 // Script arguments: The Pokémon to teach is in VAR_0x8004
 void TeachMoveRelearnerMove(void)
 {
+    sRelearnerReturnCB = NULL;
     LockPlayerFieldControls();
     CreateTask(Task_WaitForFadeOut, 10);
     // Fade to black
@@ -679,7 +690,16 @@ static void DoMoveRelearnerMain(void)
         if (!gPaletteFade.active)
         {
             FreeMoveRelearnerResources();
-            SetMainCallback2(CB2_ReturnToField);
+            if (sRelearnerReturnCB != NULL)
+            {
+                MainCallback cb = sRelearnerReturnCB;
+                sRelearnerReturnCB = NULL;
+                SetMainCallback2(cb);
+            }
+            else
+            {
+                SetMainCallback2(CB2_ReturnToField);
+            }
         }
         break;
     case MENU_STATE_FADE_FROM_SUMMARY_SCREEN:

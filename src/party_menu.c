@@ -42,6 +42,7 @@
 #include "overworld.h"
 #include "palette.h"
 #include "party_menu.h"
+#include "move_relearner.h"
 #include "player_pc.h"
 #include "pokemon.h"
 #include "pokemon_icon.h"
@@ -93,6 +94,7 @@ enum {
     MENU_TRADE1,
     MENU_TRADE2,
     MENU_TOSS,
+    MENU_RELEARN,
     MENU_FIELD_MOVES
 };
 
@@ -458,6 +460,7 @@ static void ShiftMoveSlot(struct Pokemon *, u8, u8);
 static void BlitBitmapToPartyWindow_LeftColumn(u8, u8, u8, u8, u8, bool8);
 static void BlitBitmapToPartyWindow_RightColumn(u8, u8, u8, u8, u8, bool8);
 static void CursorCb_Summary(u8);
+static void CursorCb_Relearn(u8);
 static void CursorCb_Switch(u8);
 static void CursorCb_Cancel1(u8);
 static void CursorCb_Item(u8);
@@ -2624,6 +2627,11 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
         }
     }
 
+    // MOVES: relearn level-up moves (up to the current level) and egg moves, like a TM
+    if (sPartyMenuInternal->numActions <= 4 && !GetMonData(&mons[slotId], MON_DATA_IS_EGG)
+     && GetNumberOfRelearnableMoves(&mons[slotId]) != 0)
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_RELEARN);
+
     // HMs in the bag whose field move is used from this menu (FLASH in caves, STRENGTH for the
     // ruins' puzzles) are offered on every POKeMON, as long as there is room in the list
     {
@@ -2786,6 +2794,19 @@ static void CursorCb_Summary(u8 taskId)
 {
     PlaySE(SE_SELECT);
     sPartyMenuInternal->exitCallback = CB2_ShowPokemonSummaryScreen;
+    Task_ClosePartyMenu(taskId);
+}
+
+static void CB2_OpenMoveRelearnerFromParty(void)
+{
+    OpenMoveRelearnerFromParty(gPartyMenu.slotId, CB2_ReturnToPartyMenuFromSummaryScreen);
+}
+
+static void CursorCb_Relearn(u8 taskId)
+{
+    PlaySE(SE_SELECT);
+    gLastViewedMonIndex = gPartyMenu.slotId;
+    sPartyMenuInternal->exitCallback = CB2_OpenMoveRelearnerFromParty;
     Task_ClosePartyMenu(taskId);
 }
 

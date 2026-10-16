@@ -629,6 +629,29 @@ static u8 GetEggMoves(struct Pokemon *pokemon, u16 *eggMoves)
     return numEggMoves;
 }
 
+// egg moves of a species (the base form of an evolution family has them); for the MOVES menu
+u8 GetEggMovesOfSpecies(u16 species, u16 *eggMoves)
+{
+    u16 i, idx = 0xFFFF, n = 0;
+    for (i = 0; i < ARRAY_COUNT(gEggMoves) - 1; i++)
+    {
+        if (gEggMoves[i] == species + EGG_MOVES_SPECIES_OFFSET)
+        {
+            idx = i + 1;
+            break;
+        }
+    }
+    if (idx == 0xFFFF)
+        return 0;
+    for (i = 0; i < EGG_MOVES_ARRAY_COUNT && idx + i < ARRAY_COUNT(gEggMoves); i++)
+    {
+        if (gEggMoves[idx + i] > EGG_MOVES_SPECIES_OFFSET)
+            break;
+        eggMoves[n++] = gEggMoves[idx + i];
+    }
+    return n;
+}
+
 static void BuildEggMoveset(struct Pokemon *egg, struct BoxPokemon *father, struct BoxPokemon *mother)
 {
     u16 numSharedParentMoves;

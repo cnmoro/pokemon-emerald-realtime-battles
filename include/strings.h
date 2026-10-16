@@ -313,6 +313,7 @@ extern const u8 gText_TextSpeed[];
 extern const u8 gText_BattleScene[];
 extern const u8 gText_RtDifficulty[];
 extern const u8 gText_RtAutoAim[];
+extern const u8 gText_RtMoves[];
 extern const u8 gText_RtExpShare[];
 extern const u8 gText_RtExpShareOff[];
 extern const u8 gText_RtExpShare2[];
