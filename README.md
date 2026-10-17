@@ -87,10 +87,11 @@ O menu de opções do FireRed ganhou cinco linhas (dez no total, o título "OPTI
 
 | | |
 |---|---|
-| ![](docs/screenshots/fr_trainer.png) Treinador | ![](docs/screenshots/fr_wild.png) Selvagem |
-| ![](docs/screenshots/fr_options.png) Menu OPTION | ![](docs/screenshots/fr_safari.png) Safari Zone (ISCA / PEDRA) |
+| ![](docs/screenshots/fr_trainer.png) Ginásio da Misty (Thunderbolt, "SUPER") | ![](docs/screenshots/fr_wild.png) Flamethrower contra um Nidoking selvagem na Route 1 |
+| ![](docs/screenshots/fr_legend.png) Articuno nas Seafoam Islands | ![](docs/screenshots/fr_safari.png) Safari Zone (ISCA / PEDRA) |
+| ![](docs/screenshots/fr_options.png) Menu OPTION | |
 
-**Arenas geradas a partir dos mapas de Kanto:**
+**Arenas geradas a partir dos mapas de Kanto** — Viridian Forest, Mt. Moon, Rock Tunnel, Route 24, Kindle Road, Berry Forest, Power Plant, Victory Road e Icefall Cave:
 
 ![](docs/screenshots/fr_arenas.png)
 
