@@ -26,6 +26,8 @@ enum
     VS_AURA, VS_SHIELD, VS_WALL, VS_HEAL,
     // waves
     VS_SURF, VS_SOUND, VS_HEAT,
+    // cones, zones, landings, field moves, status projectiles
+    VS_SPRAY, VS_SHOUT, VS_GAZE, VS_EMBLEM, VS_VORTEX, VS_CLOUD, VS_LAND, VS_WEATHER,
     VS_COUNT
 };
 
@@ -72,5 +74,10 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move);
 bool8 RtVfx_RushTick(struct RtActor *a, u16 move);
 bool8 RtVfx_WaveTick(struct RtProj *p);
 void RtVfx_StatusTick(struct RtActor *a);
+bool8 RtVfx_Cone(struct RtActor *a, u16 move);
+bool8 RtVfx_ZoneTick(struct RtProj *p);
+void RtVfx_Ghosts(struct RtActor *a, u8 n, u8 life);
+void RtVfx_DrawGhosts(void);
+void RtVfx_ResetGhosts(void);
 
 #endif // GUARD_RT_VFX_H

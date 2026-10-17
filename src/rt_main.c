@@ -1,6 +1,7 @@
 // Real-time arena battle: main flow, setup, rewards and exit.
 #include "global.h"
 #include "rt_internal.h"
+#include "rt_vfx.h"
 #include "battle.h"
 #include "battle_main.h"
 #include "battle_setup.h"
@@ -349,6 +350,7 @@ static void CB2_RtSetup(void)
         break;
     case 3:
         RtFx_Init();
+        RtVfx_ResetGhosts();
         RtUi_Init();
         gMain.state++;
         break;
@@ -572,6 +574,7 @@ static void Rt_RenderFrame(void)
     RtFx_DrawProjectiles();
     PROF(8);
     RtFx_DrawAll();
+    RtVfx_DrawGhosts();
     RtFx_DrawEdges();
     PROF(10);
     for (i = 0; i < n; i++)

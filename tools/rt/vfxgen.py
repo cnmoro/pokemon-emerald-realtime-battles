@@ -28,7 +28,7 @@ def default(name, pat, shp, typ, power, eff):
         if shp=='TORNADO32': st='TWISTER'
         if shp=='BUBBLE16': st='BUBBLE'
         if shp=='LEAF16': st='LEAF'
-        if shp in ('COIN8','HEART16','EYE16','SKULL16','EXCLAIM8','NOTE16','CROSS16','TARGET32','BONE16','TRI16','SEED8'): st='NONE'
+        if shp in ('COIN8','HEART16','EYE16','SKULL16','EXCLAIM8','NOTE16','CROSS16','TARGET32','BONE16','TRI16','SEED8','GLOW16'): st='EMBLEM'
     elif pat=='STREAM':
         st={'FIRE':'FLAMES','WATER':'WATERJET','DRAGON':'DBREATH','POISON':'GAS','ICE':'SNOWS','GROUND':'SANDS','ROCK':'SANDS'}.get(typ,'POWDERS')
         if shp=='BUBBLE16': st='BUBBLES'
@@ -44,6 +44,17 @@ def default(name, pat, shp, typ, power, eff):
         st='NOVA'
     elif pat=='SELF':
         st='AURA'
+    elif pat=='CONE':
+        st='SPRAY'
+        if shp in ('NOTE16','RING32','Z8'): st='SHOUT'
+        if shp=='EYE16': st='GAZE'
+        if shp in ('ARROWDN8','ARROWUP8','HEART16','DROP8','PSYRING16','FEATHER16'): st='NONE'
+    elif pat=='ZONE':
+        st='VORTEX' if name in ('FIRE_SPIN','WHIRLPOOL','SAND_TOMB') else ('CLOUD' if shp in ('SMOKE16','POWDER8') else 'NONE')
+    elif pat in ('LEAP','BURROW'):
+        st='LAND'
+    elif pat=='FIELD':
+        st='WEATHER'
     elif pat=='WAVE':
         st={'WATER':'SURF','FIRE':'HEAT'}.get(typ,'SOUND' if shp in ('NOTE16','PSYRING16','RING32') else 'NONE')
     return st
@@ -76,7 +87,7 @@ OV={  # name: dict(style=, pal=, pal2=, imp=, flags=)
  'EMBER':dict(style='FIREBALL'),
  'DRAGON_RAGE':dict(style='FIREBALL',pal='E_DRAGON',imp='DRAGON'),
  'SHADOW_BALL':dict(style='DARKORB',flags='HEAVY'),
- 'NIGHT_SHADE':dict(style='DARKORB',pal='E_DARK'),
+ 'NIGHT_SHADE':dict(style='DARKORB',pal='E_GHOST'),'FISSURE':dict(style='QUAKE',flags='SHAKE1 HEAVY',imp='GROUND'),
  'CONFUSE_RAY':dict(style='ORB',pal='E_GHOST',pal2='E_GOLD',imp='GHOST'),
  'WILL_O_WISP':dict(style='FIREBALL',pal='E_GHOST',imp='GHOST'),
  'SLUDGE':dict(style='GOO'), 'SLUDGE_BOMB':dict(style='GOO',flags='BIG HEAVY'),
@@ -153,6 +164,29 @@ OV={  # name: dict(style=, pal=, pal2=, imp=, flags=)
  'HYPER_VOICE':dict(style='SOUND',pal='E_WHITE',flags='SHAKE1'),'SUPERSONIC':dict(style='SOUND',pal='E_SKY'),
  'SING':dict(style='SOUND',pal='E_PINK'),'GRASS_WHISTLE':dict(style='SOUND',pal='E_GRASS'),'HYPNOSIS':dict(style='SOUND',pal='E_PSY'),
  'PSYWAVE':dict(style='SOUND',pal='E_PSY',flags='WAVE'),
+ 'POWDER_SNOW':dict(style='SPRAY',pal='E_ICE',pal2='E_WHITE'),'ICY_WIND':dict(style='SPRAY',pal='E_ICE',pal2='E_SKY'),
+ 'SAND_ATTACK':dict(style='SPRAY',pal='E_SAND',pal2='E_SAND',imp='NONE'),'WHIRLWIND':dict(style='SPRAY',pal='E_SKY',pal2='E_WHITE',imp='NONE'),
+ 'GROWL':dict(style='SHOUT',pal='E_WHITE'),'ROAR':dict(style='SHOUT',pal='E_HOT',flags='SHAKE1'),'SCREECH':dict(style='SHOUT',pal='E_PINK'),
+ 'UPROAR':dict(style='SHOUT',pal='E_HOT',flags='SHAKE1'),'METAL_SOUND':dict(style='SHOUT',pal='E_STEEL'),'SNORE':dict(style='SHOUT',pal='E_SKY'),
+ 'LEER':dict(style='GAZE',pal='E_FIGHT'),'GLARE':dict(style='GAZE',pal='E_GOLD'),'SCARY_FACE':dict(style='GAZE',pal='E_DARK'),
+ 'FIRE_SPIN':dict(style='VORTEX',pal='E_FIRE'),'WHIRLPOOL':dict(style='VORTEX',pal='E_WATER'),'SAND_TOMB':dict(style='VORTEX',pal='E_SAND'),
+ 'POISON_POWDER':dict(style='CLOUD',pal='E_POISON',pal2='POISON'),'STUN_SPORE':dict(style='CLOUD',pal='E_ELEC',pal2='ELECTRIC'),
+ 'SLEEP_POWDER':dict(style='CLOUD',pal='E_SKY',pal2='SLEEP'),'SPORE':dict(style='CLOUD',pal='E_GRASS',pal2='GRASS'),
+ 'COTTON_SPORE':dict(style='CLOUD',pal='E_WHITE',pal2='WHITE'),'SMOKESCREEN':dict(style='CLOUD',pal='E_SMOKE',pal2='SMOKE'),
+ 'SMOG':dict(style='CLOUD',pal='E_POISON',pal2='POISON'),'POISON_GAS':dict(style='CLOUD',pal='E_POISON',pal2='POISON'),
+ 'SWEET_SCENT':dict(style='CLOUD',pal='E_PINK',pal2='HEART'),
+ 'FLY':dict(style='LAND',pal='E_SKY',pal2='E_WHITE',imp='FLYING'),'BOUNCE':dict(style='LAND',pal='E_SKY',pal2='E_DUST'),
+ 'HI_JUMP_KICK':dict(style='LAND',pal='E_FIGHT',pal2='E_DUST',flags='HEAVY'),'DIG':dict(style='LAND',pal='E_MUD',pal2='E_DUST',imp='GROUND'),
+ 'DIVE':dict(style='LAND',pal='E_WATER',pal2='E_FOAM',imp='WATER'),
+ 'HEAL_BELL':dict(style='WEATHER',pal='E_GOLD',pal2='E_HEAL'),'AROMATHERAPY':dict(style='WEATHER',pal='E_PINK',pal2='E_HEAL'),
+ 'PERISH_SONG':dict(style='WEATHER',pal='E_DARK',pal2='E_GHOST'),'MUD_SPORT':dict(style='WEATHER',pal='E_MUD',pal2='E_DUST'),
+ 'WATER_SPORT':dict(style='WEATHER',pal='E_WATER',pal2='E_FOAM'),'SANDSTORM':dict(style='WEATHER',pal='E_SAND',pal2='E_DUST'),
+ 'HAIL':dict(style='WEATHER',pal='E_ICE',pal2='E_WHITE'),'RAIN_DANCE':dict(style='WEATHER',pal='E_WATER',pal2='E_SKY'),
+ 'SUNNY_DAY':dict(style='WEATHER',pal='E_SOLAR',pal2='E_GOLD'),'HAZE':dict(style='WEATHER',pal='E_FOAM',pal2='E_WHITE'),
+ 'ATTRACT':dict(style='EMBLEM',pal='E_PINK',pal2='E_WHITE'),'CHARM':dict(style='EMBLEM',pal='E_PINK',pal2='E_WHITE'),
+ 'SWEET_KISS':dict(style='EMBLEM',pal='E_PINK',pal2='E_WHITE'),'LOVELY_KISS':dict(style='EMBLEM',pal='E_PINK',pal2='E_PSY'),
+ 'FLATTER':dict(style='EMBLEM',pal='E_PINK',pal2='E_GOLD'),'TRI_ATTACK':dict(style='EMBLEM',pal='E_GOLD',pal2='E_ICE'),
+ 'PAY_DAY':dict(style='EMBLEM',pal='E_GOLD',pal2='E_WHITE'),
 }
 FLAGS={'SHAKE1':1,'SHAKE2':2,'DIM':4,'WAVE':8,'FLASH':16,'BIG':32,'HEAVY':64}
 VI={'FIRE','ELEC','WATER','GRASS','ICE','ROCK','PSY','GHOST','DARK','FIGHT','NORMAL','POISON','DRAGON','STEEL','BUG','FLYING','GROUND','NONE'}

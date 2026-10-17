@@ -930,7 +930,9 @@ static void UpdateZone(struct RtProj *p)
         }
     }
     // visual sparkle
-    if ((p->age & 7) == 0 && p->move != MOVE_SPIKES)
+    if (RtVfx_ZoneTick(p))
+        ;
+    else if ((p->age & 7) == 0 && p->move != MOVE_SPIKES)
     {
         u8 a = Random();
         s32 r = Random() % (p->radius + 1);
@@ -1335,8 +1337,19 @@ static void UpdateStrike(struct RtProj *p)
         if (p->delay == 0)
         {
             StrikeAt(p);
+            if (gRtVfxDefs[p->move].style == VS_THUNDER)
+            {
+                p->param |= 0x80; // stays a few frames for the bolt to be drawn
+                p->life = 14;
+                p->age = 0;
+                return;
+            }
             KillProj(p);
         }
+    }
+    else if ((p->param & 0x80) && p->life)
+    {
+        p->life--;
     }
     else
     {
@@ -2892,7 +2905,7 @@ static void ExecuteMove(struct RtActor *a)
         {
             s32 k;
             s32 range = d->range * 2;
-            for (k = 0; k < 8; k++)
+            for (k = RtVfx_Cone(a, move) ? 8 : 0; k < 8; k++)
             {
                 s8 off = (s8)((Random() % (d->spread * 2 + 1)) - d->spread);
                 u8 ang = a->act.angle + off;

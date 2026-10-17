@@ -827,7 +827,10 @@ static bool8 DrawShape(u8 shape, u8 frame, u8 fxPal, s32 sx, s32 sy, u8 bucket, 
     oam = (u16 *)o;
     if (useAffine)
     {
-        u8 m = RtFx_AllocAffine(angle, scaleQ4, hflip);
+        u8 m;
+        if (scaleQ4 > 32)
+            scaleQ4 = 32; // the double-size area holds at most 2x
+        m = RtFx_AllocAffine(angle, scaleQ4, hflip);
         if (m == 0xFF)
         {
             useAffine = FALSE;

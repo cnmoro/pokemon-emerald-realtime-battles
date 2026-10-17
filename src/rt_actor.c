@@ -1280,6 +1280,36 @@ void RtActor_Update(struct RtActor *a)
 static const u8 sShapeW[3][4] = {{8, 16, 32, 64}, {16, 32, 32, 64}, {8, 8, 16, 32}};
 static const u8 sShapeH[3][4] = {{8, 16, 32, 64}, {8, 8, 16, 32}, {16, 32, 32, 64}};
 
+// afterimage of the actor's current pose, glowing (semi-transparent), drawn behind it
+void RtActor_DrawGhost(struct RtActor *a, s32 dx, s32 dy)
+{
+    const struct RtFrame *f;
+    u8 shape, size, w, h;
+    bool8 hf;
+    u16 *oam;
+    s32 sx, sy, x, y;
+    if (!a->active || a->state == AST_GONE || a->hidden || a->curFrame == 0xFFFF)
+        return;
+    sx = FROM_FX(a->x) - gRt->camX + dx;
+    sy = FROM_FX(a->y) - gRt->camY + dy;
+    f = &gRtFrames[a->curFrame];
+    FrameIndex(a, &hf);
+    shape = f->shapeSize >> 2;
+    size = f->shapeSize & 3;
+    w = sShapeW[shape][size];
+    h = sShapeH[shape][size];
+    x = hf ? (sx - (f->x + w)) : (sx + f->x);
+    y = sy - a->z + f->y;
+    if (x + w < 0 || x > DISPLAY_WIDTH || y + h < 0 || y > DISPLAY_HEIGHT)
+        return;
+    oam = (u16 *)RtOam_Next(4);
+    if (!oam)
+        return;
+    oam[0] = (y & 0xFF) | (shape << 14) | (1 << 10);
+    oam[1] = (x & 0x1FF) | (size << 14) | (hf ? (1 << 12) : 0);
+    oam[2] = (a->vramSlot * 64) | (2 << 10) | (a->palSlot << 12);
+}
+
 void RtActor_Draw(struct RtActor *a)
 {
     s32 sx, sy;
@@ -1323,7 +1353,7 @@ void RtActor_Draw(struct RtActor *a)
         }
     }
 
-    // shadow (always under, semi-transparent)
+    // shadow (always under)
     if (a->state != AST_FAINT || a->stateTimer > 20)
     {
         u8 shadow = gRtSpeciesGfx[a->gfxDex].shadow;

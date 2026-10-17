@@ -70,7 +70,7 @@ add('EDGEDIM', 32, 64, mk_edgedim(), ui=True)
 
 # ---------------------------------------------------------------- glows and flares
 def mk_glow32():
-    c = Canvas(32, 32); soft_disc(c, 16, 16, 15.5, gamma=1.6, lo=0.0, hi=1.0); return [c]
+    c = Canvas(32, 32); soft_disc(c, 16, 16, 15.5, gamma=2.2, lo=0.0, hi=0.85); return [c]
 add('GLOW32', 32, 32, mk_glow32())
 
 def mk_mote8():

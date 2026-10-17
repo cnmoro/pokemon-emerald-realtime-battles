@@ -809,6 +809,7 @@ bool8 RtFx_Draw(u8 shape, u8 frame, u8 pal, s32 sx, s32 sy, u8 bucket, u8 angle,
 void RtFx_Dim(u8 level, u8 hold);
 void RtFx_Wave(u8 amp, u8 frames);
 struct RtPartX *RtFx_X(struct RtPart *p);
+void RtActor_DrawGhost(struct RtActor *a, s32 dx, s32 dy);
 void RtFx_DrawAll(void);
 u8 RtFx_GetPalSlot(u8 fxPal);
 void RtFx_ReleaseUnused(void);

@@ -1288,6 +1288,59 @@ void RtArena_Build(void)
                     }
             }
         }
+        // the scenery the camera can show around the field (2 cells) is made clean and whole: outdoors a ring
+        // of the map's own border blocks (trees, rock), indoors the room's floor, never black void or a
+        // building / cliff / piece of furniture sliced by the edge. Outdoors the corners of the field are
+        // rounded off with border blocks too, so the field reads as a natural clearing.
+        {
+            const struct MapLayout *layout = gMapHeader.mapLayout;
+            u16 b0 = layout->border != NULL ? (layout->border[0] & MAPGRID_METATILE_ID_MASK) : 0;
+            bool8 ring = !water && layout->border != NULL && !IsBlankMetatile(b0)
+                      && !MetatileBehavior_IsSurfableWaterOrUnderwater(BehaviorOf(b0));
+            s32 rx0 = bx0 - 2, rx1 = bx0 + bw + 2, ry0 = by0 - 2, ry1 = by0 + bh + 2;
+            if (rx0 < 0) rx0 = 0;
+            if (ry0 < 0) ry0 = 0;
+            if (rx1 > ARENA_MW) rx1 = ARENA_MW;
+            if (ry1 > ARENA_MH) ry1 = ARENA_MH;
+            for (y = ry0; y < ry1; y++)
+                for (x = rx0; x < rx1; x++)
+                {
+                    s32 ax = gx0 + bestOx + x, ay = gy0 + bestOy + y;
+                    u16 border = ring ? (layout->border[((ax + 1) & 1) + (((ay + 1) & 1) << 1)] & MAPGRID_METATILE_ID_MASK) : floorMeta;
+                    if (x >= bx0 && x < bx0 + bw && y >= by0 && y < by0 + bh)
+                        continue;
+                    if (indoorField)
+                        gRt->arenaMeta[y][x] = floorMeta;
+                    else if (ring)
+                        gRt->arenaMeta[y][x] = border;
+                    else if (IsBlankMetatile(gRt->arenaMeta[y][x]))
+                        gRt->arenaMeta[y][x] = floorMeta;
+                }
+            if (ring && !indoorField && bw >= 12 && bh >= 8)
+            {
+                // round the corners: one aligned 2x2 border block in each corner of the field
+                static const s8 sCorner[4][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
+                for (i = 0; i < 4; i++)
+                {
+                    // blocks are aligned to the border pattern (a whole tree), possibly overlapping the ring
+                    s32 cx = sCorner[i][0] ? bx0 + bw - 2 : bx0, cy = sCorner[i][1] ? by0 + bh - 2 : by0;
+                    s32 j, k;
+                    if (((gx0 + bestOx + cx) & 1) == 0)
+                        cx += sCorner[i][0] ? 1 : -1;
+                    if (((gy0 + bestOy + cy) & 1) == 0)
+                        cy += sCorner[i][1] ? 1 : -1;
+                    for (j = 0; j < 2; j++)
+                        for (k = 0; k < 2; k++)
+                        {
+                            s32 ax = gx0 + bestOx + cx + k, ay = gy0 + bestOy + cy + j;
+                            if (cx + k < 0 || cy + j < 0 || cx + k >= ARENA_MW || cy + j >= ARENA_MH)
+                                continue;
+                            gRt->arenaMeta[cy + j][cx + k] = layout->border[((ax + 1) & 1) + (((ay + 1) & 1) << 1)] & MAPGRID_METATILE_ID_MASK;
+                            gRt->solid[cy + j][cx + k] = RT_SOLID_WALK | RT_SOLID_SHOT;
+                        }
+                }
+            }
+        }
         gRt->playX0 = bx0 * 16;
         gRt->playY0 = by0 * 16;
         gRt->playX1 = (bx0 + bw) * 16;
