@@ -15,6 +15,117 @@
 #include "constants/map_types.h"
 #include "constants/metatile_behaviors.h"
 
+// --- fast map access while the arena is built ------------------------------------------------------
+// RtArena_Build looks at every cell of an 80x48 area several times (metatile, collision, elevation,
+// behaviour). The original accessors (border/connection handling, attribute lookups, behaviour checks
+// through several calls) made that take about a second, so the area's blocks and the per-metatile
+// behaviour flags are cached for the duration of the build.
+#if RT_FIRERED
+#define RT_VMAP VMap
+#define RT_VMAP_W Xsize
+#define RT_VMAP_H Ysize
+#else
+#define RT_VMAP gBackupMapLayout
+#define RT_VMAP_W width
+#define RT_VMAP_H height
+#endif
+static u16 *sBlkCache;          // meta | collision << 10 | elevation << 12 for every cell of the area
+static u8 *sCellMF;             // MF_* of every cell of the area (MF_INVALID: no metatile)
+static s32 sBlkX0, sBlkY0, sBlkW, sBlkH;
+static u16 *sMetaBehCache;      // behaviour per metatile, 0xFFFF = not looked up yet
+static u8 *sMetaFlagCache;      // MF_* per metatile, 0 = not looked up yet
+static u8 MetaFlags(u16 m);
+
+static u16 RtBlockAtSlow(s32 x, s32 y)
+{
+    if (x >= 0 && y >= 0 && x < RT_VMAP.RT_VMAP_W && y < RT_VMAP.RT_VMAP_H)
+    {
+        u16 b = RT_VMAP.map[x + RT_VMAP.RT_VMAP_W * y];
+        if (b != MAPGRID_UNDEFINED)
+            return b;
+    }
+    return (MapGridGetMetatileIdAt(x, y) & MAPGRID_METATILE_ID_MASK)
+         | ((MapGridGetCollisionAt(x, y) & 3) << MAPGRID_COLLISION_SHIFT)
+         | ((MapGridGetElevationAt(x, y) & 15) << MAPGRID_ELEVATION_SHIFT);
+}
+
+static inline u16 RtBlockAt(s32 x, s32 y)
+{
+    u32 ix = x - sBlkX0, iy = y - sBlkY0;
+    if (ix < (u32)sBlkW && iy < (u32)sBlkH) // sBlkW is 0 without a cache
+        return sBlkCache[iy * sBlkW + ix];
+    return RtBlockAtSlow(x, y);
+}
+
+static inline u32 RtMapMeta(s32 x, s32 y) { return RtBlockAt(x, y) & MAPGRID_METATILE_ID_MASK; }
+static inline u8 RtMapColl(s32 x, s32 y) { return (RtBlockAt(x, y) & MAPGRID_COLLISION_MASK) >> MAPGRID_COLLISION_SHIFT; }
+static inline u8 RtMapElev(s32 x, s32 y) { return RtBlockAt(x, y) >> MAPGRID_ELEVATION_SHIFT; }
+
+// The caches live in gDecompressionBuffer (16 KB, only used while graphics are loaded, which happens
+// after the build): the heap is nearly full at this point and a failed Alloc stops a FireRed ROM.
+static void RtMapCache_Begin(s32 x0, s32 y0, s32 w, s32 h)
+{
+    s32 x, y;
+    u16 *b;
+    u8 *f;
+    u8 *mem = gDecompressionBuffer;
+    sBlkW = sBlkH = 0;
+    if (w * h * 3 + NUM_METATILES_TOTAL * 3 > (s32)sizeof(gDecompressionBuffer))
+    {
+        sBlkCache = NULL;
+        sCellMF = NULL;
+        sMetaBehCache = NULL;
+        sMetaFlagCache = NULL;
+        return;
+    }
+    sBlkCache = (u16 *)mem;
+    mem += w * h * sizeof(u16);
+    sMetaBehCache = (u16 *)mem;
+    mem += NUM_METATILES_TOTAL * sizeof(u16);
+    sCellMF = mem;
+    mem += w * h;
+    sMetaFlagCache = mem;
+    memset(sMetaBehCache, 0xFF, NUM_METATILES_TOTAL * sizeof(u16));
+    memset(sMetaFlagCache, 0, NUM_METATILES_TOTAL);
+    b = sBlkCache;
+    f = sCellMF;
+    for (y = y0; y < y0 + h; y++)
+    {
+        // rows inside the loaded map are copied straight from it
+        bool8 rowIn = (y >= 0 && y < RT_VMAP.RT_VMAP_H);
+        const u16 *row = rowIn ? &RT_VMAP.map[RT_VMAP.RT_VMAP_W * y] : NULL;
+        for (x = x0; x < x0 + w; x++)
+        {
+            u16 v = MAPGRID_UNDEFINED;
+            if (rowIn && x >= 0 && x < RT_VMAP.RT_VMAP_W)
+                v = row[x];
+            if (v == MAPGRID_UNDEFINED)
+                v = RtBlockAtSlow(x, y);
+            *b++ = v;
+            v &= MAPGRID_METATILE_ID_MASK;
+            *f++ = (v < NUM_METATILES_TOTAL && sMetaFlagCache[v]) ? sMetaFlagCache[v] : MetaFlags(v);
+        }
+    }
+    sBlkX0 = x0;
+    sBlkY0 = y0;
+    sBlkW = w;
+    sBlkH = h;
+}
+
+static void RtMapCache_End(void)
+{
+    sBlkW = sBlkH = 0;
+    sBlkCache = NULL;
+    sCellMF = NULL;
+    sMetaBehCache = NULL;
+    sMetaFlagCache = NULL;
+}
+
+// from here on the arena code reads the map through the cache
+#define MapGridGetMetatileIdAt(x, y) RtMapMeta(x, y)
+#define MapGridGetCollisionAt(x, y) RtMapColl(x, y)
+#define MapGridGetElevationAt(x, y) RtMapElev(x, y)
+
 #define SCAN_RX 18
 #define SCAN_RY 14
 #define MAX_STAMPS 6
@@ -32,7 +143,48 @@ static u16 MetaAt(s32 x, s32 y)
 
 static u8 BehaviorOf(u16 metatile)
 {
+    if (sMetaBehCache != NULL && metatile < NUM_METATILES_TOTAL)
+    {
+        if (sMetaBehCache[metatile] == 0xFFFF)
+            sMetaBehCache[metatile] = GetMetatileAttributesById(metatile) & METATILE_ATTR_BEHAVIOR_MASK;
+        return sMetaBehCache[metatile];
+    }
     return GetMetatileAttributesById(metatile) & METATILE_ATTR_BEHAVIOR_MASK;
+}
+
+// behaviour classes used per cell by the arena build
+#define MF_KNOWN     (1 << 0)
+#define MF_SURF      (1 << 1) // surfable water or underwater
+#define MF_WATERFALL (1 << 2)
+#define MF_LEDGE     (1 << 3)
+#define MF_GROUND    (1 << 4) // a ground the battle field can keep as it is
+#define MF_INVALID   (1 << 5) // not a metatile of the tilesets
+static bool8 IsLedgeMeta(u16 m);
+static u8 MetaFlags(u16 m)
+{
+    u8 f;
+    u8 b;
+    if (m >= NUM_METATILES_TOTAL)
+        return MF_KNOWN | MF_INVALID;
+    if (sMetaFlagCache != NULL && sMetaFlagCache[m])
+        return sMetaFlagCache[m];
+    b = BehaviorOf(m);
+    f = MF_KNOWN;
+    if (MetatileBehavior_IsSurfableWaterOrUnderwater(b))
+        f |= MF_SURF;
+    if (MetatileBehavior_IsWaterfall(b))
+        f |= MF_WATERFALL;
+    if (MetatileBehavior_IsJumpEast(b) || MetatileBehavior_IsJumpWest(b)
+     || MetatileBehavior_IsJumpNorth(b) || MetatileBehavior_IsJumpSouth(b))
+        f |= MF_LEDGE;
+    if (b == MB_NORMAL || b == MB_TALL_GRASS || b == MB_LONG_GRASS || b == MB_ASHGRASS || b == MB_SAND
+     || b == MB_DEEP_SAND || b == MB_SHORT_GRASS || b == MB_FOOTPRINTS || b == MB_CAVE
+     || b == MB_INDOOR_ENCOUNTER || b == MB_MOUNTAIN_TOP || b == MB_LONG_GRASS_SOUTH_EDGE || b == MB_ICE
+     || b == MB_NO_RUNNING || b == MB_TRICK_HOUSE_PUZZLE_8_FLOOR)
+        f |= MF_GROUND;
+    if (sMetaFlagCache != NULL)
+        sMetaFlagCache[m] = f;
+    return f;
 }
 
 static bool8 IsFloorBehavior(u8 b)
@@ -378,12 +530,9 @@ static bool8 HasTopLayer(u16 m)
 
 static bool8 IsLedgeMeta(u16 m)
 {
-    u8 b;
     if (m >= NUM_METATILES_TOTAL)
         return FALSE;
-    b = BehaviorOf(m);
-    return MetatileBehavior_IsJumpEast(b) || MetatileBehavior_IsJumpWest(b)
-        || MetatileBehavior_IsJumpNorth(b) || MetatileBehavior_IsJumpSouth(b);
+    return (MetaFlags(m) & MF_LEDGE) != 0;
 }
 
 // the black void around rooms: a metatile drawn with a single tile everywhere
@@ -406,7 +555,7 @@ static bool8 sZeroElevOk;
 static bool8 CellClean(s32 x, s32 y, bool8 water, u8 elev)
 {
     u16 m = MapGridGetMetatileIdAt(x, y);
-    u8 b, e;
+    u8 f, e;
     if (m >= NUM_METATILES_TOTAL || MapGridGetCollisionAt(x, y))
         return FALSE;
     // outside the map there is only the blank border (rooms, gyms) or a neighbour map of another look
@@ -420,31 +569,63 @@ static bool8 CellClean(s32 x, s32 y, bool8 water, u8 elev)
     // same level as the player (multi-level maps use 0/15 for stairs and transitions: those are excluded too)
     if (elev != 0 && elev != 15 && e != elev && !(e == 0 && sZeroElevOk))
         return FALSE;
-    b = BehaviorOf(m);
+    f = MetaFlags(m);
     if (water)
-        return MetatileBehavior_IsSurfableWaterOrUnderwater(b) && !MetatileBehavior_IsWaterfall(b);
-    if (IsLedgeMeta(m))
+        return (f & MF_SURF) && !(f & MF_WATERFALL);
+    if (f & MF_LEDGE)
         return TRUE; // ledges are painted with the ground around them beforehand
-    return b == MB_NORMAL || b == MB_TALL_GRASS || b == MB_LONG_GRASS || b == MB_ASHGRASS || b == MB_SAND
-        || b == MB_DEEP_SAND || b == MB_SHORT_GRASS || b == MB_FOOTPRINTS || b == MB_CAVE
-        || b == MB_INDOOR_ENCOUNTER || b == MB_MOUNTAIN_TOP || b == MB_LONG_GRASS_SOUTH_EDGE || b == MB_ICE
-        || b == MB_NO_RUNNING || b == MB_TRICK_HOUSE_PUZZLE_8_FLOOR;
+    return (f & MF_GROUND) != 0;
+}
+
+// the same as CellClean / CellFlags, from a cached block and its metatile flags
+// (cells outside a map without connections never get here)
+static inline __attribute__((always_inline)) bool8 CellCleanOf(u16 blk, u8 f, bool8 water, u8 elev)
+{
+    u8 e;
+    if ((f & MF_INVALID) || (blk & MAPGRID_COLLISION_MASK))
+        return FALSE;
+    e = blk >> MAPGRID_ELEVATION_SHIFT;
+    if (elev != 0 && elev != 15 && e != elev && !(e == 0 && sZeroElevOk))
+        return FALSE;
+    if (water)
+        return (f & MF_SURF) && !(f & MF_WATERFALL);
+    if (f & MF_LEDGE)
+        return TRUE;
+    return (f & MF_GROUND) != 0;
+}
+
+static inline __attribute__((always_inline)) u8 CellFlagsOf(u16 blk, u8 f, bool8 water)
+{
+    bool8 coll = (blk & MAPGRID_COLLISION_MASK) != 0;
+    bool8 isWater = (f & (MF_SURF | MF_WATERFALL)) != 0;
+    if (f & MF_INVALID)
+        return GF_SHOT;
+    if (water)
+    {
+        if (isWater && !(f & MF_WATERFALL) && !coll)
+            return GF_WALK;
+        return coll ? GF_SHOT : 0;
+    }
+    if (coll)
+        return isWater ? 0 : GF_SHOT;
+    if (isWater)
+        return 0;
+    return GF_WALK;
 }
 
 static u8 CellFlags(s32 x, s32 y, bool8 water)
 {
     u16 m = MapGridGetMetatileIdAt(x, y);
-    u8 b, coll = MapGridGetCollisionAt(x, y);
+    u8 f, coll = MapGridGetCollisionAt(x, y);
     bool8 isWater, ledge;
     if (m >= NUM_METATILES_TOTAL)
         return GF_SHOT;
-    b = BehaviorOf(m);
-    isWater = MetatileBehavior_IsSurfableWaterOrUnderwater(b) || MetatileBehavior_IsWaterfall(b);
-    ledge = MetatileBehavior_IsJumpEast(b) || MetatileBehavior_IsJumpWest(b)
-         || MetatileBehavior_IsJumpNorth(b) || MetatileBehavior_IsJumpSouth(b);
+    f = MetaFlags(m);
+    isWater = (f & (MF_SURF | MF_WATERFALL)) != 0;
+    ledge = (f & MF_LEDGE) != 0;
     if (water)
     {
-        if (isWater && !MetatileBehavior_IsWaterfall(b) && coll == 0)
+        if (isWater && !(f & MF_WATERFALL) && coll == 0)
             return GF_WALK;
         return coll ? GF_SHOT : 0;
     }
@@ -651,6 +832,7 @@ void RtArena_Build(void)
     s32 cleanX = 0, cleanY = 0, cleanW = 0, cleanH = 0;
 
     sSpawnValid = FALSE;
+    RtMapCache_Begin(gx0, gy0, GRID_W, GRID_H);
     RtArena_ResetPaths();
     gRt->viewX0 = 0;
     gRt->viewY0 = 0;
@@ -666,82 +848,30 @@ void RtArena_Build(void)
         goto fallback;
 
     // 1. classify cells around the player
-    for (y = 0; y < GRID_H; y++)
-        for (x = 0; x < GRID_W; x++)
-            grid[y * GRID_W + x] = CellFlags(gx0 + x, gy0 + y, water);
+    if (sBlkCache != NULL)
+    {
+        for (i = 0; i < GRID_W * GRID_H; i++)
+            grid[i] = CellFlagsOf(sBlkCache[i], sCellMF[i], water);
+    }
+    else
+    {
+        for (y = 0; y < GRID_H; y++)
+            for (x = 0; x < GRID_W; x++)
+                grid[y * GRID_W + x] = CellFlags(gx0 + x, gy0 + y, water);
+    }
     for (y = 1; y < GRID_H - 1; y++)
     {
+        const u8 *r0 = &grid[(y - 1) * GRID_W], *r1 = &grid[y * GRID_W], *r2 = &grid[(y + 1) * GRID_W];
+        u8 *out = &grid[y * GRID_W];
+        // column x is walkable in all three rows; open = three such columns in a row
+        u8 c0 = r0[0] & r1[0] & r2[0] & GF_WALK, c1 = r0[1] & r1[1] & r2[1] & GF_WALK;
         for (x = 1; x < GRID_W - 1; x++)
         {
-            s32 j, k;
-            bool8 open = (grid[y * GRID_W + x] & GF_WALK) != 0;
-            for (j = -1; j <= 1 && open; j++)
-                for (k = -1; k <= 1 && open; k++)
-                    if (!(grid[(y + j) * GRID_W + x + k] & GF_WALK))
-                        open = FALSE;
-            if (open)
-                grid[y * GRID_W + x] |= GF_OPEN;
-        }
-    }
-    // 2. prefix sums of open cells
-    for (y = 0; y <= GRID_H; y++)
-        for (x = 0; x <= GRID_W; x++)
-        {
-            if (x == 0 || y == 0)
-                sum[y * (GRID_W + 1) + x] = 0;
-            else
-                sum[y * (GRID_W + 1) + x] = ((grid[(y - 1) * GRID_W + x - 1] & GF_OPEN) ? 1 : 0)
-                    + sum[(y - 1) * (GRID_W + 1) + x] + sum[y * (GRID_W + 1) + x - 1] - sum[(y - 1) * (GRID_W + 1) + x - 1];
-        }
-    // 3. coarse ranking of all window positions (open area, close to the player)
-    for (y = 0; y <= GRID_H - ARENA_MH; y++)
-    {
-        for (x = 0; x <= GRID_W - ARENA_MW; x++)
-        {
-            s32 open = sum[(y + ARENA_MH) * (GRID_W + 1) + x + ARENA_MW] - sum[y * (GRID_W + 1) + x + ARENA_MW]
-                     - sum[(y + ARENA_MH) * (GRID_W + 1) + x] + sum[y * (GRID_W + 1) + x];
-            s32 dcx = (gx0 + x + ARENA_MW / 2) - px, dcy = (gy0 + y + ARENA_MH / 2) - py;
-            s32 score, k;
-            if (dcx < 0) dcx = -dcx;
-            if (dcy < 0) dcy = -dcy;
-            score = open * 4 - (dcx + dcy * 2) * 3;
-            // the player's own spot should normally be part of the arena
-            if (px < gx0 + x + 1 || px >= gx0 + x + ARENA_MW - 1 || py < gy0 + y + 1 || py >= gy0 + y + ARENA_MH - 1)
-                score -= 120;
-            // keep the best few, spread apart
-            for (k = 0; k < nCand; k++)
-                if ((cand[k].ox - x) * (cand[k].ox - x) + (cand[k].oy - y) * (cand[k].oy - y) < 9)
-                    break;
-            if (k < nCand)
-            {
-                if (score > cand[k].score)
-                {
-                    cand[k].ox = x;
-                    cand[k].oy = y;
-                    cand[k].score = score;
-                }
-                continue;
-            }
-            if (nCand < ARRAY_COUNT(cand))
-            {
-                cand[nCand].ox = x;
-                cand[nCand].oy = y;
-                cand[nCand].score = score;
-                nCand++;
-            }
-            else
-            {
-                s32 worst = 0;
-                for (k = 1; k < nCand; k++)
-                    if (cand[k].score < cand[worst].score)
-                        worst = k;
-                if (score > cand[worst].score)
-                {
-                    cand[worst].ox = x;
-                    cand[worst].oy = y;
-                    cand[worst].score = score;
-                }
-            }
+            u8 c2 = r0[x + 1] & r1[x + 1] & r2[x + 1] & GF_WALK;
+            if (c0 & c1 & c2)
+                out[x] |= GF_OPEN;
+            c0 = c1;
+            c1 = c2;
         }
     }
     // is this a single-level place? (one elevation besides 0/15 among the walkable cells around)
@@ -749,10 +879,19 @@ void RtArena_Build(void)
         u16 cnt[16];
         s32 k, top = 0, second = 0;
         memset(cnt, 0, sizeof(cnt));
-        for (y = 0; y < GRID_H; y++)
-            for (x = 0; x < GRID_W; x++)
-                if (MapGridGetCollisionAt(gx0 + x, gy0 + y) == 0)
-                    cnt[MapGridGetElevationAt(gx0 + x, gy0 + y)]++;
+        if (sBlkCache != NULL)
+        {
+            for (i = 0; i < GRID_W * GRID_H; i++)
+                if (!(sBlkCache[i] & MAPGRID_COLLISION_MASK))
+                    cnt[sBlkCache[i] >> MAPGRID_ELEVATION_SHIFT]++;
+        }
+        else
+        {
+            for (y = 0; y < GRID_H; y++)
+                for (x = 0; x < GRID_W; x++)
+                    if (MapGridGetCollisionAt(gx0 + x, gy0 + y) == 0)
+                        cnt[MapGridGetElevationAt(gx0 + x, gy0 + y)]++;
+        }
         for (k = 1; k < 15; k++)
         {
             if (cnt[k] > top)
@@ -775,23 +914,30 @@ void RtArena_Build(void)
         u8 pe = MapGridGetElevationAt(px, py);
         bool8 noConn = (gMapHeader.connections == NULL || gMapHeader.connections->count == 0);
         const struct MapLayout *layout = gMapHeader.mapLayout;
+        s32 mapX1 = MAP_OFFSET + layout->width, mapY1 = MAP_OFFSET + layout->height;
         s32 bestC = 0x7FFFFFFF;
-        for (y = 0; y <= GRID_H; y++)
-            for (x = 0; x <= GRID_W; x++)
+        for (x = 0; x <= GRID_W; x++)
+            sum[x] = 0;
+        for (y = 1; y <= GRID_H; y++)
+        {
+            s32 cy = gy0 + y - 1, rowSum = 0;
+            bool8 rowOut = (cy < MAP_OFFSET || cy >= mapY1);
+            u16 *sRow = &sum[y * (GRID_W + 1)];
+            const u16 *sUp = sRow - (GRID_W + 1);
+            sRow[0] = 0;
+            for (x = 1; x <= GRID_W; x++)
             {
-                if (x == 0 || y == 0)
-                    sum[y * (GRID_W + 1) + x] = 0;
-                else
-                {
-                    s32 cx = gx0 + x - 1, cy = gy0 + y - 1, c = 0;
-                    if (noConn && (cx < MAP_OFFSET || cy < MAP_OFFSET || cx >= MAP_OFFSET + layout->width || cy >= MAP_OFFSET + layout->height))
-                        c = 6;
-                    else if (!CellClean(cx, cy, water, pe))
-                        c = 2;
-                    sum[y * (GRID_W + 1) + x] = c + sum[(y - 1) * (GRID_W + 1) + x] + sum[y * (GRID_W + 1) + x - 1]
-                                                - sum[(y - 1) * (GRID_W + 1) + x - 1];
-                }
+                s32 cx = gx0 + x - 1, c = 0;
+                bool8 outside = rowOut || cx < MAP_OFFSET || cx >= mapX1;
+                if (outside && noConn)
+                    c = 6; // (outside the map with connections: CellClean looks at the neighbour map)
+                else if (sBlkCache != NULL ? !CellCleanOf(sBlkCache[(y - 1) * GRID_W + x - 1], sCellMF[(y - 1) * GRID_W + x - 1], water, pe)
+                                           : !CellClean(cx, cy, water, pe))
+                    c = 2;
+                rowSum += c;
+                sRow[x] = sUp[x] + rowSum;
             }
+        }
         for (y = (ARENA_MH - FIELD_H) / 2; y + FIELD_H + (ARENA_MH - FIELD_H) / 2 <= GRID_H; y++)
         {
             if (((gy0 + y) & 1) == 0)
@@ -815,6 +961,70 @@ void RtArena_Build(void)
                     cleanY = y;
                     cleanW = FIELD_W;
                     cleanH = FIELD_H;
+                }
+            }
+        }
+    }
+    if (!cleanW)
+    {
+        // 2. prefix sums of open cells
+        for (y = 0; y <= GRID_H; y++)
+            for (x = 0; x <= GRID_W; x++)
+            {
+                if (x == 0 || y == 0)
+                    sum[y * (GRID_W + 1) + x] = 0;
+                else
+                    sum[y * (GRID_W + 1) + x] = ((grid[(y - 1) * GRID_W + x - 1] & GF_OPEN) ? 1 : 0)
+                        + sum[(y - 1) * (GRID_W + 1) + x] + sum[y * (GRID_W + 1) + x - 1] - sum[(y - 1) * (GRID_W + 1) + x - 1];
+            }
+        // 3. coarse ranking of all window positions (open area, close to the player)
+        for (y = 0; y <= GRID_H - ARENA_MH; y++)
+        {
+            for (x = 0; x <= GRID_W - ARENA_MW; x++)
+            {
+                s32 open = sum[(y + ARENA_MH) * (GRID_W + 1) + x + ARENA_MW] - sum[y * (GRID_W + 1) + x + ARENA_MW]
+                         - sum[(y + ARENA_MH) * (GRID_W + 1) + x] + sum[y * (GRID_W + 1) + x];
+                s32 dcx = (gx0 + x + ARENA_MW / 2) - px, dcy = (gy0 + y + ARENA_MH / 2) - py;
+                s32 score, k;
+                if (dcx < 0) dcx = -dcx;
+                if (dcy < 0) dcy = -dcy;
+                score = open * 4 - (dcx + dcy * 2) * 3;
+                // the player's own spot should normally be part of the arena
+                if (px < gx0 + x + 1 || px >= gx0 + x + ARENA_MW - 1 || py < gy0 + y + 1 || py >= gy0 + y + ARENA_MH - 1)
+                    score -= 120;
+                // keep the best few, spread apart
+                for (k = 0; k < nCand; k++)
+                    if ((cand[k].ox - x) * (cand[k].ox - x) + (cand[k].oy - y) * (cand[k].oy - y) < 9)
+                        break;
+                if (k < nCand)
+                {
+                    if (score > cand[k].score)
+                    {
+                        cand[k].ox = x;
+                        cand[k].oy = y;
+                        cand[k].score = score;
+                    }
+                    continue;
+                }
+                if (nCand < ARRAY_COUNT(cand))
+                {
+                    cand[nCand].ox = x;
+                    cand[nCand].oy = y;
+                    cand[nCand].score = score;
+                    nCand++;
+                }
+                else
+                {
+                    s32 worst = 0;
+                    for (k = 1; k < nCand; k++)
+                        if (cand[k].score < cand[worst].score)
+                            worst = k;
+                    if (score > cand[worst].score)
+                    {
+                        cand[worst].ox = x;
+                        cand[worst].oy = y;
+                        cand[worst].score = score;
+                    }
                 }
             }
         }
@@ -1418,6 +1628,7 @@ void RtArena_Build(void)
         }
     }
     gRt->floorKind = water ? 1 : ((MetatileBehavior_IsTallGrass(playerBehav) || MetatileBehavior_IsLongGrass(playerBehav)) ? 2 : 0);
+    RtMapCache_End();
     RtProps_Place(); // after floorKind: nothing is put down on water
     Free(grid);
     Free(sum);
@@ -1426,6 +1637,7 @@ void RtArena_Build(void)
     return;
 
 fallback:
+    RtMapCache_End();
     if (grid) Free(grid);
     if (sum) Free(sum);
     if (comp) Free(comp);

@@ -304,6 +304,7 @@ static void Rt_ResetVideo(void)
 {
     SetVBlankCallback(NULL);
     SetHBlankCallback(NULL);
+    DisableInterrupts(INTR_FLAG_HBLANK); // left on by the battle transitions: an interrupt every scanline
     ScanlineEffect_Stop();
     SetGpuReg(REG_OFFSET_DISPCNT, 0);
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
