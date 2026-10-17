@@ -1318,15 +1318,21 @@ void RtArena_Build(void)
                 }
             if (ring && !indoorField && bw >= 12 && bh >= 8)
             {
-                // round the corners: one aligned 2x2 border block in each corner of the field
-                static const s8 sCorner[4][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
-                for (i = 0; i < 4; i++)
+                // round the corners: one aligned 2x2 border block in each corner of the field, plus one block
+                // stepping into the long top and bottom edges, so the edge is not a ruler-straight line
+                u32 seed = (gx0 + bestOx) * 31 + (gy0 + bestOy) * 17;
+                s32 notch[2];
+                static const s8 sCorner[6][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}, {2, 0}, {2, 1}};
+                notch[0] = bx0 + 4 + (seed % (bw - 10));
+                notch[1] = bx0 + 4 + ((seed / 7) % (bw - 10));
+                for (i = 0; i < 6; i++)
                 {
                     // blocks are aligned to the border pattern (a whole tree), possibly overlapping the ring
-                    s32 cx = sCorner[i][0] ? bx0 + bw - 2 : bx0, cy = sCorner[i][1] ? by0 + bh - 2 : by0;
+                    s32 cx = sCorner[i][0] == 2 ? notch[sCorner[i][1]] : (sCorner[i][0] ? bx0 + bw - 2 : bx0);
+                    s32 cy = sCorner[i][1] ? by0 + bh - 2 : by0;
                     s32 j, k;
                     if (((gx0 + bestOx + cx) & 1) == 0)
-                        cx += sCorner[i][0] ? 1 : -1;
+                        cx += sCorner[i][0] == 1 ? 1 : -1;
                     if (((gy0 + bestOy + cy) & 1) == 0)
                         cy += sCorner[i][1] ? 1 : -1;
                     for (j = 0; j < 2; j++)

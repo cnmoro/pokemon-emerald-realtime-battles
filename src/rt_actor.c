@@ -1,6 +1,7 @@
 // Real-time battle actors: stats, animation, movement, status, rendering.
 #include "global.h"
 #include "rt_internal.h"
+#include "rt_vfx.h"
 #include "battle.h"
 #include "item.h"
 #include "main.h"
@@ -822,6 +823,7 @@ void RtActor_TickStatus(struct RtActor *a)
     if (a->attract)
         a->attract--;
 
+    RtVfx_StatusTick(a);
     // major status
     switch (a->mstatus)
     {

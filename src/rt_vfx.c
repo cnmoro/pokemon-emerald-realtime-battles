@@ -2077,7 +2077,45 @@ bool8 RtVfx_WaveTick(struct RtProj *p)
     return FALSE;
 }
 
+// ambient look of major status conditions on the Pokemon itself
 void RtVfx_StatusTick(struct RtActor *a)
 {
-    (void)a;
+    struct RtPart *p;
+    s32 bx, by;
+    if (a->hidden || a->state == AST_GONE || a->state == AST_FAINT)
+        return;
+    bx = a->x + TO_FX((s32)(Random() % (a->radius + 1)) - a->radius / 2);
+    by = a->y - TO_FX(Random() % (a->height + 1));
+    sPrio = 1;
+    switch (a->mstatus)
+    {
+    case MST_BRN:
+        if (((gRt->frame + a->id * 5) & 11) == 0)
+        {
+            p = Sp(FX_EMBER8, FXP_E_HOT, bx, by, 18);
+            Accel(p, 0, -3);
+            Fade(p, FXP_E_FIRE, 10, FXP_E_SMOKE, 4);
+        }
+        break;
+    case MST_PSN:
+    case MST_TOX:
+        if (((gRt->frame + a->id * 7) & (a->mstatus == MST_TOX ? 7 : 15)) == 0)
+        {
+            p = Sp(FX_MOTE8, FXP_E_POISON, bx, by, 22);
+            if (p) p->vy = -90;
+            FadeOut(p);
+        }
+        break;
+    case MST_PAR:
+        if (((gRt->frame + a->id * 3) % 24) == 0)
+        {
+            p = Sp(FX_CRACKLE16, (gRt->frame & 8) ? FXP_E_ELEC : FXP_E_BOLT, bx, by, 6);
+            if (p) p->frameRate = 2;
+        }
+        break;
+    case MST_FRZ:
+        if (((gRt->frame + a->id * 3) & 15) == 0)
+            Sp(FX_SPARKLE8, FXP_E_ICE, bx, by, 14);
+        break;
+    }
 }
