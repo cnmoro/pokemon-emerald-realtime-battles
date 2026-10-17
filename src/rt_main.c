@@ -66,6 +66,7 @@ bool8 RtLegends_IsLegendBattle(void);
 bool8 RtLegends_IsRoamingBattle(void);
 void RtLegends_AfterBattle(u8 outcome);
 void RtProf(u8 n);
+u16 RtFrameLinesUsed(void);
 static void Rt_UpdateOutro(void);
 static void Rt_Exit(void);
 static void CB2_RtEvolutionLoop(void);
@@ -520,6 +521,8 @@ extern const u8 gRtDebugEnabled;
 extern u8 gRtDebugAutoplay;
 
 EWRAM_DATA u32 gRtProf[32] = {0};
+static EWRAM_DATA u16 sFrameStartLine = 0;
+EWRAM_DATA u8 gRtFxHeavy = 0;
 static u16 sProfCur[16];
 static u16 sProfLast;
 static u16 ProfLine(void)
@@ -530,7 +533,7 @@ static u16 ProfLine(void)
 }
 #define PROF(n) do { if (gRtDebugEnabled) { u16 _l = ProfLine(); if ((n) == 0) { gRtProf[9]++; gRtProf[0] += _l; memset(sProfCur, 0, sizeof(sProfCur)); sProfCur[0] = _l; } else { u16 _d = (_l >= sProfLast) ? (_l - sProfLast) : (_l + 228 - sProfLast); gRtProf[n] += _d; sProfCur[n] += _d; } sProfLast = _l; if ((n) == 6) { u32 _t = 0, _k; for (_k = 0; _k < 16; _k++) _t += sProfCur[_k]; if (_t > 222) { gRtProf[31]++; for (_k = 0; _k < 15; _k++) gRtProf[16 + _k] += sProfCur[_k]; } } } } while (0)
 
-void RtProf(u8 n) { switch (n) { case 13: PROF(13); break; case 14: PROF(14); break; case 15: PROF(15); break; } }
+void RtProf(u8 n) { switch (n) { case 11: PROF(11); break; case 12: PROF(12); break; case 13: PROF(13); break; case 14: PROF(14); break; case 15: PROF(15); break; } }
 static void Rt_RenderFrame(void)
 {
     s32 i;
@@ -584,6 +587,7 @@ static void Rt_RenderFrame(void)
         else
             RtActor_Draw(&gRt->actors[order[i]]);
     }
+    RtProf(15);
     RtOam_Commit();
 }
 
@@ -592,6 +596,7 @@ static void CB2_RtMain(void)
     s32 i;
 
     gRt->frame++;
+    sFrameStartLine = RtFrameLinesUsed();
     PROF(0);
     if (gRtDebugEnabled && gRtDebugAutoplay && gRt->state != RTS_FIGHT && (gRt->frame % 20) == 0)
         gMain.newKeys |= A_BUTTON;
@@ -649,6 +654,16 @@ static void CB2_RtMain(void)
     DoScheduledBgTilemapCopiesToVram();
     UpdateTilesetAnimations();
     PROF(6);
+    {
+        // frame load: when a frame ran long, cosmetic particle spawns are thinned out for a while
+        extern u8 gRtFxHeavy;
+        u16 end = RtFrameLinesUsed();
+        bool8 over = end < sFrameStartLine || end > 200;
+        if (over)
+            gRtFxHeavy = 20;
+        else if (gRtFxHeavy)
+            gRtFxHeavy--;
+    }
 }
 
 static void Rt_UpdateCamera(void)

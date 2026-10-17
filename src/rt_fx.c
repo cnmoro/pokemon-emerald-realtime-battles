@@ -14,6 +14,8 @@
 
 #include "data/rt/fx_data.h"
 
+void RtProf(u8 n);
+
 // ---------------------------------------------------------------------------
 // OAM buckets
 // ---------------------------------------------------------------------------
@@ -26,7 +28,7 @@ static const u8 sBucketOrder[BUCKETS] = {0, 5, 1, 2, 4, 3};
 // the GBA renders sprites in OAM order and silently stops a scanline once its sprite cycles run out, cutting
 // whatever comes later in half; cosmetic sprites that would overflow a band of lines are left out instead
 #define LINE_BUDGET 1150
-#define BAND_LINES 4
+#define BAND_LINES 8
 #define BANDS (160 / BAND_LINES)
 static const u8 sObjW[3][4] = {{8, 16, 32, 64}, {16, 32, 32, 64}, {8, 8, 16, 32}};
 static const u8 sObjH[3][4] = {{8, 16, 32, 64}, {8, 8, 16, 32}, {16, 32, 32, 64}};
@@ -118,14 +120,24 @@ void RtOam_Commit(void)
     s32 b, i, n = 0;
     s32 room, k;
     u16 band[BANDS];
+    bool8 budget;
     FlushScratch();
+    n = 0;
+    for (k = 0; k < BUCKETS; k++)
+        n += sBucketCount[k];
+    // few sprites: no line can overflow, skip the bookkeeping
+    budget = n > 40;
+    n = 0;
     for (i = 0; i < BANDS; i++)
         band[i] = 0;
     // reserve the cycles of the HUD and the actors first: effects may only use what is left
-    for (i = 0; i < sBucketCount[0]; i++)
-        ChargeLines(band, &sBucket[0][i], TRUE);
-    for (i = 0; i < sBucketCount[2]; i++)
-        ChargeLines(band, &sBucket[2][i], TRUE);
+    if (budget)
+    {
+        for (i = 0; i < sBucketCount[0]; i++)
+            ChargeLines(band, &sBucket[0][i], TRUE);
+        for (i = 0; i < sBucketCount[2]; i++)
+            ChargeLines(band, &sBucket[2][i], TRUE);
+    }
     // the GBA draws sprites in OAM order and drops whatever goes past its per-scanline budget, so the HUD and
     // the actors come before the bulk of the effects; front effects (impacts, numbers) are capped
     for (k = 0; k < BUCKETS; k++)
@@ -145,7 +157,7 @@ void RtOam_Commit(void)
         {
             u16 *o = (u16 *)&gMain.oamBuffer[n];
             // the HUD and the actors always get their cycles
-            if (b != 0 && b != 2 && !ChargeLines(band, &sBucket[b][i], FALSE))
+            if (budget && b != 0 && b != 2 && !ChargeLines(band, &sBucket[b][i], FALSE))
                 continue;
             o[0] = sBucket[b][i].a0;
             o[1] = sBucket[b][i].a1;
@@ -181,24 +193,33 @@ void RtFx_ResetAffine(void)
 }
 
 static EWRAM_DATA u16 sAffKey[32] = {0};
+static EWRAM_DATA u16 sAffFrame[32] = {0}; // frame stamp: a slot is live only if stamped this frame
 
 u8 RtFx_AllocAffine(u8 angle, u8 scaleQ4, bool8 hflip)
 {
-    u8 idx;
+    u8 idx, k;
     s32 c, s, sc;
     u16 key = angle | ((scaleQ4 & 0x7F) << 8) | (hflip ? 0x8000 : 0);
-    // sprites sharing rotation and scale share a matrix
-    for (idx = 0; idx < gRt->affineUsed; idx++)
+    u16 fr = (u16)gRt->frame;
+    // sprites sharing rotation and scale share a matrix: open-addressed lookup (a few probes) instead of a
+    // linear scan, the cost of which added up with dozens of rotating particles
+    u8 h = (angle * 7 + scaleQ4 * 13 + (hflip ? 5 : 0)) & 31;
+    for (k = 0; k < 6; k++)
+    {
+        idx = (h + k) & 31;
+        if (sAffFrame[idx] != fr || gRt->affineUsed == 0)
+            break; // free slot
         if (sAffKey[idx] == key)
             return idx;
-    if (gRt->affineUsed >= 32)
+    }
+    if (k == 6 || gRt->affineUsed >= 32)
     {
-        // out of matrices: reuse the closest angle with the same scale
+        // crowded: reuse a live matrix with the same scale and a close angle
         u8 best = 0xFF, bd = 255;
         for (idx = 0; idx < 32; idx++)
         {
             u8 d;
-            if ((sAffKey[idx] & 0xFF00) != (key & 0xFF00))
+            if (sAffFrame[idx] != fr || (sAffKey[idx] & 0xFF00) != (key & 0xFF00))
                 continue;
             d = (u8)((sAffKey[idx] & 0xFF) - angle);
             if (d > 128) d = 256 - d;
@@ -210,8 +231,18 @@ u8 RtFx_AllocAffine(u8 angle, u8 scaleQ4, bool8 hflip)
         }
         return bd <= 12 ? best : 0xFF;
     }
-    idx = gRt->affineUsed++;
+    if (gRt->affineUsed == 0)
+    {
+        // first matrix of the frame: forget last frame's slots
+        u8 j;
+        for (j = 0; j < 32; j++)
+            sAffFrame[j] = fr - 1;
+        idx = h;
+    }
+    gRt->affineUsed++;
+
     sAffKey[idx] = key;
+    sAffFrame[idx] = fr;
     if (scaleQ4 == 0)
         scaleQ4 = 1;
     // inverse matrix: rotate by -angle, scale by 1/scale
@@ -602,23 +633,46 @@ static void BuildLineTable(void)
     }
     else
     {
+        // edge dimming: EDGE_DIM above and below the field with an EDGE_GRAD ramp a few px inside it, the
+        // field rows at the dim level. Filled in runs (constant stretches) instead of per-line math.
         s32 top = gRt->playY0 - gRt->camY, bot = gRt->playY1 - gRt->camY;
         u16 dim = gRt->dimLevel > 8 ? 8 : gRt->dimLevel;
+        u16 hi = dim > EDGE_DIM ? dim : EDGE_DIM;
+        s32 n = DISPLAY_HEIGHT + 2;
+        s32 r0 = top - EDGE_GRAD / 2, r1 = top + EDGE_GRAD / 2;       // top ramp [r0, r1)
+        s32 q0 = bot - 1 - EDGE_GRAD / 2, q1 = bot - 1 + EDGE_GRAD / 2; // bottom ramp
         SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_TGT1_BG2 | BLDCNT_TGT1_BG3 | BLDCNT_TGT1_BD | BLDCNT_EFFECT_DARKEN
                   | BLDCNT_TGT2_BG1 | BLDCNT_TGT2_BG2 | BLDCNT_TGT2_BG3 | BLDCNT_TGT2_BD);
-        for (y = 0; y < DISPLAY_HEIGHT + 2; y++)
+        // constant runs
         {
-            s32 d;
-            u16 v;
-            // signed distance past the field edge, the ramp starts a few px inside the field
-            d = top - y;
-            if (y - bot + 1 > d)
-                d = y - bot + 1;
-            d += EDGE_GRAD / 2;
-            v = d <= 0 ? 0 : (d >= EDGE_GRAD ? EDGE_DIM : (d * EDGE_DIM + EDGE_GRAD / 2) / EDGE_GRAD);
-            if (v < dim)
-                v = dim;
-            b[y] = v;
+            s32 a0 = r0 < 0 ? 0 : (r0 > n ? n : r0);
+            s32 a1 = r1 < 0 ? 0 : (r1 > n ? n : r1);
+            s32 c0 = q0 < 0 ? 0 : (q0 > n ? n : q0);
+            s32 c1 = q1 < 0 ? 0 : (q1 > n ? n : q1);
+            if (a0 > 0)
+                CpuFill16(hi, b, a0 * 2);
+            if (c0 > a1)
+                CpuFill16(dim, b + a1, (c0 - a1) * 2);
+            if (n > c1)
+                CpuFill16(hi, b + c1, (n - c1) * 2);
+            // ramps
+            for (y = a0; y < n; y++)
+            {
+                s32 d;
+                u16 v;
+                if (y == a1 && y < c0)
+                    y = c0;
+                if (y >= c1)
+                    break;
+                d = top - y;
+                if (y - bot + 1 > d)
+                    d = y - bot + 1;
+                d += EDGE_GRAD / 2;
+                v = d <= 0 ? 0 : (d >= EDGE_GRAD ? EDGE_DIM : (d * EDGE_DIM + EDGE_GRAD / 2) / EDGE_GRAD);
+                if (v < dim)
+                    v = dim;
+                b[y] = v;
+            }
         }
     }
     sLineFront = back;
@@ -742,7 +796,9 @@ anim:
         DisableInterrupts(INTR_FLAG_HBLANK);
     }
     SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(9, 16)); // additive light: glows only brighten
+    RtProf(11);
     BuildLineTable();
+    RtProf(12);
     RtFx_WeatherUpdate();
 }
 
@@ -968,12 +1024,22 @@ void RtFx_DrawAll(void)
             }
             bool8 blend = (p->flags & PF_BLEND) != 0;
             u8 ang = p->angle;
+            u8 w = gRtFxShapes[p->shape].w;
             aff = (p->flags & (PF_ROTATE | PF_SCALE)) != 0 || x->spin;
             if (x->flags & PX_STRETCH)
             {
-                ang = RtAtan2(p->vx, p->vy);
+                // the direction of travel changes slowly: refresh it every 4th frame
+                if (((gRt->frame + i) & 3) == 0 || p->angle == 0)
+                    p->angle = RtAtan2(p->vx, p->vy);
+                ang = p->angle;
                 aff = TRUE;
             }
+            // rotation of tiny sprites is invisible but costs a rotated double-size sprite: drawn flat
+            if (aff && w <= 8 && !(p->flags & PF_SCALE) && !(x->flags & PX_STRETCH))
+                aff = FALSE;
+            // fewer distinct rotations share affine matrices
+            if (aff && w <= 16)
+                ang &= 0xF8;
             if ((x->flags & PX_FADE) && p->life * 3 < p->maxLife)
                 blend = TRUE;
             DrawShape(p->shape, frame, p->pal, sx, sy, (p->flags & PF_GROUND) ? 3 : p->prio,
@@ -986,6 +1052,11 @@ void RtFx_DrawAll(void)
 // below are dimmed per scanline)
 void RtFx_DrawEdges(void)
 {
+    // during a screen flash or a dramatic dim the whole screen is affected alike: the dithered side columns
+    // would otherwise stand out as un-dimmed (or un-flashed) panels
+    if (gRt->flashTimer || gRt->dimLevel >= 2)
+        return;
+    {
     const struct RtFxShape *s = &gRtFxShapes[FX_EDGEDIM];
     s32 l = gRt->playX0 - gRt->camX, r = gRt->playX1 - gRt->camX, y;
     u16 tile = RT_FX_TILE_BASE + s->tile;
@@ -1014,6 +1085,7 @@ void RtFx_DrawEdges(void)
                 oam[2] = tile | (1 << 10) | (4 << 12);
             }
         }
+    }
     }
 }
 

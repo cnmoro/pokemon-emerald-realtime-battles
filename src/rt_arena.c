@@ -1058,6 +1058,8 @@ void RtArena_Build(void)
                     clean[y][x] = 1;
                 else if (indoorField && m != floorMeta)
                     clean[y][x] = 1; // rooms: one plain floor (rugs, stools and the like go with the furniture)
+                else if (water && m != floorMeta && MetatileBehavior_IsSurfableWaterOrUnderwater(BehaviorOf(m)))
+                    clean[y][x] = 1; // at sea: one water (no patchwork of currents and depths)
                 else if (m != floorMeta && freq[m] <= 16
                       && (water || !(MetatileBehavior_IsTallGrass(BehaviorOf(m)) || MetatileBehavior_IsLongGrass(BehaviorOf(m)))))
                     clean[y][x] = 1; // rare pieces (steps, odd stones, a lone plank): painted when in the field
@@ -1290,8 +1292,9 @@ void RtArena_Build(void)
         }
         // the scenery the camera can show around the field (2 cells) is made clean and whole: outdoors a ring
         // of the map's own border blocks (trees, rock), indoors the room's floor, never black void or a
-        // building / cliff / piece of furniture sliced by the edge. Outdoors the corners of the field are
-        // rounded off with border blocks too, so the field reads as a natural clearing.
+        // building / cliff / piece of furniture sliced by the edge. (Squaring off the corners with whole border
+        // blocks was tried: inside the bright field they read as stray bushes, so the field stays a clean
+        // rectangle and the soft dimming does the transition.)
         {
             const struct MapLayout *layout = gMapHeader.mapLayout;
             u16 b0 = layout->border != NULL ? (layout->border[0] & MAPGRID_METATILE_ID_MASK) : 0;
@@ -1313,39 +1316,9 @@ void RtArena_Build(void)
                         gRt->arenaMeta[y][x] = floorMeta;
                     else if (ring)
                         gRt->arenaMeta[y][x] = border;
-                    else if (IsBlankMetatile(gRt->arenaMeta[y][x]))
-                        gRt->arenaMeta[y][x] = floorMeta;
+                    else
+                        gRt->arenaMeta[y][x] = floorMeta; // no usable border block: the ground runs on into the dark
                 }
-            if (ring && !indoorField && bw >= 12 && bh >= 8)
-            {
-                // round the corners: one aligned 2x2 border block in each corner of the field, plus one block
-                // stepping into the long top and bottom edges, so the edge is not a ruler-straight line
-                u32 seed = (gx0 + bestOx) * 31 + (gy0 + bestOy) * 17;
-                s32 notch[2];
-                static const s8 sCorner[6][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}, {2, 0}, {2, 1}};
-                notch[0] = bx0 + 4 + (seed % (bw - 10));
-                notch[1] = bx0 + 4 + ((seed / 7) % (bw - 10));
-                for (i = 0; i < 6; i++)
-                {
-                    // blocks are aligned to the border pattern (a whole tree), possibly overlapping the ring
-                    s32 cx = sCorner[i][0] == 2 ? notch[sCorner[i][1]] : (sCorner[i][0] ? bx0 + bw - 2 : bx0);
-                    s32 cy = sCorner[i][1] ? by0 + bh - 2 : by0;
-                    s32 j, k;
-                    if (((gx0 + bestOx + cx) & 1) == 0)
-                        cx += sCorner[i][0] == 1 ? 1 : -1;
-                    if (((gy0 + bestOy + cy) & 1) == 0)
-                        cy += sCorner[i][1] ? 1 : -1;
-                    for (j = 0; j < 2; j++)
-                        for (k = 0; k < 2; k++)
-                        {
-                            s32 ax = gx0 + bestOx + cx + k, ay = gy0 + bestOy + cy + j;
-                            if (cx + k < 0 || cy + j < 0 || cx + k >= ARENA_MW || cy + j >= ARENA_MH)
-                                continue;
-                            gRt->arenaMeta[cy + j][cx + k] = layout->border[((ax + 1) & 1) + (((ay + 1) & 1) << 1)] & MAPGRID_METATILE_ID_MASK;
-                            gRt->solid[cy + j][cx + k] = RT_SOLID_WALK | RT_SOLID_SHOT;
-                        }
-                }
-            }
         }
         gRt->playX0 = bx0 * 16;
         gRt->playY0 = by0 * 16;

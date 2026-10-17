@@ -63,7 +63,8 @@ def mk_edgedim():
     bayer = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
     for y in range(64):
         for x in range(32):
-            t = min(1.0, (x + 0.5) / 10.0) * 0.5   # ramps up to a 50% checker (reads as dimmed scenery)
+            u = min(1.0, (x + 0.5) / 22.0)
+            t = (u * u * (3 - 2 * u)) * 0.5        # smooth ramp up to a 50% checker (reads as dimmed scenery)
             if t * 16 > bayer[y & 3][x & 3]: c.p[y][x] = 15
     return [c]
 add('EDGEDIM', 32, 64, mk_edgedim(), ui=True)
@@ -418,19 +419,22 @@ def mk_claw32():
 add('CLAW32', 32, 32, mk_claw32())
 
 def mk_jaws32():
-    # bite: two rows of fangs closing on the centre (3 frames)
+    # bite: two curved rows of fangs closing on the centre (3 frames)
     fr = []
     for f in range(3):
         c = Canvas(32, 32); gap = [9, 4, 0][f]
         for side in (-1, 1):
-            gum = 16 + side * (gap + 9)   # gum line
-            tip = 16 + side * gap         # fang tips
+            def gum(x): return 16 + side * (gap + 8 + 3.0 * ((x - 16) / 14) ** 2)
             for k in range(5):
-                tx = 4.5 + k * 5.75
-                h = 1.0 if k in (0, 4) else 0.8
-                polyfill(c, [(tx - 2.6, gum), (tx + 2.6, gum), (tx, gum + (tip - gum) * h)],
-                         lambda px, py, tx=tx: lv(0.98 - 0.45 * abs(px - tx) / 2.6))
-            polyfill(c, [(2, gum - side * 2.5), (30, gum - side * 2.5), (30, gum), (2, gum)], lambda px, py: lv(0.45))
+                tx = 5 + k * 5.5
+                g = gum(tx); tip = 16 + side * (gap + 1.5 * ((tx - 16) / 14) ** 2)
+                h = 1.0 if k in (0, 4) else 0.85
+                polyfill(c, [(tx - 2.5, g), (tx + 2.5, g), (tx, g + (tip - g) * h)],
+                         lambda px, py, tx=tx: lv(0.98 - 0.45 * abs(px - tx) / 2.5))
+            for x in range(3, 30):
+                g = gum(x + 0.5)
+                for t in range(3):
+                    c.putmax(x, g - side * (t - 0.5), lv(0.5 - 0.08 * t))
         dark_rim(c); fr.append(c)
     return fr
 add('JAWS32', 32, 32, mk_jaws32())
@@ -467,16 +471,34 @@ def mk_speed16():
 add('SPEED16', 16, 8, mk_speed16())
 
 def mk_fist32():
+    # a rounded clenched fist (knuckles toward +x): oval silhouette, knuckle bumps on the front, short curled
+    # finger creases, a thumb wrapped under them, a narrow wrist behind; lit from the top
     c = Canvas(32, 32)
-    # knuckles facing +x
-    polyfill(c, [(6, 9), (22, 7), (28, 11), (28, 21), (22, 25), (6, 23)], lambda px, py: lv(0.8 - 0.35 * (py - 7) / 18 + 0.1 * (px - 6) / 22))
-    for k in range(4):
-        y = 9.5 + k * 3.6
-        thick(c, 22, y, 28, y + 0.5, 1.0, 4, 4)
-    thick(c, 12, 23, 20, 23, 1.2, 4, 4)
+    for y in range(32):
+        for x in range(32):
+            px, py = x + 0.5, y + 0.5
+            inside = ((px - 18) / 9.0) ** 2 + ((py - 16) / 7.6) ** 2 < 1
+            for k in range(4):
+                if math.hypot(px - 25.2, py - (10.4 + k * 3.8)) < 2.3: inside = True
+            if ((px - 9) / 4.0) ** 2 + ((py - 16.5) / 4.6) ** 2 < 1: inside = True    # wrist
+            if inside:
+                t = 0.95 - 0.42 * (py - 8) / 17 - 0.1 * max(0, 11 - px) / 6
+                c.put(x, y, lv(t))
+    def line(pts, v):
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            n = int(max(abs(x1 - x0), abs(y1 - y0)) * 2) + 1
+            for i in range(n + 1):
+                t = i / n; c.put(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, v)
+    for k in range(3):                       # finger creases, curling down at the front
+        y = 12.2 + k * 3.8
+        line([(19.5, y + 0.6), (22.5, y), (25.5, y + 0.3)], 4)
+    line([(18.8, 9.5), (18.2, 13), (18.2, 19.5)], 5)   # where the fingers fold in
+    line([(12, 19.2), (17, 19.6), (22, 19.0), (24, 20.3)], 4)   # top edge of the thumb
+    for x in range(13, 23):
+        c.put(x, 20.6, lv(0.5))
     dark_rim(c)
-    for k, y in enumerate((8, 16, 24)):
-        thick(c, 0, y, 5 - k % 2, y, 1.1, 10, 5)
+    for k, y in enumerate((11, 16.5, 22)):
+        thick(c, 0, y, 3.5 - k % 2, y, 1.1, 10, 5)
     return [c]
 add('FIST32', 32, 32, mk_fist32())
 
@@ -536,10 +558,9 @@ def mk_hex32():
         pts = [(16 + math.cos(k * math.pi / 3 + math.pi / 6) * R, 16 + math.sin(k * math.pi / 3 + math.pi / 6) * R) for k in range(6)]
         for k in range(6):
             thick(c, *pts[k], *pts[(k + 1) % 6], 2.2, 15 if f == 0 else 12, 8)
-        for k in range(6):
+        for k in range(6):   # faint facets near the rim
             a = k * math.pi / 3 + math.pi / 6
-            thick(c, 16, 16, 16 + math.cos(a) * R * 0.95, 16 + math.sin(a) * R * 0.95, 1.0, 7, 7)
-        soft_disc(c, 16, 16, 12, gamma=0.5, lo=0.05, hi=0.25)
+            thick(c, 16 + math.cos(a) * R * 0.6, 16 + math.sin(a) * R * 0.6, 16 + math.cos(a) * R * 0.95, 16 + math.sin(a) * R * 0.95, 1.0, 6, 6)
         fr.append(c)
     return fr
 add('HEX32', 32, 32, mk_hex32())
@@ -678,20 +699,24 @@ def mk_chop32():
 add('CHOP32', 32, 32, mk_chop32())
 
 def mk_veil16():
-    # soft glass pane (16x32): no hard frame, edges dithered away, a diagonal sheen; 2 frames (sheen moves)
+    # glass pane (16x32): a screen-door fill (every other pixel) so the scene shows through without additive
+    # blending, an arched top, a brighter rim and a diagonal sheen that moves (2 frames)
     fr = []
     for f in range(2):
         c = Canvas(16, 32)
         for y in range(32):
             for x in range(16):
-                ex = min(x + 0.5, 15.5 - x) / 5.0; ey = min(y + 0.5, 31.5 - y) / 7.0
-                e = clamp(min(ex, ey), 0, 1)
-                if e * 16 <= BAYER[y & 3][x & 3] * 0.9: continue
-                t = 0.3 + 0.12 * (y / 32)
+                cx = x + 0.5 - 8
+                top = 5 - 5 * math.sqrt(max(0, 1 - (cx / 8) ** 2))   # arch
+                if y + 0.5 < top or y > 30: continue
+                rim = x == 0 or x == 15 or y + 0.5 < top + 1.2 or y == 30
                 s = (x - 8) + (y - 16) * 0.55 - (f * 6 - 3)
-                if abs(s) < 1.6: t = 0.95 - abs(s) * 0.2
-                elif abs(s - 4) < 0.8: t = 0.7
-                c.put(x, y, lv(t))
+                if abs(s) < 1.3:
+                    c.put(x, y, lv(0.98))
+                elif rim:
+                    c.put(x, y, lv(0.8))
+                elif (x + y) % 2 == 0:
+                    c.put(x, y, lv(0.45 + 0.15 * (1 - y / 32)))
         fr.append(c)
     return fr
 add('VEIL16', 16, 32, mk_veil16())
@@ -754,6 +779,15 @@ def mk_eye16b():
     return fr
 add('EYE16B', 16, 16, mk_eye16b())
 
+def mk_qmark8():
+    c = Canvas(8, 8)
+    pts = [(2,1),(3,0),(4,0),(5,1),(5,2),(4,3),(3,4),(3,5)]
+    for (x, y) in pts: c.put(x, y, 15)
+    c.put(3, 7, 15)
+    for (x, y) in [(2,2),(4,1)]: c.put(x, y, 11)
+    dark_rim(c); return [c]
+add('QMARK8', 8, 8, mk_qmark8())
+
 def mk_wave48():
     # a breaking wave crest seen from the side, wide (32x32): curl at the top, foam lip, body below (3 frames)
     fr = []
@@ -808,4 +842,5 @@ EP('E_FIGHT',  [(0, (90, 20, 10)), (0.4, (220, 90, 50)), (0.75, (255, 190, 130))
 EP('E_SKY',    [(0, (60, 80, 140)), (0.4, (150, 180, 240)), (0.75, (215, 230, 255)), (1, (255, 255, 255))])
 EP('E_MUD',    [(0, (40, 25, 10)), (0.4, (110, 75, 40)), (0.75, (170, 130, 80)), (1, (220, 190, 140))])
 EP('E_RED',    [(0, (80, 0, 0)), (0.4, (210, 20, 20)), (0.75, (255, 110, 90)), (1, (255, 230, 220))])
+EP('E_MUDW',   [(0, (45, 28, 12)), (0.35, (105, 70, 35)), (0.65, (150, 110, 65)), (0.85, (200, 170, 125)), (1, (245, 240, 225))])
 EP('E_SAND',   [(0, (120, 90, 40)), (0.5, (210, 180, 110)), (1, (250, 240, 200))])

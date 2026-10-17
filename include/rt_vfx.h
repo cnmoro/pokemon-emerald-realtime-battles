@@ -75,6 +75,7 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move);
 bool8 RtVfx_RushTick(struct RtActor *a, u16 move);
 bool8 RtVfx_WaveTick(struct RtProj *p);
 void RtVfx_StatusTick(struct RtActor *a);
+void RtVfx_BideTick(struct RtActor *a, u16 t);
 bool8 RtVfx_Cone(struct RtActor *a, u16 move);
 bool8 RtVfx_ZoneTick(struct RtProj *p);
 void RtVfx_Ghosts(struct RtActor *a, u8 n, u8 life);

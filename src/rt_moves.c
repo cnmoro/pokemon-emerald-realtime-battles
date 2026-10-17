@@ -3074,8 +3074,7 @@ void RtMove_UpdateCast(struct RtActor *a)
                 FinishCast(a, 10);
                 return;
             }
-            if ((a->act.timer & 7) == 0)
-                RtFx_Spawn(FX_AURA32, FXP_GOLD, a->x, a->y - TO_FX(a->height / 2), 16);
+            RtVfx_BideTick(a, a->act.timer);
             return;
         }
         if (d->pattern == RTP_LEAP)
