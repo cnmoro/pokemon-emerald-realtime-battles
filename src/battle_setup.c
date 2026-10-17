@@ -1352,6 +1352,17 @@ void RtDebug_StartTrainerBattle(u16 trainerId)
     CreateBattleStartTask(GetTrainerBattleTransition(), 0);
 }
 
+// debug: wild battle (gEnemyParty already set) that starts with transition `transition`
+void RtDebug_StartWildBattleWithTransition(u8 transition)
+{
+    LockPlayerFieldControls();
+    FreezeObjectEvents();
+    StopPlayerAvatar();
+    gMain.savedCallback = CB2_RtDebugEndTrainer;
+    gBattleTypeFlags = 0;
+    CreateBattleStartTask(transition, 0);
+}
+
 static void CB2_EndTrainerBattle(void)
 {
     if (gTrainerBattleOpponent_A == TRAINER_SECRET_BASE)

@@ -65,6 +65,7 @@ static void Task_OptionMenuSave(u8 taskId);
 static void Task_OptionMenuFadeOut(u8 taskId);
 static void HighlightOptionMenuItem(u8 selection);
 static u8 TextSpeed_ProcessInput(u8 selection);
+static u8 Difficulty_ProcessInput(u8 selection);
 static void TextSpeed_DrawChoices(u8 selection);
 
 static void Difficulty_DrawChoices(u8 selection);
@@ -333,7 +334,7 @@ static void Task_OptionMenuProcessInput(u8 taskId)
             break;
         case MENUITEM_BATTLESCENE:
             previousOption = gTasks[taskId].tDifficulty;
-            gTasks[taskId].tDifficulty = TextSpeed_ProcessInput(gTasks[taskId].tDifficulty);
+            gTasks[taskId].tDifficulty = Difficulty_ProcessInput(gTasks[taskId].tDifficulty);
 
             if (previousOption != gTasks[taskId].tDifficulty)
                 Difficulty_DrawChoices(gTasks[taskId].tDifficulty);
@@ -561,24 +562,33 @@ static void BattleSpeed_DrawChoices(u8 selection)
         DrawOptionMenuChoice(sOriginal, 144, YPOS_BATTLESPEED, 0);
 }
 
-static u8 TextSpeed_ProcessInput(u8 selection)
+// DIFFICULTY: EASY / MEDIUM / HARD, cycling
+static u8 Difficulty_ProcessInput(u8 selection)
 {
     if (JOY_NEW(DPAD_RIGHT))
     {
-        if (selection <= 1)
-            selection++;
-        else
-            selection = 0;
-
+        selection = selection < 2 ? selection + 1 : 0;
         sArrowPressed = TRUE;
     }
     if (JOY_NEW(DPAD_LEFT))
     {
-        if (selection != 0)
-            selection--;
-        else
-            selection = 2;
+        selection = selection != 0 ? selection - 1 : 2;
+        sArrowPressed = TRUE;
+    }
+    return selection;
+}
 
+// TEXT SPEED: SLOW / MID / FAST / INSTANT (real-time mod), one value at a time like the other new rows
+static u8 TextSpeed_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_RIGHT))
+    {
+        selection = selection < OPTIONS_TEXT_SPEED_INSTANT ? selection + 1 : 0;
+        sArrowPressed = TRUE;
+    }
+    if (JOY_NEW(DPAD_LEFT))
+    {
+        selection = selection != 0 ? selection - 1 : OPTIONS_TEXT_SPEED_INSTANT;
         sArrowPressed = TRUE;
     }
     return selection;
@@ -586,26 +596,12 @@ static u8 TextSpeed_ProcessInput(u8 selection)
 
 static void TextSpeed_DrawChoices(u8 selection)
 {
-    u8 styles[3];
-    s32 widthSlow, widthMid, widthFast, xMid;
-
+    static const u8 sInstant[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}INSTANT");
+    static const u8 *const sTexts[] = {gText_TextSpeedSlow, gText_TextSpeedMid, gText_TextSpeedFast, sInstant};
+    if (selection > OPTIONS_TEXT_SPEED_INSTANT)
+        selection = OPTIONS_TEXT_SPEED_MID;
     ClearChoiceRow(YPOS_TEXTSPEED);
-    styles[0] = 0;
-    styles[1] = 0;
-    styles[2] = 0;
-    styles[selection] = 1;
-
-    DrawOptionMenuChoice(gText_TextSpeedSlow, 104, YPOS_TEXTSPEED, styles[0]);
-
-    widthSlow = GetStringWidth(FONT_NORMAL, gText_TextSpeedSlow, 0);
-    widthMid = GetStringWidth(FONT_NORMAL, gText_TextSpeedMid, 0);
-    widthFast = GetStringWidth(FONT_NORMAL, gText_TextSpeedFast, 0);
-
-    widthMid -= 94;
-    xMid = (widthSlow - widthMid - widthFast) / 2 + 104;
-    DrawOptionMenuChoice(gText_TextSpeedMid, xMid, YPOS_TEXTSPEED, styles[1]);
-
-    DrawOptionMenuChoice(gText_TextSpeedFast, GetStringRightAlignXOffset(FONT_NORMAL, gText_TextSpeedFast, 198), YPOS_TEXTSPEED, styles[2]);
+    DrawOptionMenuChoice(sTexts[selection], 104, YPOS_TEXTSPEED, 1);
 }
 
 static u8 BattleStyle_ProcessInput(u8 selection)

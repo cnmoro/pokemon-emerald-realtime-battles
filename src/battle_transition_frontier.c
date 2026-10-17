@@ -10,6 +10,8 @@
 #include "gpu_regs.h"
 #include "constants/rgb.h"
 
+#define BeginNormalPaletteFade(sel, delay, startY, targetY, color) BeginNormalPaletteFade(sel, BattleTransition_TurboFadeDelay(delay), startY, targetY, color)
+
 /*
     There are 3 "categories" of Battle Frontier transition
     1. The full logo is used (B_TRANSITION_FRONTIER_LOGO_*)

@@ -77,6 +77,7 @@ static const u8 sWindowVerticalScrollSpeeds[] = {
     [OPTIONS_TEXT_SPEED_SLOW] = 1,
     [OPTIONS_TEXT_SPEED_MID] = 2,
     [OPTIONS_TEXT_SPEED_FAST] = 4,
+    [OPTIONS_TEXT_SPEED_INSTANT] = 16,
 };
 
 static const struct GlyphWidthFunc sGlyphWidthFuncs[] =
@@ -326,19 +327,36 @@ void RunTextPrinters(void)
         {
             if (sTextPrinters[i].active)
             {
-                u16 renderCmd = RenderFont(&sTextPrinters[i]);
-                switch (renderCmd)
+                // real-time mod: INSTANT text speed renders until the line needs a button, a scroll or a pause
+                bool32 instant = gSaveBlock2Ptr != NULL && gSaveBlock2Ptr->optionsTextSpeed == OPTIONS_TEXT_SPEED_INSTANT
+                              && !gTextFlags.forceMidTextSpeed;
+                bool32 printed = FALSE;
+                u32 guard = 0;
+                u16 renderCmd;
+                do
                 {
-                case RENDER_PRINT:
+                    if (instant)
+                        sTextPrinters[i].delayCounter = 0;
+                    renderCmd = RenderFont(&sTextPrinters[i]);
+                    switch (renderCmd)
+                    {
+                    case RENDER_PRINT:
+                        if (instant)
+                            printed = TRUE;
+                        else
+                            CopyWindowToVram(sTextPrinters[i].printerTemplate.windowId, COPYWIN_GFX);
+                    case RENDER_UPDATE:
+                        if (sTextPrinters[i].callback != NULL)
+                            sTextPrinters[i].callback(&sTextPrinters[i].printerTemplate, renderCmd);
+                        break;
+                    case RENDER_FINISH:
+                        sTextPrinters[i].active = FALSE;
+                        break;
+                    }
+                } while (instant && renderCmd != RENDER_FINISH && sTextPrinters[i].active
+                         && sTextPrinters[i].state == RENDER_STATE_HANDLE_CHAR && ++guard < 0x400);
+                if (printed)
                     CopyWindowToVram(sTextPrinters[i].printerTemplate.windowId, COPYWIN_GFX);
-                case RENDER_UPDATE:
-                    if (sTextPrinters[i].callback != NULL)
-                        sTextPrinters[i].callback(&sTextPrinters[i].printerTemplate, renderCmd);
-                    break;
-                case RENDER_FINISH:
-                    sTextPrinters[i].active = FALSE;
-                    break;
-                }
             }
         }
     }

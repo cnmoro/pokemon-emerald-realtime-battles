@@ -116,6 +116,15 @@ bool8 RtDebug_FieldInput(void)
         DoWarp();
         return TRUE;
     }
+    if (cmd == 30)
+    {
+        // wild Zigzagoon battle opened by battle transition number gRtDebugTrainer (transition timing tests)
+        extern void RtDebug_StartWildBattleWithTransition(u8 transition);
+        ZeroEnemyPartyMons();
+        CreateMon(&gEnemyParty[0], SPECIES_ZIGZAGOON, 3, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+        RtDebug_StartWildBattleWithTransition(gRtDebugTrainer);
+        return TRUE;
+    }
     if (cmd == 29)
     {
         // party of 5: the last party POKeMON is removed (capture-to-party test)
