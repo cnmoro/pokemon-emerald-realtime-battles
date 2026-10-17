@@ -702,10 +702,8 @@ void RtAi_TrainerItems(void)
                 }
                 sTrainerItems[j] = ITEM_NONE;
                 {
-                    u8 *d = gStringVar1;
-                    d = StringCopy(d, gTrainerClassNames[gTrainers[gTrainerBattleOpponent_A].trainerClass]);
-                    *d++ = CHAR_SPACE;
-                    StringCopy(d, gTrainers[gTrainerBattleOpponent_A].trainerName);
+                    extern void Rt_GetOpponentName(u8 *dst, u16 trainerId);
+                    Rt_GetOpponentName(gStringVar1, gTrainerBattleOpponent_A);
                 }
                 CopyItemName(item, gStringVar2);
                 RtUi_ToastFmt(sText_TrainerUsed, 70);

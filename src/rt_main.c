@@ -234,6 +234,7 @@ static u8 FindNextUsable(u8 side, u8 from, u8 to)
     return PARTY_SIZE;
 }
 
+void Rt_GetOpponentName(u8 *dst, u16 trainerId);
 static void GetOpponentName(u8 *dst, u16 trainerId)
 {
     if (trainerId == TRAINER_SECRET_BASE)
@@ -260,8 +261,21 @@ static void GetOpponentName(u8 *dst, u16 trainerId)
         u8 cls = gTrainers[trainerId].trainerClass;
         dst = StringCopy(dst, gTrainerClassNames[cls]);
         *dst++ = CHAR_SPACE;
+#if RT_FIRERED
+        // the rival (and the rival as CHAMPION) goes by the name the player gave him
+        if (cls == TRAINER_CLASS_RIVAL_EARLY || cls == TRAINER_CLASS_RIVAL_LATE || cls == TRAINER_CLASS_CHAMPION)
+        {
+            StringCopy(dst, gSaveBlock1Ptr->rivalName);
+            return;
+        }
+#endif
         StringCopy(dst, gTrainers[trainerId].trainerName);
     }
+}
+
+void Rt_GetOpponentName(u8 *dst, u16 trainerId)
+{
+    GetOpponentName(dst, trainerId);
 }
 
 // ---------------------------------------------------------------------------
