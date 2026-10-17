@@ -76,6 +76,10 @@ def main():
     # summary screen: cooldown in seconds where the PP were
     hook(rom, v['BufferMonMoveI'], syms['RtLc_BufferMonMoveI'])
     hook(rom, v['PokeSum_PrintMoveName'], syms['RtLc_PokeSum_PrintMoveName'])
+    # TEXT SPEED INSTANT and the 3x faster battle start transition
+    hook(rom, v['RunTextPrinters'], syms['RtLc_RunTextPrinters'])
+    hook(rom, v['GetTextSpeedSetting'], syms['RtLc_GetTextSpeedSetting'])
+    hook(rom, v['Task_BattleTransition'], syms['RtLc_Task_BattleTransition'])
     # the engine's RAM sits at the top of gHeap
     hook(rom, v['InitHeap'], syms['RtLc_InitHeap'])
 
