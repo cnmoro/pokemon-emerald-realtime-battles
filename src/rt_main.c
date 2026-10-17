@@ -1258,6 +1258,11 @@ static void Rt_GiveExpToMon(u8 partyIdx, u32 exp, u16 defeatedSpecies)
         if (GetMonData(mon, MON_DATA_OT_ID) != playerId)
             exp = exp * 150 / 100;
     }
+    // EXP BONUS option
+    {
+        static const u16 sBonusPct[8] = {100, 125, 150, 200, 250, 300, 400, 500};
+        exp = exp * sBonusPct[gSaveBlock2Ptr->optionsRtExpBonus & 7] / 100;
+    }
     if (exp == 0)
         exp = 1;
 
@@ -1267,6 +1272,8 @@ static void Rt_GiveExpToMon(u8 partyIdx, u32 exp, u16 defeatedSpecies)
     RtUi_ToastFmt(sText_GainedExp, 70);
 
     cur = GetMonData(mon, MON_DATA_EXP) + exp;
+    if (cur > gExperienceTables[gSpeciesInfo[species].growthRate][MAX_LEVEL])
+        cur = gExperienceTables[gSpeciesInfo[species].growthRate][MAX_LEVEL];
     SetMonData(mon, MON_DATA_EXP, &cur);
     oldLevel = level;
     next = gExperienceTables[gSpeciesInfo[species].growthRate][level + 1];

@@ -160,6 +160,16 @@ bool8 RtActor_CanAct(struct RtActor *a)
     return a->state == AST_NORMAL && a->gcd == 0 && !a->recharge && !a->flinch;
 }
 
+// a move that can be used while asleep (Snore, Sleep Talk) or frozen (Flame Wheel, Sacred Fire thaw the user)
+bool8 RtActor_StatusMove(struct RtActor *a, u16 move)
+{
+    if (a->mstatus == MST_SLP)
+        return move == MOVE_SNORE || move == MOVE_SLEEP_TALK;
+    if (a->mstatus == MST_FRZ)
+        return move == MOVE_FLAME_WHEEL || move == MOVE_SACRED_FIRE;
+    return FALSE;
+}
+
 u8 RtActor_MoveSlotUsable(struct RtActor *a, u8 slot)
 {
     u16 move = a->moves[slot];
@@ -1239,6 +1249,20 @@ void RtActor_Update(struct RtActor *a)
     case AST_STUN:
         if (a->mstatus == MST_SLP || a->mstatus == MST_FRZ)
         {
+            // moves meant for this state: Snore / Sleep Talk while asleep,
+            // Flame Wheel / Sacred Fire thaw a frozen user and go off
+            if (a->inSlot >= 0 && a->gcd == 0 && !a->recharge && RtActor_StatusMove(a, a->moves[a->inSlot]))
+            {
+                u8 slot = a->inSlot;
+                if (a->mstatus == MST_FRZ)
+                {
+                    NameToVar1(a);
+                    RtUi_ToastFmt(sText_Thawed, 60);
+                    RtActor_CureStatus(a);
+                }
+                if (RtMove_TryStart(a, slot, a->inAim))
+                    break;
+            }
             // player can mash to recover faster
             if (a->id == gRt->playerLead && a->side == RT_SIDE_PLAYER && (gMain.newKeysRaw & (A_BUTTON | B_BUTTON | L_BUTTON | R_BUTTON)))
             {

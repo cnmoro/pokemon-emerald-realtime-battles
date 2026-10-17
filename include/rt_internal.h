@@ -770,6 +770,7 @@ void RtActor_Draw(struct RtActor *a);
 void RtActor_Withdraw(struct RtActor *a);
 void RtActor_SendOut(struct RtActor *a, u8 partyIdx, bool8 instant);
 u8 RtActor_MoveSlotUsable(struct RtActor *a, u8 slot);
+bool8 RtActor_StatusMove(struct RtActor *a, u16 move);
 
 // rt_moves.c
 bool8 RtMove_TryStart(struct RtActor *a, u8 slot, u8 angle);

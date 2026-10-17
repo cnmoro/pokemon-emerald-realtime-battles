@@ -460,6 +460,22 @@ void RtAi_Update(struct RtActor *a)
     if (a->state != AST_NORMAL && a->state != AST_CAST)
     {
         a->inMoveX = a->inMoveY = 0;
+        // asleep with Snore / Sleep Talk, or frozen with Flame Wheel / Sacred Fire: use it
+        if (a->state == AST_STUN && a->gcd == 0 && a->aiThinkCd == 0)
+        {
+            struct RtActor *t = Rt_NearestFoe(a);
+            u8 i;
+            a->aiThinkCd = 20 + (10 - a->aiSkill) * 4 + Random() % 20;
+            for (i = 0; i < MAX_MON_MOVES; i++)
+            {
+                if (t && RtActor_StatusMove(a, a->moves[i]) && RtActor_MoveSlotUsable(a, i))
+                {
+                    a->inSlot = i;
+                    a->inAim = LeadAim(a, t, a->moves[i]);
+                    break;
+                }
+            }
+        }
         return;
     }
     if (gRt->isSafari && a->side == RT_SIDE_ENEMY)
@@ -513,6 +529,11 @@ void RtAi_Update(struct RtActor *a)
             a->inMoveX = a->inMoveY = 0;
             if (a->side == RT_SIDE_ENEMY)
                 return;
+            // moves for a status: the tester falls asleep / freezes first
+            if (a->mstatus == MST_NONE && (a->moves[0] == MOVE_SNORE || a->moves[0] == MOVE_SLEEP_TALK))
+                RtActor_ApplyStatus(a, MST_SLP, a->id);
+            if (a->mstatus == MST_NONE && (a->moves[0] == MOVE_FLAME_WHEEL || a->moves[0] == MOVE_SACRED_FIRE) && gRt->frame > 200 && gRt->frame < 260)
+                RtActor_ApplyStatus(a, MST_FRZ, a->id);
             if (dist > range)
             {
                 u8 pang = ang;
