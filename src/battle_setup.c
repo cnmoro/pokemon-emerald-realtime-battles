@@ -903,6 +903,29 @@ void StartTrainerBattle(void)
     ScriptContext_Stop();
 }
 
+static void CB2_RtDebugEndTrainer(void)
+{
+    CpuFill16(0, (void *)(BG_PLTT), BG_PLTT_SIZE);
+    ResetOamRange(0, 128);
+    if (IsPlayerDefeated(gBattleOutcome) == TRUE)
+        SetMainCallback2(CB2_WhiteOut);
+    else
+        SetMainCallback2(CB2_ReturnToField);
+}
+
+void RtDebug_StartTrainerBattle(u16 trainerId)
+{
+    gTrainerBattleOpponent_A = trainerId;
+    gBattleTypeFlags = BATTLE_TYPE_TRAINER;
+    if (gTrainers[trainerId].doubleBattle)
+        gBattleTypeFlags |= BATTLE_TYPE_DOUBLE;
+    LockPlayerFieldControls();
+    FreezeObjectEvents();
+    StopPlayerAvatar();
+    gMain.savedCallback = CB2_RtDebugEndTrainer;
+    CreateBattleStartTask(GetTrainerBattleTransition(), 0);
+}
+
 static void CB2_EndTrainerBattle(void)
 {
     if (sTrainerBattleMode == TRAINER_BATTLE_EARLY_RIVAL)

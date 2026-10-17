@@ -146,6 +146,12 @@ void NewGameInitData(void)
     ClearMysteryGift();
     SetAllRenewableItemFlags();
     WarpToPlayersRoom();
+    {
+        extern const u8 gRtDebugEnabled;
+        extern void RtDebug_NewGame(void);
+        if (gRtDebugEnabled)
+            RtDebug_NewGame();
+    }
     RunScriptImmediately(EventScript_ResetAllMapFlags);
     StringCopy(gSaveBlock1Ptr->rivalName, rivalName);
     ResetTrainerTowerResults();

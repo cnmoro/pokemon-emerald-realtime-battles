@@ -6,6 +6,7 @@
 #include "battle_controllers.h"
 #include "battle_interface.h"
 #include "battle_main.h"
+#include "rt_battle.h"
 #include "battle_message.h"
 #include "battle_scripts.h"
 #include "battle_setup.h"
@@ -611,6 +612,13 @@ const u8 *const gStatusConditionStringsTable[][2] =
 
 void CB2_InitBattle(void)
 {
+    if (RtBattle_IsSupported())
+    {
+        MoveSaveBlocks_ResetHeap();
+        AllocateBattleResources();
+        CB2_InitRtBattle();
+        return;
+    }
     MoveSaveBlocks_ResetHeap();
     AllocateBattleResources();
     AllocateBattleSpritesData();
@@ -1534,6 +1542,19 @@ static void SpriteCB_UnusedDebugSprite_Step(struct Sprite *sprite)
         }
         break;
     }
+}
+
+// Real-time battles: build trainer parties and wild held items exactly like the original init.
+void RtBattle_PrepareParties(void)
+{
+    s32 i;
+    if (!(gBattleTypeFlags & BATTLE_TYPE_LINK))
+    {
+        CreateNPCTrainerParty(&gEnemyParty[0], gTrainerBattleOpponent_A);
+        SetWildMonHeldItem();
+    }
+    for (i = 0; i < PARTY_SIZE; i++)
+        AdjustFriendship(&gPlayerParty[i], FRIENDSHIP_EVENT_LEAGUE_BATTLE);
 }
 
 static u8 CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum)

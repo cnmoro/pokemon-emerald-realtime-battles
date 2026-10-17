@@ -1,0 +1,26 @@
+loadst {HARNESS}/field.ss
+poke8 {gRtDebugAutoplay} 1
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 39
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 4
+shot {OUT}/surf0.png
+wait 4
+shot {OUT}/surf1.png
+wait 4
+shot {OUT}/surf2.png
+wait 4
+shot {OUT}/surf3.png
+wait 4
+shot {OUT}/surf4.png
+wait 4
+shot {OUT}/surf5.png
+wait 4
+shot {OUT}/surf6.png
+wait 4
+shot {OUT}/surf7.png

@@ -9258,6 +9258,12 @@ static void Cmd_getsecretpowereffect(void)
     gBattlescriptCurrInstr++;
 }
 
+// Used by the real-time battle engine at the end of a battle.
+void RtBattle_DoPickup(void)
+{
+    Cmd_pickup();
+}
+
 static void Cmd_pickup(void)
 {
     s32 i;

@@ -1,0 +1,6374 @@
+loadst {HARNESS}/field.ss
+poke8 {gRtDebugAutoplay} 1
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 1
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/001_a.png
+wait 12
+shot {HARNESS}/mv/001_b.png
+wait 22
+shot {HARNESS}/mv/001_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 2
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/002_a.png
+wait 12
+shot {HARNESS}/mv/002_b.png
+wait 22
+shot {HARNESS}/mv/002_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 3
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/003_a.png
+wait 12
+shot {HARNESS}/mv/003_b.png
+wait 22
+shot {HARNESS}/mv/003_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 4
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/004_a.png
+wait 12
+shot {HARNESS}/mv/004_b.png
+wait 22
+shot {HARNESS}/mv/004_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 5
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/005_a.png
+wait 12
+shot {HARNESS}/mv/005_b.png
+wait 22
+shot {HARNESS}/mv/005_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 6
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/006_a.png
+wait 12
+shot {HARNESS}/mv/006_b.png
+wait 22
+shot {HARNESS}/mv/006_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 7
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/007_a.png
+wait 12
+shot {HARNESS}/mv/007_b.png
+wait 22
+shot {HARNESS}/mv/007_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 8
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/008_a.png
+wait 12
+shot {HARNESS}/mv/008_b.png
+wait 22
+shot {HARNESS}/mv/008_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 9
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/009_a.png
+wait 12
+shot {HARNESS}/mv/009_b.png
+wait 22
+shot {HARNESS}/mv/009_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/010_a.png
+wait 12
+shot {HARNESS}/mv/010_b.png
+wait 22
+shot {HARNESS}/mv/010_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/011_a.png
+wait 12
+shot {HARNESS}/mv/011_b.png
+wait 22
+shot {HARNESS}/mv/011_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/012_a.png
+wait 12
+shot {HARNESS}/mv/012_b.png
+wait 22
+shot {HARNESS}/mv/012_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/013_a.png
+wait 12
+shot {HARNESS}/mv/013_b.png
+wait 22
+shot {HARNESS}/mv/013_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/014_a.png
+wait 12
+shot {HARNESS}/mv/014_b.png
+wait 22
+shot {HARNESS}/mv/014_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/015_a.png
+wait 12
+shot {HARNESS}/mv/015_b.png
+wait 22
+shot {HARNESS}/mv/015_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 10
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/016_a.png
+wait 12
+shot {HARNESS}/mv/016_b.png
+wait 22
+shot {HARNESS}/mv/016_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 11
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/017_a.png
+wait 12
+shot {HARNESS}/mv/017_b.png
+wait 22
+shot {HARNESS}/mv/017_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 12
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/018_a.png
+wait 12
+shot {HARNESS}/mv/018_b.png
+wait 22
+shot {HARNESS}/mv/018_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 13
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/019_a.png
+wait 12
+shot {HARNESS}/mv/019_b.png
+wait 22
+shot {HARNESS}/mv/019_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 14
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/020_a.png
+wait 12
+shot {HARNESS}/mv/020_b.png
+wait 22
+shot {HARNESS}/mv/020_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 15
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/021_a.png
+wait 12
+shot {HARNESS}/mv/021_b.png
+wait 22
+shot {HARNESS}/mv/021_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 16
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/022_a.png
+wait 12
+shot {HARNESS}/mv/022_b.png
+wait 22
+shot {HARNESS}/mv/022_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 17
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/023_a.png
+wait 12
+shot {HARNESS}/mv/023_b.png
+wait 22
+shot {HARNESS}/mv/023_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 18
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/024_a.png
+wait 12
+shot {HARNESS}/mv/024_b.png
+wait 22
+shot {HARNESS}/mv/024_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 19
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/025_a.png
+wait 12
+shot {HARNESS}/mv/025_b.png
+wait 22
+shot {HARNESS}/mv/025_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 1a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/026_a.png
+wait 12
+shot {HARNESS}/mv/026_b.png
+wait 22
+shot {HARNESS}/mv/026_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 1b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/027_a.png
+wait 12
+shot {HARNESS}/mv/027_b.png
+wait 22
+shot {HARNESS}/mv/027_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 1c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/028_a.png
+wait 12
+shot {HARNESS}/mv/028_b.png
+wait 22
+shot {HARNESS}/mv/028_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 1d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/029_a.png
+wait 12
+shot {HARNESS}/mv/029_b.png
+wait 22
+shot {HARNESS}/mv/029_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 1e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/030_a.png
+wait 12
+shot {HARNESS}/mv/030_b.png
+wait 22
+shot {HARNESS}/mv/030_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 1f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/031_a.png
+wait 12
+shot {HARNESS}/mv/031_b.png
+wait 22
+shot {HARNESS}/mv/031_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 20
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/032_a.png
+wait 12
+shot {HARNESS}/mv/032_b.png
+wait 22
+shot {HARNESS}/mv/032_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 21
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/033_a.png
+wait 12
+shot {HARNESS}/mv/033_b.png
+wait 22
+shot {HARNESS}/mv/033_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 22
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/034_a.png
+wait 12
+shot {HARNESS}/mv/034_b.png
+wait 22
+shot {HARNESS}/mv/034_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 23
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/035_a.png
+wait 12
+shot {HARNESS}/mv/035_b.png
+wait 22
+shot {HARNESS}/mv/035_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 24
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/036_a.png
+wait 12
+shot {HARNESS}/mv/036_b.png
+wait 22
+shot {HARNESS}/mv/036_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 25
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/037_a.png
+wait 12
+shot {HARNESS}/mv/037_b.png
+wait 22
+shot {HARNESS}/mv/037_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 26
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/038_a.png
+wait 12
+shot {HARNESS}/mv/038_b.png
+wait 22
+shot {HARNESS}/mv/038_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 27
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/039_a.png
+wait 12
+shot {HARNESS}/mv/039_b.png
+wait 22
+shot {HARNESS}/mv/039_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 28
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/040_a.png
+wait 12
+shot {HARNESS}/mv/040_b.png
+wait 22
+shot {HARNESS}/mv/040_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 29
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/041_a.png
+wait 12
+shot {HARNESS}/mv/041_b.png
+wait 22
+shot {HARNESS}/mv/041_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 2a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/042_a.png
+wait 12
+shot {HARNESS}/mv/042_b.png
+wait 22
+shot {HARNESS}/mv/042_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 2b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/043_a.png
+wait 12
+shot {HARNESS}/mv/043_b.png
+wait 22
+shot {HARNESS}/mv/043_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 2c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/044_a.png
+wait 12
+shot {HARNESS}/mv/044_b.png
+wait 22
+shot {HARNESS}/mv/044_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 2d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/045_a.png
+wait 12
+shot {HARNESS}/mv/045_b.png
+wait 22
+shot {HARNESS}/mv/045_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 2e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/046_a.png
+wait 12
+shot {HARNESS}/mv/046_b.png
+wait 22
+shot {HARNESS}/mv/046_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 2f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/047_a.png
+wait 12
+shot {HARNESS}/mv/047_b.png
+wait 22
+shot {HARNESS}/mv/047_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 30
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/048_a.png
+wait 12
+shot {HARNESS}/mv/048_b.png
+wait 22
+shot {HARNESS}/mv/048_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 31
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/049_a.png
+wait 12
+shot {HARNESS}/mv/049_b.png
+wait 22
+shot {HARNESS}/mv/049_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 32
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/050_a.png
+wait 12
+shot {HARNESS}/mv/050_b.png
+wait 22
+shot {HARNESS}/mv/050_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 33
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/051_a.png
+wait 12
+shot {HARNESS}/mv/051_b.png
+wait 22
+shot {HARNESS}/mv/051_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 34
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/052_a.png
+wait 12
+shot {HARNESS}/mv/052_b.png
+wait 22
+shot {HARNESS}/mv/052_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 35
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/053_a.png
+wait 12
+shot {HARNESS}/mv/053_b.png
+wait 22
+shot {HARNESS}/mv/053_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 36
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/054_a.png
+wait 12
+shot {HARNESS}/mv/054_b.png
+wait 22
+shot {HARNESS}/mv/054_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 37
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/055_a.png
+wait 12
+shot {HARNESS}/mv/055_b.png
+wait 22
+shot {HARNESS}/mv/055_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 38
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/056_a.png
+wait 12
+shot {HARNESS}/mv/056_b.png
+wait 22
+shot {HARNESS}/mv/056_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 39
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/057_a.png
+wait 12
+shot {HARNESS}/mv/057_b.png
+wait 22
+shot {HARNESS}/mv/057_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 3a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/058_a.png
+wait 12
+shot {HARNESS}/mv/058_b.png
+wait 22
+shot {HARNESS}/mv/058_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 3b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/059_a.png
+wait 12
+shot {HARNESS}/mv/059_b.png
+wait 22
+shot {HARNESS}/mv/059_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 3c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/060_a.png
+wait 12
+shot {HARNESS}/mv/060_b.png
+wait 22
+shot {HARNESS}/mv/060_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 3d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/061_a.png
+wait 12
+shot {HARNESS}/mv/061_b.png
+wait 22
+shot {HARNESS}/mv/061_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 3e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/062_a.png
+wait 12
+shot {HARNESS}/mv/062_b.png
+wait 22
+shot {HARNESS}/mv/062_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 3f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/063_a.png
+wait 12
+shot {HARNESS}/mv/063_b.png
+wait 22
+shot {HARNESS}/mv/063_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 40
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/064_a.png
+wait 12
+shot {HARNESS}/mv/064_b.png
+wait 22
+shot {HARNESS}/mv/064_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 41
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/065_a.png
+wait 12
+shot {HARNESS}/mv/065_b.png
+wait 22
+shot {HARNESS}/mv/065_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 42
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/066_a.png
+wait 12
+shot {HARNESS}/mv/066_b.png
+wait 22
+shot {HARNESS}/mv/066_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 43
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/067_a.png
+wait 12
+shot {HARNESS}/mv/067_b.png
+wait 22
+shot {HARNESS}/mv/067_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 44
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/068_a.png
+wait 12
+shot {HARNESS}/mv/068_b.png
+wait 22
+shot {HARNESS}/mv/068_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 45
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/069_a.png
+wait 12
+shot {HARNESS}/mv/069_b.png
+wait 22
+shot {HARNESS}/mv/069_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 46
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/070_a.png
+wait 12
+shot {HARNESS}/mv/070_b.png
+wait 22
+shot {HARNESS}/mv/070_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 47
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/071_a.png
+wait 12
+shot {HARNESS}/mv/071_b.png
+wait 22
+shot {HARNESS}/mv/071_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 48
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/072_a.png
+wait 12
+shot {HARNESS}/mv/072_b.png
+wait 22
+shot {HARNESS}/mv/072_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 49
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/073_a.png
+wait 12
+shot {HARNESS}/mv/073_b.png
+wait 22
+shot {HARNESS}/mv/073_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 4a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/074_a.png
+wait 12
+shot {HARNESS}/mv/074_b.png
+wait 22
+shot {HARNESS}/mv/074_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 4b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/075_a.png
+wait 12
+shot {HARNESS}/mv/075_b.png
+wait 22
+shot {HARNESS}/mv/075_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 4c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/076_a.png
+wait 12
+shot {HARNESS}/mv/076_b.png
+wait 22
+shot {HARNESS}/mv/076_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 4d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/077_a.png
+wait 12
+shot {HARNESS}/mv/077_b.png
+wait 22
+shot {HARNESS}/mv/077_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 4e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/078_a.png
+wait 12
+shot {HARNESS}/mv/078_b.png
+wait 22
+shot {HARNESS}/mv/078_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 4f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/079_a.png
+wait 12
+shot {HARNESS}/mv/079_b.png
+wait 22
+shot {HARNESS}/mv/079_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 50
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/080_a.png
+wait 12
+shot {HARNESS}/mv/080_b.png
+wait 22
+shot {HARNESS}/mv/080_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 51
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/081_a.png
+wait 12
+shot {HARNESS}/mv/081_b.png
+wait 22
+shot {HARNESS}/mv/081_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 52
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/082_a.png
+wait 12
+shot {HARNESS}/mv/082_b.png
+wait 22
+shot {HARNESS}/mv/082_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 53
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/083_a.png
+wait 12
+shot {HARNESS}/mv/083_b.png
+wait 22
+shot {HARNESS}/mv/083_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 54
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/084_a.png
+wait 12
+shot {HARNESS}/mv/084_b.png
+wait 22
+shot {HARNESS}/mv/084_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 55
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/085_a.png
+wait 12
+shot {HARNESS}/mv/085_b.png
+wait 22
+shot {HARNESS}/mv/085_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 56
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/086_a.png
+wait 12
+shot {HARNESS}/mv/086_b.png
+wait 22
+shot {HARNESS}/mv/086_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 57
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/087_a.png
+wait 12
+shot {HARNESS}/mv/087_b.png
+wait 22
+shot {HARNESS}/mv/087_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 58
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/088_a.png
+wait 12
+shot {HARNESS}/mv/088_b.png
+wait 22
+shot {HARNESS}/mv/088_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 59
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/089_a.png
+wait 12
+shot {HARNESS}/mv/089_b.png
+wait 22
+shot {HARNESS}/mv/089_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 5a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/090_a.png
+wait 12
+shot {HARNESS}/mv/090_b.png
+wait 22
+shot {HARNESS}/mv/090_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 5b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/091_a.png
+wait 12
+shot {HARNESS}/mv/091_b.png
+wait 22
+shot {HARNESS}/mv/091_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 5c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/092_a.png
+wait 12
+shot {HARNESS}/mv/092_b.png
+wait 22
+shot {HARNESS}/mv/092_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 5d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/093_a.png
+wait 12
+shot {HARNESS}/mv/093_b.png
+wait 22
+shot {HARNESS}/mv/093_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 5e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/094_a.png
+wait 12
+shot {HARNESS}/mv/094_b.png
+wait 22
+shot {HARNESS}/mv/094_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 5f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/095_a.png
+wait 12
+shot {HARNESS}/mv/095_b.png
+wait 22
+shot {HARNESS}/mv/095_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 60
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/096_a.png
+wait 12
+shot {HARNESS}/mv/096_b.png
+wait 22
+shot {HARNESS}/mv/096_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 61
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/097_a.png
+wait 12
+shot {HARNESS}/mv/097_b.png
+wait 22
+shot {HARNESS}/mv/097_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 62
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/098_a.png
+wait 12
+shot {HARNESS}/mv/098_b.png
+wait 22
+shot {HARNESS}/mv/098_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 63
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/099_a.png
+wait 12
+shot {HARNESS}/mv/099_b.png
+wait 22
+shot {HARNESS}/mv/099_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 64
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/100_a.png
+wait 12
+shot {HARNESS}/mv/100_b.png
+wait 22
+shot {HARNESS}/mv/100_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 65
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/101_a.png
+wait 12
+shot {HARNESS}/mv/101_b.png
+wait 22
+shot {HARNESS}/mv/101_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 66
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/102_a.png
+wait 12
+shot {HARNESS}/mv/102_b.png
+wait 22
+shot {HARNESS}/mv/102_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 67
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/103_a.png
+wait 12
+shot {HARNESS}/mv/103_b.png
+wait 22
+shot {HARNESS}/mv/103_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 68
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/104_a.png
+wait 12
+shot {HARNESS}/mv/104_b.png
+wait 22
+shot {HARNESS}/mv/104_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 69
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/105_a.png
+wait 12
+shot {HARNESS}/mv/105_b.png
+wait 22
+shot {HARNESS}/mv/105_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 6a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/106_a.png
+wait 12
+shot {HARNESS}/mv/106_b.png
+wait 22
+shot {HARNESS}/mv/106_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 6b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/107_a.png
+wait 12
+shot {HARNESS}/mv/107_b.png
+wait 22
+shot {HARNESS}/mv/107_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 6c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/108_a.png
+wait 12
+shot {HARNESS}/mv/108_b.png
+wait 22
+shot {HARNESS}/mv/108_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 6d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/109_a.png
+wait 12
+shot {HARNESS}/mv/109_b.png
+wait 22
+shot {HARNESS}/mv/109_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 6e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/110_a.png
+wait 12
+shot {HARNESS}/mv/110_b.png
+wait 22
+shot {HARNESS}/mv/110_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 6f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/111_a.png
+wait 12
+shot {HARNESS}/mv/111_b.png
+wait 22
+shot {HARNESS}/mv/111_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 70
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/112_a.png
+wait 12
+shot {HARNESS}/mv/112_b.png
+wait 22
+shot {HARNESS}/mv/112_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 71
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/113_a.png
+wait 12
+shot {HARNESS}/mv/113_b.png
+wait 22
+shot {HARNESS}/mv/113_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 72
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/114_a.png
+wait 12
+shot {HARNESS}/mv/114_b.png
+wait 22
+shot {HARNESS}/mv/114_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 73
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/115_a.png
+wait 12
+shot {HARNESS}/mv/115_b.png
+wait 22
+shot {HARNESS}/mv/115_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 74
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/116_a.png
+wait 12
+shot {HARNESS}/mv/116_b.png
+wait 22
+shot {HARNESS}/mv/116_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 75
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/117_a.png
+wait 12
+shot {HARNESS}/mv/117_b.png
+wait 22
+shot {HARNESS}/mv/117_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 76
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/118_a.png
+wait 12
+shot {HARNESS}/mv/118_b.png
+wait 22
+shot {HARNESS}/mv/118_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 77
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/119_a.png
+wait 12
+shot {HARNESS}/mv/119_b.png
+wait 22
+shot {HARNESS}/mv/119_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 78
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/120_a.png
+wait 12
+shot {HARNESS}/mv/120_b.png
+wait 22
+shot {HARNESS}/mv/120_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 79
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/121_a.png
+wait 12
+shot {HARNESS}/mv/121_b.png
+wait 22
+shot {HARNESS}/mv/121_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 7a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/122_a.png
+wait 12
+shot {HARNESS}/mv/122_b.png
+wait 22
+shot {HARNESS}/mv/122_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 7b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/123_a.png
+wait 12
+shot {HARNESS}/mv/123_b.png
+wait 22
+shot {HARNESS}/mv/123_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 7c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/124_a.png
+wait 12
+shot {HARNESS}/mv/124_b.png
+wait 22
+shot {HARNESS}/mv/124_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 7d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/125_a.png
+wait 12
+shot {HARNESS}/mv/125_b.png
+wait 22
+shot {HARNESS}/mv/125_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 7e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/126_a.png
+wait 12
+shot {HARNESS}/mv/126_b.png
+wait 22
+shot {HARNESS}/mv/126_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 7f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/127_a.png
+wait 12
+shot {HARNESS}/mv/127_b.png
+wait 22
+shot {HARNESS}/mv/127_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 80
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/128_a.png
+wait 12
+shot {HARNESS}/mv/128_b.png
+wait 22
+shot {HARNESS}/mv/128_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 81
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/129_a.png
+wait 12
+shot {HARNESS}/mv/129_b.png
+wait 22
+shot {HARNESS}/mv/129_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 82
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/130_a.png
+wait 12
+shot {HARNESS}/mv/130_b.png
+wait 22
+shot {HARNESS}/mv/130_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 83
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/131_a.png
+wait 12
+shot {HARNESS}/mv/131_b.png
+wait 22
+shot {HARNESS}/mv/131_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 84
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/132_a.png
+wait 12
+shot {HARNESS}/mv/132_b.png
+wait 22
+shot {HARNESS}/mv/132_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 85
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/133_a.png
+wait 12
+shot {HARNESS}/mv/133_b.png
+wait 22
+shot {HARNESS}/mv/133_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 86
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/134_a.png
+wait 12
+shot {HARNESS}/mv/134_b.png
+wait 22
+shot {HARNESS}/mv/134_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 87
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/135_a.png
+wait 12
+shot {HARNESS}/mv/135_b.png
+wait 22
+shot {HARNESS}/mv/135_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 88
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/136_a.png
+wait 12
+shot {HARNESS}/mv/136_b.png
+wait 22
+shot {HARNESS}/mv/136_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 89
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/137_a.png
+wait 12
+shot {HARNESS}/mv/137_b.png
+wait 22
+shot {HARNESS}/mv/137_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 8a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/138_a.png
+wait 12
+shot {HARNESS}/mv/138_b.png
+wait 22
+shot {HARNESS}/mv/138_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 8b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/139_a.png
+wait 12
+shot {HARNESS}/mv/139_b.png
+wait 22
+shot {HARNESS}/mv/139_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 8c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/140_a.png
+wait 12
+shot {HARNESS}/mv/140_b.png
+wait 22
+shot {HARNESS}/mv/140_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 8d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/141_a.png
+wait 12
+shot {HARNESS}/mv/141_b.png
+wait 22
+shot {HARNESS}/mv/141_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 8e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/142_a.png
+wait 12
+shot {HARNESS}/mv/142_b.png
+wait 22
+shot {HARNESS}/mv/142_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 8f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/143_a.png
+wait 12
+shot {HARNESS}/mv/143_b.png
+wait 22
+shot {HARNESS}/mv/143_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 90
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/144_a.png
+wait 12
+shot {HARNESS}/mv/144_b.png
+wait 22
+shot {HARNESS}/mv/144_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 91
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/145_a.png
+wait 12
+shot {HARNESS}/mv/145_b.png
+wait 22
+shot {HARNESS}/mv/145_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 92
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/146_a.png
+wait 12
+shot {HARNESS}/mv/146_b.png
+wait 22
+shot {HARNESS}/mv/146_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 93
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/147_a.png
+wait 12
+shot {HARNESS}/mv/147_b.png
+wait 22
+shot {HARNESS}/mv/147_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 94
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/148_a.png
+wait 12
+shot {HARNESS}/mv/148_b.png
+wait 22
+shot {HARNESS}/mv/148_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 95
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/149_a.png
+wait 12
+shot {HARNESS}/mv/149_b.png
+wait 22
+shot {HARNESS}/mv/149_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 96
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/150_a.png
+wait 12
+shot {HARNESS}/mv/150_b.png
+wait 22
+shot {HARNESS}/mv/150_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 97
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/151_a.png
+wait 12
+shot {HARNESS}/mv/151_b.png
+wait 22
+shot {HARNESS}/mv/151_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 98
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/152_a.png
+wait 12
+shot {HARNESS}/mv/152_b.png
+wait 22
+shot {HARNESS}/mv/152_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 99
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/153_a.png
+wait 12
+shot {HARNESS}/mv/153_b.png
+wait 22
+shot {HARNESS}/mv/153_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 9a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/154_a.png
+wait 12
+shot {HARNESS}/mv/154_b.png
+wait 22
+shot {HARNESS}/mv/154_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 9b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/155_a.png
+wait 12
+shot {HARNESS}/mv/155_b.png
+wait 22
+shot {HARNESS}/mv/155_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 9c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/156_a.png
+wait 12
+shot {HARNESS}/mv/156_b.png
+wait 22
+shot {HARNESS}/mv/156_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 9d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/157_a.png
+wait 12
+shot {HARNESS}/mv/157_b.png
+wait 22
+shot {HARNESS}/mv/157_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 9e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/158_a.png
+wait 12
+shot {HARNESS}/mv/158_b.png
+wait 22
+shot {HARNESS}/mv/158_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 9f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/159_a.png
+wait 12
+shot {HARNESS}/mv/159_b.png
+wait 22
+shot {HARNESS}/mv/159_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/160_a.png
+wait 12
+shot {HARNESS}/mv/160_b.png
+wait 22
+shot {HARNESS}/mv/160_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a1
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/161_a.png
+wait 12
+shot {HARNESS}/mv/161_b.png
+wait 22
+shot {HARNESS}/mv/161_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a2
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/162_a.png
+wait 12
+shot {HARNESS}/mv/162_b.png
+wait 22
+shot {HARNESS}/mv/162_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a3
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/163_a.png
+wait 12
+shot {HARNESS}/mv/163_b.png
+wait 22
+shot {HARNESS}/mv/163_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a4
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/164_a.png
+wait 12
+shot {HARNESS}/mv/164_b.png
+wait 22
+shot {HARNESS}/mv/164_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a5
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/165_a.png
+wait 12
+shot {HARNESS}/mv/165_b.png
+wait 22
+shot {HARNESS}/mv/165_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a6
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/166_a.png
+wait 12
+shot {HARNESS}/mv/166_b.png
+wait 22
+shot {HARNESS}/mv/166_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a7
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/167_a.png
+wait 12
+shot {HARNESS}/mv/167_b.png
+wait 22
+shot {HARNESS}/mv/167_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a8
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/168_a.png
+wait 12
+shot {HARNESS}/mv/168_b.png
+wait 22
+shot {HARNESS}/mv/168_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} a9
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/169_a.png
+wait 12
+shot {HARNESS}/mv/169_b.png
+wait 22
+shot {HARNESS}/mv/169_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} aa
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/170_a.png
+wait 12
+shot {HARNESS}/mv/170_b.png
+wait 22
+shot {HARNESS}/mv/170_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ab
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/171_a.png
+wait 12
+shot {HARNESS}/mv/171_b.png
+wait 22
+shot {HARNESS}/mv/171_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ac
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/172_a.png
+wait 12
+shot {HARNESS}/mv/172_b.png
+wait 22
+shot {HARNESS}/mv/172_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ad
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/173_a.png
+wait 12
+shot {HARNESS}/mv/173_b.png
+wait 22
+shot {HARNESS}/mv/173_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ae
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/174_a.png
+wait 12
+shot {HARNESS}/mv/174_b.png
+wait 22
+shot {HARNESS}/mv/174_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} af
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/175_a.png
+wait 12
+shot {HARNESS}/mv/175_b.png
+wait 22
+shot {HARNESS}/mv/175_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/176_a.png
+wait 12
+shot {HARNESS}/mv/176_b.png
+wait 22
+shot {HARNESS}/mv/176_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b1
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/177_a.png
+wait 12
+shot {HARNESS}/mv/177_b.png
+wait 22
+shot {HARNESS}/mv/177_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b2
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/178_a.png
+wait 12
+shot {HARNESS}/mv/178_b.png
+wait 22
+shot {HARNESS}/mv/178_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b3
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/179_a.png
+wait 12
+shot {HARNESS}/mv/179_b.png
+wait 22
+shot {HARNESS}/mv/179_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b4
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/180_a.png
+wait 12
+shot {HARNESS}/mv/180_b.png
+wait 22
+shot {HARNESS}/mv/180_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b5
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/181_a.png
+wait 12
+shot {HARNESS}/mv/181_b.png
+wait 22
+shot {HARNESS}/mv/181_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b6
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/182_a.png
+wait 12
+shot {HARNESS}/mv/182_b.png
+wait 22
+shot {HARNESS}/mv/182_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b7
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/183_a.png
+wait 12
+shot {HARNESS}/mv/183_b.png
+wait 22
+shot {HARNESS}/mv/183_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b8
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/184_a.png
+wait 12
+shot {HARNESS}/mv/184_b.png
+wait 22
+shot {HARNESS}/mv/184_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} b9
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/185_a.png
+wait 12
+shot {HARNESS}/mv/185_b.png
+wait 22
+shot {HARNESS}/mv/185_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ba
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/186_a.png
+wait 12
+shot {HARNESS}/mv/186_b.png
+wait 22
+shot {HARNESS}/mv/186_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} bb
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/187_a.png
+wait 12
+shot {HARNESS}/mv/187_b.png
+wait 22
+shot {HARNESS}/mv/187_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} bc
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/188_a.png
+wait 12
+shot {HARNESS}/mv/188_b.png
+wait 22
+shot {HARNESS}/mv/188_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} bd
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/189_a.png
+wait 12
+shot {HARNESS}/mv/189_b.png
+wait 22
+shot {HARNESS}/mv/189_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} be
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/190_a.png
+wait 12
+shot {HARNESS}/mv/190_b.png
+wait 22
+shot {HARNESS}/mv/190_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} bf
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/191_a.png
+wait 12
+shot {HARNESS}/mv/191_b.png
+wait 22
+shot {HARNESS}/mv/191_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/192_a.png
+wait 12
+shot {HARNESS}/mv/192_b.png
+wait 22
+shot {HARNESS}/mv/192_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c1
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/193_a.png
+wait 12
+shot {HARNESS}/mv/193_b.png
+wait 22
+shot {HARNESS}/mv/193_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c2
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/194_a.png
+wait 12
+shot {HARNESS}/mv/194_b.png
+wait 22
+shot {HARNESS}/mv/194_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c3
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/195_a.png
+wait 12
+shot {HARNESS}/mv/195_b.png
+wait 22
+shot {HARNESS}/mv/195_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c4
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/196_a.png
+wait 12
+shot {HARNESS}/mv/196_b.png
+wait 22
+shot {HARNESS}/mv/196_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c5
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/197_a.png
+wait 12
+shot {HARNESS}/mv/197_b.png
+wait 22
+shot {HARNESS}/mv/197_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c6
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/198_a.png
+wait 12
+shot {HARNESS}/mv/198_b.png
+wait 22
+shot {HARNESS}/mv/198_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c7
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/199_a.png
+wait 12
+shot {HARNESS}/mv/199_b.png
+wait 22
+shot {HARNESS}/mv/199_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c8
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/200_a.png
+wait 12
+shot {HARNESS}/mv/200_b.png
+wait 22
+shot {HARNESS}/mv/200_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} c9
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/201_a.png
+wait 12
+shot {HARNESS}/mv/201_b.png
+wait 22
+shot {HARNESS}/mv/201_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ca
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/202_a.png
+wait 12
+shot {HARNESS}/mv/202_b.png
+wait 22
+shot {HARNESS}/mv/202_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} cb
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/203_a.png
+wait 12
+shot {HARNESS}/mv/203_b.png
+wait 22
+shot {HARNESS}/mv/203_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} cc
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/204_a.png
+wait 12
+shot {HARNESS}/mv/204_b.png
+wait 22
+shot {HARNESS}/mv/204_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} cd
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/205_a.png
+wait 12
+shot {HARNESS}/mv/205_b.png
+wait 22
+shot {HARNESS}/mv/205_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ce
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/206_a.png
+wait 12
+shot {HARNESS}/mv/206_b.png
+wait 22
+shot {HARNESS}/mv/206_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} cf
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/207_a.png
+wait 12
+shot {HARNESS}/mv/207_b.png
+wait 22
+shot {HARNESS}/mv/207_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/208_a.png
+wait 12
+shot {HARNESS}/mv/208_b.png
+wait 22
+shot {HARNESS}/mv/208_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d1
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/209_a.png
+wait 12
+shot {HARNESS}/mv/209_b.png
+wait 22
+shot {HARNESS}/mv/209_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d2
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/210_a.png
+wait 12
+shot {HARNESS}/mv/210_b.png
+wait 22
+shot {HARNESS}/mv/210_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d3
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/211_a.png
+wait 12
+shot {HARNESS}/mv/211_b.png
+wait 22
+shot {HARNESS}/mv/211_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d4
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/212_a.png
+wait 12
+shot {HARNESS}/mv/212_b.png
+wait 22
+shot {HARNESS}/mv/212_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d5
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/213_a.png
+wait 12
+shot {HARNESS}/mv/213_b.png
+wait 22
+shot {HARNESS}/mv/213_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d6
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/214_a.png
+wait 12
+shot {HARNESS}/mv/214_b.png
+wait 22
+shot {HARNESS}/mv/214_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d7
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/215_a.png
+wait 12
+shot {HARNESS}/mv/215_b.png
+wait 22
+shot {HARNESS}/mv/215_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d8
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/216_a.png
+wait 12
+shot {HARNESS}/mv/216_b.png
+wait 22
+shot {HARNESS}/mv/216_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} d9
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/217_a.png
+wait 12
+shot {HARNESS}/mv/217_b.png
+wait 22
+shot {HARNESS}/mv/217_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} da
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/218_a.png
+wait 12
+shot {HARNESS}/mv/218_b.png
+wait 22
+shot {HARNESS}/mv/218_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} db
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/219_a.png
+wait 12
+shot {HARNESS}/mv/219_b.png
+wait 22
+shot {HARNESS}/mv/219_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} dc
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/220_a.png
+wait 12
+shot {HARNESS}/mv/220_b.png
+wait 22
+shot {HARNESS}/mv/220_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} dd
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/221_a.png
+wait 12
+shot {HARNESS}/mv/221_b.png
+wait 22
+shot {HARNESS}/mv/221_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} de
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/222_a.png
+wait 12
+shot {HARNESS}/mv/222_b.png
+wait 22
+shot {HARNESS}/mv/222_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} df
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/223_a.png
+wait 12
+shot {HARNESS}/mv/223_b.png
+wait 22
+shot {HARNESS}/mv/223_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/224_a.png
+wait 12
+shot {HARNESS}/mv/224_b.png
+wait 22
+shot {HARNESS}/mv/224_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e1
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/225_a.png
+wait 12
+shot {HARNESS}/mv/225_b.png
+wait 22
+shot {HARNESS}/mv/225_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e2
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/226_a.png
+wait 12
+shot {HARNESS}/mv/226_b.png
+wait 22
+shot {HARNESS}/mv/226_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e3
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/227_a.png
+wait 12
+shot {HARNESS}/mv/227_b.png
+wait 22
+shot {HARNESS}/mv/227_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e4
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/228_a.png
+wait 12
+shot {HARNESS}/mv/228_b.png
+wait 22
+shot {HARNESS}/mv/228_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e5
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/229_a.png
+wait 12
+shot {HARNESS}/mv/229_b.png
+wait 22
+shot {HARNESS}/mv/229_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e6
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/230_a.png
+wait 12
+shot {HARNESS}/mv/230_b.png
+wait 22
+shot {HARNESS}/mv/230_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e7
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/231_a.png
+wait 12
+shot {HARNESS}/mv/231_b.png
+wait 22
+shot {HARNESS}/mv/231_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e8
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/232_a.png
+wait 12
+shot {HARNESS}/mv/232_b.png
+wait 22
+shot {HARNESS}/mv/232_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} e9
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/233_a.png
+wait 12
+shot {HARNESS}/mv/233_b.png
+wait 22
+shot {HARNESS}/mv/233_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ea
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/234_a.png
+wait 12
+shot {HARNESS}/mv/234_b.png
+wait 22
+shot {HARNESS}/mv/234_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} eb
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/235_a.png
+wait 12
+shot {HARNESS}/mv/235_b.png
+wait 22
+shot {HARNESS}/mv/235_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ec
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/236_a.png
+wait 12
+shot {HARNESS}/mv/236_b.png
+wait 22
+shot {HARNESS}/mv/236_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ed
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/237_a.png
+wait 12
+shot {HARNESS}/mv/237_b.png
+wait 22
+shot {HARNESS}/mv/237_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ee
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/238_a.png
+wait 12
+shot {HARNESS}/mv/238_b.png
+wait 22
+shot {HARNESS}/mv/238_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ef
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/239_a.png
+wait 12
+shot {HARNESS}/mv/239_b.png
+wait 22
+shot {HARNESS}/mv/239_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f0
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/240_a.png
+wait 12
+shot {HARNESS}/mv/240_b.png
+wait 22
+shot {HARNESS}/mv/240_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f1
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/241_a.png
+wait 12
+shot {HARNESS}/mv/241_b.png
+wait 22
+shot {HARNESS}/mv/241_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f2
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/242_a.png
+wait 12
+shot {HARNESS}/mv/242_b.png
+wait 22
+shot {HARNESS}/mv/242_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f3
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/243_a.png
+wait 12
+shot {HARNESS}/mv/243_b.png
+wait 22
+shot {HARNESS}/mv/243_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f4
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/244_a.png
+wait 12
+shot {HARNESS}/mv/244_b.png
+wait 22
+shot {HARNESS}/mv/244_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f5
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/245_a.png
+wait 12
+shot {HARNESS}/mv/245_b.png
+wait 22
+shot {HARNESS}/mv/245_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f6
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/246_a.png
+wait 12
+shot {HARNESS}/mv/246_b.png
+wait 22
+shot {HARNESS}/mv/246_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f7
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/247_a.png
+wait 12
+shot {HARNESS}/mv/247_b.png
+wait 22
+shot {HARNESS}/mv/247_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f8
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/248_a.png
+wait 12
+shot {HARNESS}/mv/248_b.png
+wait 22
+shot {HARNESS}/mv/248_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} f9
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/249_a.png
+wait 12
+shot {HARNESS}/mv/249_b.png
+wait 22
+shot {HARNESS}/mv/249_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} fa
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/250_a.png
+wait 12
+shot {HARNESS}/mv/250_b.png
+wait 22
+shot {HARNESS}/mv/250_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} fb
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/251_a.png
+wait 12
+shot {HARNESS}/mv/251_b.png
+wait 22
+shot {HARNESS}/mv/251_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} fc
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/252_a.png
+wait 12
+shot {HARNESS}/mv/252_b.png
+wait 22
+shot {HARNESS}/mv/252_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} fd
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/253_a.png
+wait 12
+shot {HARNESS}/mv/253_b.png
+wait 22
+shot {HARNESS}/mv/253_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} fe
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/254_a.png
+wait 12
+shot {HARNESS}/mv/254_b.png
+wait 22
+shot {HARNESS}/mv/254_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} ff
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/255_a.png
+wait 12
+shot {HARNESS}/mv/255_b.png
+wait 22
+shot {HARNESS}/mv/255_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 100
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/256_a.png
+wait 12
+shot {HARNESS}/mv/256_b.png
+wait 22
+shot {HARNESS}/mv/256_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 101
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/257_a.png
+wait 12
+shot {HARNESS}/mv/257_b.png
+wait 22
+shot {HARNESS}/mv/257_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 102
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/258_a.png
+wait 12
+shot {HARNESS}/mv/258_b.png
+wait 22
+shot {HARNESS}/mv/258_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 103
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/259_a.png
+wait 12
+shot {HARNESS}/mv/259_b.png
+wait 22
+shot {HARNESS}/mv/259_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 104
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/260_a.png
+wait 12
+shot {HARNESS}/mv/260_b.png
+wait 22
+shot {HARNESS}/mv/260_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 105
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/261_a.png
+wait 12
+shot {HARNESS}/mv/261_b.png
+wait 22
+shot {HARNESS}/mv/261_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 106
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/262_a.png
+wait 12
+shot {HARNESS}/mv/262_b.png
+wait 22
+shot {HARNESS}/mv/262_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 107
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/263_a.png
+wait 12
+shot {HARNESS}/mv/263_b.png
+wait 22
+shot {HARNESS}/mv/263_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 108
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/264_a.png
+wait 12
+shot {HARNESS}/mv/264_b.png
+wait 22
+shot {HARNESS}/mv/264_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 109
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/265_a.png
+wait 12
+shot {HARNESS}/mv/265_b.png
+wait 22
+shot {HARNESS}/mv/265_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 10a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/266_a.png
+wait 12
+shot {HARNESS}/mv/266_b.png
+wait 22
+shot {HARNESS}/mv/266_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 10b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/267_a.png
+wait 12
+shot {HARNESS}/mv/267_b.png
+wait 22
+shot {HARNESS}/mv/267_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 10c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/268_a.png
+wait 12
+shot {HARNESS}/mv/268_b.png
+wait 22
+shot {HARNESS}/mv/268_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 10d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/269_a.png
+wait 12
+shot {HARNESS}/mv/269_b.png
+wait 22
+shot {HARNESS}/mv/269_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 10e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/270_a.png
+wait 12
+shot {HARNESS}/mv/270_b.png
+wait 22
+shot {HARNESS}/mv/270_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 10f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/271_a.png
+wait 12
+shot {HARNESS}/mv/271_b.png
+wait 22
+shot {HARNESS}/mv/271_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 110
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/272_a.png
+wait 12
+shot {HARNESS}/mv/272_b.png
+wait 22
+shot {HARNESS}/mv/272_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 111
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/273_a.png
+wait 12
+shot {HARNESS}/mv/273_b.png
+wait 22
+shot {HARNESS}/mv/273_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 112
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/274_a.png
+wait 12
+shot {HARNESS}/mv/274_b.png
+wait 22
+shot {HARNESS}/mv/274_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 113
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/275_a.png
+wait 12
+shot {HARNESS}/mv/275_b.png
+wait 22
+shot {HARNESS}/mv/275_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 114
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/276_a.png
+wait 12
+shot {HARNESS}/mv/276_b.png
+wait 22
+shot {HARNESS}/mv/276_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 115
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/277_a.png
+wait 12
+shot {HARNESS}/mv/277_b.png
+wait 22
+shot {HARNESS}/mv/277_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 116
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/278_a.png
+wait 12
+shot {HARNESS}/mv/278_b.png
+wait 22
+shot {HARNESS}/mv/278_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 117
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/279_a.png
+wait 12
+shot {HARNESS}/mv/279_b.png
+wait 22
+shot {HARNESS}/mv/279_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 118
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/280_a.png
+wait 12
+shot {HARNESS}/mv/280_b.png
+wait 22
+shot {HARNESS}/mv/280_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 119
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/281_a.png
+wait 12
+shot {HARNESS}/mv/281_b.png
+wait 22
+shot {HARNESS}/mv/281_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 11a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/282_a.png
+wait 12
+shot {HARNESS}/mv/282_b.png
+wait 22
+shot {HARNESS}/mv/282_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 11b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/283_a.png
+wait 12
+shot {HARNESS}/mv/283_b.png
+wait 22
+shot {HARNESS}/mv/283_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 11c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/284_a.png
+wait 12
+shot {HARNESS}/mv/284_b.png
+wait 22
+shot {HARNESS}/mv/284_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 11d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/285_a.png
+wait 12
+shot {HARNESS}/mv/285_b.png
+wait 22
+shot {HARNESS}/mv/285_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 11e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/286_a.png
+wait 12
+shot {HARNESS}/mv/286_b.png
+wait 22
+shot {HARNESS}/mv/286_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 11f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/287_a.png
+wait 12
+shot {HARNESS}/mv/287_b.png
+wait 22
+shot {HARNESS}/mv/287_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 120
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/288_a.png
+wait 12
+shot {HARNESS}/mv/288_b.png
+wait 22
+shot {HARNESS}/mv/288_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 121
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/289_a.png
+wait 12
+shot {HARNESS}/mv/289_b.png
+wait 22
+shot {HARNESS}/mv/289_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 122
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/290_a.png
+wait 12
+shot {HARNESS}/mv/290_b.png
+wait 22
+shot {HARNESS}/mv/290_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 123
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/291_a.png
+wait 12
+shot {HARNESS}/mv/291_b.png
+wait 22
+shot {HARNESS}/mv/291_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 124
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/292_a.png
+wait 12
+shot {HARNESS}/mv/292_b.png
+wait 22
+shot {HARNESS}/mv/292_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 125
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/293_a.png
+wait 12
+shot {HARNESS}/mv/293_b.png
+wait 22
+shot {HARNESS}/mv/293_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 126
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/294_a.png
+wait 12
+shot {HARNESS}/mv/294_b.png
+wait 22
+shot {HARNESS}/mv/294_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 127
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/295_a.png
+wait 12
+shot {HARNESS}/mv/295_b.png
+wait 22
+shot {HARNESS}/mv/295_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 128
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/296_a.png
+wait 12
+shot {HARNESS}/mv/296_b.png
+wait 22
+shot {HARNESS}/mv/296_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 129
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/297_a.png
+wait 12
+shot {HARNESS}/mv/297_b.png
+wait 22
+shot {HARNESS}/mv/297_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 12a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/298_a.png
+wait 12
+shot {HARNESS}/mv/298_b.png
+wait 22
+shot {HARNESS}/mv/298_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 12b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/299_a.png
+wait 12
+shot {HARNESS}/mv/299_b.png
+wait 22
+shot {HARNESS}/mv/299_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 12c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/300_a.png
+wait 12
+shot {HARNESS}/mv/300_b.png
+wait 22
+shot {HARNESS}/mv/300_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 12d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/301_a.png
+wait 12
+shot {HARNESS}/mv/301_b.png
+wait 22
+shot {HARNESS}/mv/301_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 12e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/302_a.png
+wait 12
+shot {HARNESS}/mv/302_b.png
+wait 22
+shot {HARNESS}/mv/302_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 12f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/303_a.png
+wait 12
+shot {HARNESS}/mv/303_b.png
+wait 22
+shot {HARNESS}/mv/303_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 130
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/304_a.png
+wait 12
+shot {HARNESS}/mv/304_b.png
+wait 22
+shot {HARNESS}/mv/304_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 131
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/305_a.png
+wait 12
+shot {HARNESS}/mv/305_b.png
+wait 22
+shot {HARNESS}/mv/305_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 132
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/306_a.png
+wait 12
+shot {HARNESS}/mv/306_b.png
+wait 22
+shot {HARNESS}/mv/306_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 133
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/307_a.png
+wait 12
+shot {HARNESS}/mv/307_b.png
+wait 22
+shot {HARNESS}/mv/307_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 134
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/308_a.png
+wait 12
+shot {HARNESS}/mv/308_b.png
+wait 22
+shot {HARNESS}/mv/308_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 135
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/309_a.png
+wait 12
+shot {HARNESS}/mv/309_b.png
+wait 22
+shot {HARNESS}/mv/309_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 136
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/310_a.png
+wait 12
+shot {HARNESS}/mv/310_b.png
+wait 22
+shot {HARNESS}/mv/310_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 137
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/311_a.png
+wait 12
+shot {HARNESS}/mv/311_b.png
+wait 22
+shot {HARNESS}/mv/311_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 138
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/312_a.png
+wait 12
+shot {HARNESS}/mv/312_b.png
+wait 22
+shot {HARNESS}/mv/312_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 139
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/313_a.png
+wait 12
+shot {HARNESS}/mv/313_b.png
+wait 22
+shot {HARNESS}/mv/313_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 13a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/314_a.png
+wait 12
+shot {HARNESS}/mv/314_b.png
+wait 22
+shot {HARNESS}/mv/314_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 13b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/315_a.png
+wait 12
+shot {HARNESS}/mv/315_b.png
+wait 22
+shot {HARNESS}/mv/315_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 13c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/316_a.png
+wait 12
+shot {HARNESS}/mv/316_b.png
+wait 22
+shot {HARNESS}/mv/316_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 13d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/317_a.png
+wait 12
+shot {HARNESS}/mv/317_b.png
+wait 22
+shot {HARNESS}/mv/317_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 13e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/318_a.png
+wait 12
+shot {HARNESS}/mv/318_b.png
+wait 22
+shot {HARNESS}/mv/318_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 13f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/319_a.png
+wait 12
+shot {HARNESS}/mv/319_b.png
+wait 22
+shot {HARNESS}/mv/319_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 140
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/320_a.png
+wait 12
+shot {HARNESS}/mv/320_b.png
+wait 22
+shot {HARNESS}/mv/320_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 141
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/321_a.png
+wait 12
+shot {HARNESS}/mv/321_b.png
+wait 22
+shot {HARNESS}/mv/321_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 142
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/322_a.png
+wait 12
+shot {HARNESS}/mv/322_b.png
+wait 22
+shot {HARNESS}/mv/322_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 143
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/323_a.png
+wait 12
+shot {HARNESS}/mv/323_b.png
+wait 22
+shot {HARNESS}/mv/323_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 144
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/324_a.png
+wait 12
+shot {HARNESS}/mv/324_b.png
+wait 22
+shot {HARNESS}/mv/324_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 145
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/325_a.png
+wait 12
+shot {HARNESS}/mv/325_b.png
+wait 22
+shot {HARNESS}/mv/325_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 146
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/326_a.png
+wait 12
+shot {HARNESS}/mv/326_b.png
+wait 22
+shot {HARNESS}/mv/326_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 147
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/327_a.png
+wait 12
+shot {HARNESS}/mv/327_b.png
+wait 22
+shot {HARNESS}/mv/327_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 148
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/328_a.png
+wait 12
+shot {HARNESS}/mv/328_b.png
+wait 22
+shot {HARNESS}/mv/328_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 149
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/329_a.png
+wait 12
+shot {HARNESS}/mv/329_b.png
+wait 22
+shot {HARNESS}/mv/329_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 14a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/330_a.png
+wait 12
+shot {HARNESS}/mv/330_b.png
+wait 22
+shot {HARNESS}/mv/330_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 14b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/331_a.png
+wait 12
+shot {HARNESS}/mv/331_b.png
+wait 22
+shot {HARNESS}/mv/331_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 14c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/332_a.png
+wait 12
+shot {HARNESS}/mv/332_b.png
+wait 22
+shot {HARNESS}/mv/332_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 14d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/333_a.png
+wait 12
+shot {HARNESS}/mv/333_b.png
+wait 22
+shot {HARNESS}/mv/333_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 14e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/334_a.png
+wait 12
+shot {HARNESS}/mv/334_b.png
+wait 22
+shot {HARNESS}/mv/334_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 14f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/335_a.png
+wait 12
+shot {HARNESS}/mv/335_b.png
+wait 22
+shot {HARNESS}/mv/335_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 150
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/336_a.png
+wait 12
+shot {HARNESS}/mv/336_b.png
+wait 22
+shot {HARNESS}/mv/336_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 151
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/337_a.png
+wait 12
+shot {HARNESS}/mv/337_b.png
+wait 22
+shot {HARNESS}/mv/337_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 152
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/338_a.png
+wait 12
+shot {HARNESS}/mv/338_b.png
+wait 22
+shot {HARNESS}/mv/338_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 153
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/339_a.png
+wait 12
+shot {HARNESS}/mv/339_b.png
+wait 22
+shot {HARNESS}/mv/339_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 154
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/340_a.png
+wait 12
+shot {HARNESS}/mv/340_b.png
+wait 22
+shot {HARNESS}/mv/340_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 155
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/341_a.png
+wait 12
+shot {HARNESS}/mv/341_b.png
+wait 22
+shot {HARNESS}/mv/341_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 156
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/342_a.png
+wait 12
+shot {HARNESS}/mv/342_b.png
+wait 22
+shot {HARNESS}/mv/342_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 157
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/343_a.png
+wait 12
+shot {HARNESS}/mv/343_b.png
+wait 22
+shot {HARNESS}/mv/343_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 158
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/344_a.png
+wait 12
+shot {HARNESS}/mv/344_b.png
+wait 22
+shot {HARNESS}/mv/344_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 159
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/345_a.png
+wait 12
+shot {HARNESS}/mv/345_b.png
+wait 22
+shot {HARNESS}/mv/345_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 15a
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/346_a.png
+wait 12
+shot {HARNESS}/mv/346_b.png
+wait 22
+shot {HARNESS}/mv/346_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 15b
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/347_a.png
+wait 12
+shot {HARNESS}/mv/347_b.png
+wait 22
+shot {HARNESS}/mv/347_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 15c
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/348_a.png
+wait 12
+shot {HARNESS}/mv/348_b.png
+wait 22
+shot {HARNESS}/mv/348_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 15d
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/349_a.png
+wait 12
+shot {HARNESS}/mv/349_b.png
+wait 22
+shot {HARNESS}/mv/349_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 15e
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/350_a.png
+wait 12
+shot {HARNESS}/mv/350_b.png
+wait 22
+shot {HARNESS}/mv/350_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 15f
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/351_a.png
+wait 12
+shot {HARNESS}/mv/351_b.png
+wait 22
+shot {HARNESS}/mv/351_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 160
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/352_a.png
+wait 12
+shot {HARNESS}/mv/352_b.png
+wait 22
+shot {HARNESS}/mv/352_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 161
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/353_a.png
+wait 12
+shot {HARNESS}/mv/353_b.png
+wait 22
+shot {HARNESS}/mv/353_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4
+poke8 {gRtDebugCommand} 7
+wait 2
+poke16 {gRtDebugTestMove} 162
+poke16 {gRtDebugSpecies} 8f
+poke8 {gRtDebugLevel} 32
+poke8 {gRtDebugCommand} 1
+wait 60
+waitp {gRt} 2f 03 700
+wait 8
+shot {HARNESS}/mv/354_a.png
+wait 12
+shot {HARNESS}/mv/354_b.png
+wait 22
+shot {HARNESS}/mv/354_c.png
+wait 60
+poke8 {gRtDebugCommand} 9
+wait 330
+peek {gMain+4} 4

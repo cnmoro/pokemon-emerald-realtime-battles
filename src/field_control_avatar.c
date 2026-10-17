@@ -198,6 +198,12 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     u32 metatileAttributes;
 
     ResetFacingNpcOrSignpostVars();
+    {
+        extern const u8 gRtDebugEnabled;
+        extern bool8 RtDebug_FieldInput(void);
+        if (gRtDebugEnabled && RtDebug_FieldInput())
+            return TRUE;
+    }
     playerDirection = GetPlayerFacingDirection();
     GetPlayerPosition(&position);
     metatileAttributes = MapGridGetMetatileAttributeAt(position.x, position.y, METATILE_ATTRIBUTES_ALL);

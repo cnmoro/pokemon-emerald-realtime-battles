@@ -685,6 +685,21 @@ static void CB2_NewGameScene(void)
 
 void StartNewGameScene(void)
 {
+    {
+        // debug ROM (harness): straight into the game
+        extern const u8 gRtDebugEnabled;
+        if (gRtDebugEnabled)
+        {
+            static const u8 sRival[] = _("BLUE");
+            static const u8 sPlayer[] = _("TEST");
+            gSaveBlock2Ptr->playerGender = MALE;
+            StringCopy(gSaveBlock1Ptr->rivalName, sRival);
+            StringCopy(gSaveBlock2Ptr->playerName, sPlayer);
+            gMain.state = 0;
+            SetMainCallback2(CB2_NewGame);
+            return;
+        }
+    }
     gPlttBufferUnfaded[0] = RGB_BLACK;
     gPlttBufferFaded[0]   = RGB_BLACK;
     CreateTask(Task_NewGameScene, 0);

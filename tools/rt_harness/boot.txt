@@ -1,0 +1,13 @@
+wait 400
+tap S
+wait 120
+tap A
+wait 120
+tap A
+wait 120
+tap A
+wait 60
+tap A
+wait 500
+shot {HARNESS}/b1.png
+savest {HARNESS}/field.ss
