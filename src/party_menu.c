@@ -5308,6 +5308,27 @@ void ItemUseCB_EvolutionStone(u8 taskId, TaskFunc task)
 {
     PlaySE(SE_SELECT);
     gCB2_AfterEvolution = gPartyMenu.exitCallback;
+    // the former trade-evolution items (Metal Coat, King's Rock, Dragon Scale, Up-Grade, Deep Sea Tooth/Scale)
+    // have no entry in the item effect table: evolve directly from the evolution table
+    if (!ITEM_HAS_EFFECT(gSpecialVar_ItemId))
+    {
+        struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
+        u16 target = GetEvolutionTargetSpecies(mon, EVO_MODE_ITEM_USE, gSpecialVar_ItemId);
+        if (target != SPECIES_NONE)
+        {
+            BeginEvolutionScene(mon, target, FALSE, gPartyMenu.slotId);
+            RemoveBagItem(gSpecialVar_ItemId, 1);
+            FreePartyPointers();
+        }
+        else
+        {
+            gPartyMenuUseExitCallback = FALSE;
+            DisplayPartyMenuMessage(gText_WontHaveEffect, TRUE);
+            ScheduleBgCopyTilemapToVram(2);
+            gTasks[taskId].func = task;
+        }
+        return;
+    }
     if (ExecuteTableBasedItemEffect_(gPartyMenu.slotId, gSpecialVar_ItemId, 0))
     {
         gPartyMenuUseExitCallback = FALSE;

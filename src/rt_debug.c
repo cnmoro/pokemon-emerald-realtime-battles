@@ -109,6 +109,13 @@ bool8 RtDebug_FieldInput(void)
         RtDebug_StartTrainerBattle(gRtDebugTrainer ? gRtDebugTrainer : TRAINER_ROXANNE_1);
         return TRUE;
     }
+    if (cmd == 23)
+    {
+        // lead becomes gRtDebugSpecies (Lv gRtDebugLevel) and the bag gets item gRtDebugTestMove
+        CreateMon(&gPlayerParty[0], gRtDebugSpecies, gRtDebugLevel ? gRtDebugLevel : 30, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+        AddBagItem(gRtDebugTestMove, 1);
+        return FALSE;
+    }
     if (cmd == 18)
     {
         // lead becomes a Lv5 Magikarp (nothing to relearn)
