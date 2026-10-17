@@ -87,6 +87,8 @@ static const u8 sColHudPurple[] = {1, 9, 3};
 static const u8 sColHudOrange[] = {1, 10, 3};
 static const u8 sColMenu[] = {1, 2, 3};
 static const u8 sColMenuRed[] = {1, 5, 3};
+// cursor arrow: transparent background, so the glyph's empty right side doesn't paint over the row's text
+static const u8 sColMenuArrow[] = {0, 5, 3};
 static const u8 sColMenuGray[] = {1, 3, 7};
 
 static const u8 sText_Lv[] = _("Lv");
@@ -1034,7 +1036,7 @@ static void DrawMenu(void)
             static const u8 *const sOpts[] = {sText_Resume, sText_Bag, sText_Pokemon, sText_Run};
             for (i = 0; i < 4; i++)
                 AddTextPrinterParameterized3(WIN_MENU, FONT_NORMAL, 16, 6 + i * 16, sColMenu, TEXT_SKIP_DRAW, sOpts[i]);
-            AddTextPrinterParameterized3(WIN_MENU, FONT_NORMAL, 6, 6 + gRt->menuCursor * 16, sColMenuRed, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
+            AddTextPrinterParameterized3(WIN_MENU, FONT_NORMAL, 6, 6 + gRt->menuCursor * 16, sColMenuArrow, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
         }
         break;
     case MENU_BAG:
@@ -1056,7 +1058,7 @@ static void DrawMenu(void)
             ConvertIntToDecimalStringN(s, GetBagQty(gRt->menuItems[idx]), STR_CONV_MODE_LEFT_ALIGN, 3);
             AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 88, 3 + row * 13, sColMenuGray, TEXT_SKIP_DRAW, gStringVar2);
         }
-        AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 5, 3 + (gRt->menuCursor - gRt->menuScroll) * 13, sColMenuRed, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
+        AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 5, 3 + (gRt->menuCursor - gRt->menuScroll) * 13, sColMenuArrow, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
         {
             // description of selected item in the message box area
         }
@@ -1086,7 +1088,7 @@ static void DrawMenu(void)
                 AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 62, 1 + row * 12, col, TEXT_SKIP_DRAW, gStringVar4);
             }
         }
-        AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 4, 1 + gRt->menuCursor * 12, sColMenuRed, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
+        AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 4, 1 + gRt->menuCursor * 12, sColMenuArrow, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
         break;
     case MENU_LEARN:
         {
@@ -1094,7 +1096,7 @@ static void DrawMenu(void)
             for (row = 0; row < MAX_MON_MOVES; row++)
                 AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 14, 3 + row * 13, sColMenu, TEXT_SKIP_DRAW, gMoveNames[GetMonData(mon, MON_DATA_MOVE1 + row)]);
             AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 14, 3 + 4 * 13, sColMenuRed, TEXT_SKIP_DRAW, sText_DontLearn);
-            AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 5, 3 + gRt->menuCursor * 13, sColMenuRed, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
+            AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 5, 3 + gRt->menuCursor * 13, sColMenuArrow, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
         }
         break;
     }
@@ -1358,7 +1360,7 @@ static void DrawYesNo(void)
     FillWindowPixelRect(WIN_MENU, PIXEL_FILL(1), 58, 34, 52, 36);
     AddTextPrinterParameterized3(WIN_MENU, FONT_NORMAL, 74, 36, sColMenu, TEXT_SKIP_DRAW, sText_Yes);
     AddTextPrinterParameterized3(WIN_MENU, FONT_NORMAL, 74, 52, sColMenu, TEXT_SKIP_DRAW, sText_No);
-    AddTextPrinterParameterized3(WIN_MENU, FONT_NORMAL, 64, 36 + sYesNoCursor * 16, sColMenuRed, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
+    AddTextPrinterParameterized3(WIN_MENU, FONT_NORMAL, 64, 36 + sYesNoCursor * 16, sColMenuArrow, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
     PutWindowTilemap(WIN_MENU);
     CopyWindowToVram(WIN_MENU, COPYWIN_FULL);
 }

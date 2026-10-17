@@ -109,6 +109,20 @@ bool8 RtDebug_FieldInput(void)
         RtDebug_StartTrainerBattle(gRtDebugTrainer ? gRtDebugTrainer : TRAINER_ROXANNE_1);
         return TRUE;
     }
+    if (cmd == 28)
+    {
+        // warp to map gRtDebugSpecies (MAP_* constant: num | group << 8) at (gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF)
+        SetWarpDestination(gRtDebugSpecies >> 8, gRtDebugSpecies & 0xFF, WARP_ID_NONE, gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF);
+        DoWarp();
+        return TRUE;
+    }
+    if (cmd == 29)
+    {
+        // party of 5: the last party POKeMON is removed (capture-to-party test)
+        ZeroMonData(&gPlayerParty[PARTY_SIZE - 1]);
+        CalculatePlayerPartyCount();
+        return FALSE;
+    }
     if (cmd == 23)
     {
         // lead becomes gRtDebugSpecies (Lv gRtDebugLevel) and the bag gets item gRtDebugTestMove
