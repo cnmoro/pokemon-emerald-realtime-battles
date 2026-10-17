@@ -1417,8 +1417,8 @@ void RtArena_Build(void)
             sSpawnValid = TRUE;
         }
     }
-    RtProps_Place();
     gRt->floorKind = water ? 1 : ((MetatileBehavior_IsTallGrass(playerBehav) || MetatileBehavior_IsLongGrass(playerBehav)) ? 2 : 0);
+    RtProps_Place(); // after floorKind: nothing is put down on water
     Free(grid);
     Free(sum);
     Free(comp);
