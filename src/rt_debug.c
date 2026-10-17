@@ -117,6 +117,13 @@ bool8 RtDebug_FieldInput(void)
         AddBagItem(gRtDebugTestMove, 1);
         return FALSE;
     }
+    if (cmd == 29)
+    {
+        // party of 5: the last party POKeMON is removed (capture-to-party test)
+        ZeroMonData(&gPlayerParty[PARTY_SIZE - 1]);
+        CalculatePlayerPartyCount();
+        return FALSE;
+    }
     if (cmd == 28)
     {
         // warp to map gRtDebugSpecies (MAP_* constant: num | group << 8) at (gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF)
