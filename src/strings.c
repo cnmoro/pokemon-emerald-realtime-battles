@@ -1486,6 +1486,7 @@ const u8 gText_RtExpShare4[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}FIRST 4");
 const u8 gText_RtExpShare5[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}FIRST 5");
 const u8 gText_RtExpShareAll[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ALL 6");
 const u8 gText_RtExpBonus[] = _("EXP BONUS");
+const u8 gText_RtBattleSpeed[] = _("BATTLE SPEED");
 const u8 gText_RtDifficultyEasy[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}EASY");
 const u8 gText_RtDifficultyMedium[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}MEDIUM");
 const u8 gText_RtDifficultyHard[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HARD");

@@ -524,7 +524,15 @@ extern const u8 gRtDebugEnabled;
 extern u8 gRtDebugAutoplay;
 
 EWRAM_DATA u32 gRtProf[32] = {0};
-EWRAM_DATA u32 gRtDebugStat = 0; // debug harness: result of a statistics command
+EWRAM_DATA u32 gRtDebugStat = 0;
+
+// BATTLE SPEED option: saved code -> percentage of frames that advance the fight
+u8 RtBattleSpeedPct(void)
+{
+    static const u8 sPct[] = {80, 60, 70, 90, 100};
+    u8 code = gSaveBlock2Ptr->optionsRtBattleSpeed;
+    return sPct[code < ARRAY_COUNT(sPct) ? code : 0];
+} // debug harness: result of a statistics command
 static EWRAM_DATA u16 sFrameStartLine = 0;
 EWRAM_DATA u8 gRtFxHeavy = 0;
 static u16 sProfCur[16];
@@ -611,12 +619,12 @@ static void CB2_RtMain(void)
         break;
     case RTS_FIGHT:
         // battle pace: the simulation (movement, moves, timers, animations, effects) advances on
-        // RT_SIM_NUM of every RT_SIM_DEN frames; presses made on the other frames are kept for the next
-        gRt->simAcc += RT_SIM_NUM;
-        gRt->simStep = gRt->simAcc >= RT_SIM_DEN;
+        // BATTLE SPEED % of the frames; presses made on the other frames are kept for the next
+        gRt->simAcc += RtBattleSpeedPct();
+        gRt->simStep = gRt->simAcc >= 100;
         if (gRt->simStep)
         {
-            gRt->simAcc -= RT_SIM_DEN;
+            gRt->simAcc -= 100;
             gMain.newKeys |= gRt->latchNew;
             gMain.newKeysRaw |= gRt->latchNewRaw;
             gRt->latchNew = gRt->latchNewRaw = 0;

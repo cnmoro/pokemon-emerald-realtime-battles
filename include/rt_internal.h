@@ -713,14 +713,13 @@ struct RtBattle
     u8 vfxPalCycle;      // misc frame counter for palette flicker
     u8 sideDim;          // dither-dim the scenery left/right of the field (no ring of border blocks there)
     u8 ballFails;        // balls that hit but broke free this battle: each one raises the next catch chance
-    u8 simAcc;           // battle pace: the fight simulation runs RT_SIM_NUM of every RT_SIM_DEN frames
+    u8 simAcc;           // battle pace: the fight simulation advances RtBattleSpeedPct() of every 100 frames
     bool8 simStep;       // this frame advances the fight (FALSE: only camera / HUD / drawing)
     u16 latchNew, latchNewRaw; // buttons pressed on frames that did not advance the fight
 };
 
-// battle pace: 4 of 5 frames = the whole fight runs at 80 % speed
-#define RT_SIM_NUM 4
-#define RT_SIM_DEN 5
+// battle pace (OPTION menu, BATTLE SPEED): percentage of frames that advance the fight
+u8 RtBattleSpeedPct(void);
 
 extern struct RtBattle *gRt;
 
