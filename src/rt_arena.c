@@ -22,8 +22,12 @@
 // behaviour flags are cached for the duration of the build.
 #if RT_FIRERED
 #define RT_VMAP VMap
+#define RT_VMAP_W Xsize
+#define RT_VMAP_H Ysize
 #else
 #define RT_VMAP gBackupMapLayout
+#define RT_VMAP_W width
+#define RT_VMAP_H height
 #endif
 static u16 *sBlkCache;          // meta | collision << 10 | elevation << 12 for every cell of the area
 static u8 *sCellMF;             // MF_* of every cell of the area (MF_INVALID: no metatile)
@@ -34,9 +38,9 @@ static u8 MetaFlags(u16 m);
 
 static u16 RtBlockAtSlow(s32 x, s32 y)
 {
-    if (x >= 0 && y >= 0 && x < RT_VMAP.Xsize && y < RT_VMAP.Ysize)
+    if (x >= 0 && y >= 0 && x < RT_VMAP.RT_VMAP_W && y < RT_VMAP.RT_VMAP_H)
     {
-        u16 b = RT_VMAP.map[x + RT_VMAP.Xsize * y];
+        u16 b = RT_VMAP.map[x + RT_VMAP.RT_VMAP_W * y];
         if (b != MAPGRID_UNDEFINED)
             return b;
     }
@@ -88,12 +92,12 @@ static void RtMapCache_Begin(s32 x0, s32 y0, s32 w, s32 h)
     for (y = y0; y < y0 + h; y++)
     {
         // rows inside the loaded map are copied straight from it
-        bool8 rowIn = (y >= 0 && y < RT_VMAP.Ysize);
-        const u16 *row = rowIn ? &RT_VMAP.map[RT_VMAP.Xsize * y] : NULL;
+        bool8 rowIn = (y >= 0 && y < RT_VMAP.RT_VMAP_H);
+        const u16 *row = rowIn ? &RT_VMAP.map[RT_VMAP.RT_VMAP_W * y] : NULL;
         for (x = x0; x < x0 + w; x++)
         {
             u16 v = MAPGRID_UNDEFINED;
-            if (rowIn && x >= 0 && x < RT_VMAP.Xsize)
+            if (rowIn && x >= 0 && x < RT_VMAP.RT_VMAP_W)
                 v = row[x];
             if (v == MAPGRID_UNDEFINED)
                 v = RtBlockAtSlow(x, y);
