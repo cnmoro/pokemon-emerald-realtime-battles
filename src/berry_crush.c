@@ -1144,6 +1144,7 @@ static void SetNamesAndTextSpeed(struct BerryCrushGame *game)
         game->textSpeed = 4;
         break;
     case OPTIONS_TEXT_SPEED_FAST:
+    case OPTIONS_TEXT_SPEED_INSTANT:
         game->textSpeed = 1;
         break;
     }

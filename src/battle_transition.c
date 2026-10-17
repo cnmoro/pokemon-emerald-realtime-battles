@@ -647,9 +647,27 @@ static void LaunchBattleTransitionTask(u8 transitionId)
     gTasks[taskId].tTransitionId = transitionId;
 }
 
+// real-time mod: the field transition plays 3x faster - the transition's own tasks run twice more per frame
+static void RunTransitionTaskAgain(TaskFunc func)
+{
+    u8 id = FindTaskIdByFunc(func);
+    if (id != TASK_NONE)
+        func(id);
+}
+
 static void Task_BattleTransition(u8 taskId)
 {
+    u8 k, transitionId;
     while (sTaskHandlers[gTasks[taskId].tState](&gTasks[taskId]));
+    transitionId = gTasks[taskId].tTransitionId;
+    for (k = 0; k < 2; k++)
+    {
+        if (sTasks_Intro[transitionId] != NULL)
+            RunTransitionTaskAgain(sTasks_Intro[transitionId]);
+        RunTransitionTaskAgain(Task_BattleTransition_Intro);
+        RunTransitionTaskAgain(sTasks_Main[transitionId]);
+        AnimateSprites(); // sprite-based transitions (Poke Ball trail, mugshots) move with them
+    }
 }
 
 static bool8 Transition_StartIntro(struct Task *task)
