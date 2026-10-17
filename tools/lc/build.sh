@@ -6,7 +6,7 @@ B=build/lc; mkdir -p $B
 CC1=$(arm-none-eabi-gcc --print-prog-name=cc1)
 CPPFLAGS="-iquote include -Wno-trigraphs -DFIRERED -DREVISION=0 -DENGLISH -DMODERN=1 -DRT_LC=1"
 CFLAGS="-mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast -mlong-calls"
-SRCS="${SRCS:-src/rt_lc_glue.c src/rt_main.c src/rt_arena.c src/rt_actor.c src/rt_moves.c src/rt_fx.c src/rt_ai.c src/rt_ui.c src/rt_props.c src/rt_vfx.c src/rt_data.c src/rt_debug.c}"
+SRCS="${SRCS:-src/rt_lc_glue.c src/rt_main.c src/rt_arena.c src/rt_actor.c src/rt_moves.c src/rt_fx.c src/rt_ai.c src/rt_ui.c src/rt_props.c src/rt_vfx.c src/rt_data.c src/rt_debug.c src/option_menu.c src/rt_lc_summary.c}"
 OBJS=""
 for s in $SRCS; do
   o=$B/$(basename ${s%.c}).o
@@ -16,7 +16,8 @@ for s in $SRCS; do
   OBJS="$OBJS $o"
 done
 arm-none-eabi-as -mcpu=arm7tdmi -I . -o $B/rt_gfx.o data/rt_gfx_lc.s
-python3 tools/lc/gen_syms.py tools/lc/pokefirered_bpre10.sym tools/lc/overrides.txt $B/syms.ld tools/lc/fr_functions.txt
+arm-none-eabi-nm --defined-only $OBJS | awk 'NF==3 {print $3}' | sort -u > $B/own_syms.txt
+python3 tools/lc/gen_syms.py tools/lc/pokefirered_bpre10.sym tools/lc/overrides.txt $B/syms.ld tools/lc/fr_functions.txt $B/own_syms.txt
 LIBGCC=$(dirname $(arm-none-eabi-gcc -mthumb -march=armv4t -print-libgcc-file-name))
 LIBC=$(dirname $(arm-none-eabi-gcc -mthumb -march=armv4t -print-file-name=libc.a))
 arm-none-eabi-ld -L $B -T tools/lc/lc.ld -Map $B/rt_blob.map -o $B/rt_blob.elf $OBJS $B/rt_gfx.o -L $LIBC -L $LIBGCC -lc -lgcc

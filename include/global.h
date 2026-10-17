@@ -334,6 +334,25 @@ struct SaveBlock2
     /*0x010*/ u8 playTimeMinutes;
     /*0x011*/ u8 playTimeSeconds;
     /*0x012*/ u8 playTimeVBlanks;
+#if RT_LC
+    // Liquid Crystal build: the game rewrites byte 0x13 whole, so the real-time options live in 0x90-0x92
+    /*0x013*/ u8 optionsButtonMode;  // OPTIONS_BUTTON_MODE_[NORMAL/LR/L_EQUALS_A]
+    /*0x014*/ u16 optionsTextSpeed:3; // OPTIONS_TEXT_SPEED_[SLOW/MID/FAST]
+              u16 optionsWindowFrameType:5; // Specifies one of the 20 decorative borders for text boxes
+    /*0x15*/  u16 optionsSound:1; // OPTIONS_SOUND_[MONO/STEREO]
+              u16 optionsBattleStyle:1; // OPTIONS_BATTLE_STYLE_[SHIFT/SET]
+              u16 optionsBattleSceneOff:1; // whether battle animations are disabled
+              u16 regionMapZoom:1; // whether the map is zoomed in
+    /*0x018*/ struct Pokedex pokedex;
+    /*0x090*/ u8 optionsRtBattleSpeed;
+    /*0x091*/ u8 optionsRtExpShare:3;
+              u8 optionsRtExpBonus:3;
+              u8 optionsRtAutoAim:1;
+              u8 filler_91_7:1;
+    /*0x092*/ u8 optionsRtDifficulty:2;
+              u8 filler_92_2:6;
+    /*0x093*/ u8 filler_93[0x5];
+#else
     /*0x013*/ u8 optionsButtonMode:2;  // OPTIONS_BUTTON_MODE_[NORMAL/LR/L_EQUALS_A]
               u8 optionsRtExpShare:3;  // real-time mod: automatic EXP share, 0 off, 1..5 = first 2..6 party POKeMON
               u8 optionsRtExpBonus:3;  // real-time mod: EXP bonus, 0 off, 1..7 = +25/50/100/150/200/300/400 %
@@ -348,6 +367,7 @@ struct SaveBlock2
     /*0x018*/ struct Pokedex pokedex;
     /*0x090*/ u8 optionsRtBattleSpeed; // real-time battle pace: 0 = 80 % (default), 1 = 60, 2 = 70, 3 = 90, 4 = 100 %
     /*0x091*/ u8 filler_91[0x7];
+#endif
     /*0x098*/ struct Time localTimeOffset;
     /*0x0A0*/ struct Time lastBerryTreeUpdate;
     /*0x0A8*/ u32 gcnLinkFlags; // Read by Pokemon Colosseum/XD

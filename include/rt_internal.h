@@ -82,6 +82,7 @@ extern const struct RtFrame gRtFrames[];
 #define RT_GFX_DEX_COUNT NATIONAL_DEX_COUNT
 #endif
 extern const struct RtSpeciesGfx gRtSpeciesGfx[];
+bool8 RtMove_IsPhysical(u16 move, u8 type);
 extern const u16 gRtSpeciesPal[][2][16];
 
 // ---------------------------------------------------------------------------

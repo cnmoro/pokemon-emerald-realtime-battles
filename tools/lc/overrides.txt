@@ -1,2 +1,3 @@
 # Liquid Crystal moved these tables
 gTrainers 0x08ABFD84
+gWildMonHeaders 0x08C10200

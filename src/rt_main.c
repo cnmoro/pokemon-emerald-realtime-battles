@@ -294,6 +294,10 @@ static void CB1_RtBattle(void)
 {
 }
 
+#if RT_LC
+static EWRAM_DATA u8 sLcDnsSaved = 0;
+#endif
+
 void CB2_InitRtBattle(void)
 {
 #if RT_FIRERED
@@ -304,6 +308,11 @@ void CB2_InitRtBattle(void)
 #endif
     gPreBattleCallback1 = gMain.callback1;
     gMain.callback1 = CB1_RtBattle;
+#if RT_LC
+    // Liquid Crystal's day/night system tints palettes while its flag (0x0203E000) is set: not in battle
+    sLcDnsSaved = *(vu8 *)0x0203E000;
+    *(vu8 *)0x0203E000 = 0;
+#endif
     gRt = AllocZeroed(sizeof(struct RtBattle));
     {
         s32 i;
@@ -2063,6 +2072,9 @@ static void Rt_UpdateOutro(void)
 // ---------------------------------------------------------------------------
 static void Rt_FinalReturn(void)
 {
+#if RT_LC
+    *(vu8 *)0x0203E000 = sLcDnsSaved;
+#endif
     if (!(gBattleTypeFlags & BATTLE_TYPE_LINK))
     {
         RandomlyGivePartyPokerus(gPlayerParty);

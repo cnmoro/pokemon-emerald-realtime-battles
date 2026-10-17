@@ -24,7 +24,9 @@ enum
     MENUITEM_EXPBONUS,
     MENUITEM_BATTLESPEED,
     MENUITEM_SOUND,
-    MENUITEM_BUTTONMODE,
+#if !RT_LC
+    MENUITEM_BUTTONMODE, // Liquid Crystal keeps L/R as page buttons (no help screen): no row
+#endif
     MENUITEM_FRAMETYPE,
     MENUITEM_CANCEL,
     MENUITEM_COUNT
@@ -134,7 +136,13 @@ static const struct BgTemplate sOptionMenuBgTemplates[] =
 };
 
 static const u16 sOptionMenuPalette[] = INCBIN_U16("graphics/misc/option_menu.gbapal");
-static const u16 sOptionMenuItemCounts[MENUITEM_COUNT] = {3, 3, 2, 6, 8, 5, 2, 3, 10, 0};
+static const u16 sOptionMenuItemCounts[MENUITEM_COUNT] = {
+    [MENUITEM_TEXTSPEED] = 3, [MENUITEM_BATTLESCENE] = 3, [MENUITEM_BATTLESTYLE] = 2, [MENUITEM_EXPSHARE] = 6,
+    [MENUITEM_EXPBONUS] = 8, [MENUITEM_BATTLESPEED] = 5, [MENUITEM_SOUND] = 2,
+#if !RT_LC
+    [MENUITEM_BUTTONMODE] = 3,
+#endif
+    [MENUITEM_FRAMETYPE] = 10, [MENUITEM_CANCEL] = 0};
 
 // real-time mod rows are 12 px apart (10 rows); text is drawn on a transparent background so a
 // row's glyph cell never paints over its neighbours' shadows
@@ -190,7 +198,9 @@ static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
     [MENUITEM_EXPBONUS]    = sText_RtExpBonus,
     [MENUITEM_BATTLESPEED] = sText_RtBattleSpeed,
     [MENUITEM_SOUND]       = gText_Sound,
+#if !RT_LC
     [MENUITEM_BUTTONMODE]  = gText_ButtonMode,
+#endif
     [MENUITEM_FRAMETYPE]   = gText_Frame,
     [MENUITEM_CANCEL]      = gText_OptionMenuCancel,
 };
@@ -264,7 +274,9 @@ void CB2_OptionsMenuFromStartMenu(void)
     sOptionMenuPtr->option[MENUITEM_EXPBONUS] = gSaveBlock2Ptr->optionsRtExpBonus;
     sOptionMenuPtr->option[MENUITEM_BATTLESPEED] = sSpeedSaveToMenu[gSaveBlock2Ptr->optionsRtBattleSpeed < 5 ? gSaveBlock2Ptr->optionsRtBattleSpeed : 0];
     sOptionMenuPtr->option[MENUITEM_SOUND] = gSaveBlock2Ptr->optionsSound;
+#if !RT_LC
     sOptionMenuPtr->option[MENUITEM_BUTTONMODE] = gSaveBlock2Ptr->optionsButtonMode;
+#endif
     sOptionMenuPtr->option[MENUITEM_FRAMETYPE] = gSaveBlock2Ptr->optionsWindowFrameType;
     
     for (i = 0; i < MENUITEM_COUNT - 1; i++)
@@ -553,9 +565,11 @@ static void BufferOptionMenuString(u8 selection)
     case MENUITEM_SOUND:
         AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sSoundOptions[sOptionMenuPtr->option[selection]]);
         break;
+#if !RT_LC
     case MENUITEM_BUTTONMODE:
         AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sButtonTypeOptions[sOptionMenuPtr->option[selection]]);
         break;
+#endif
     case MENUITEM_FRAMETYPE:
         StringCopy(str, gText_FrameType);
         ConvertIntToDecimalStringN(buf, sOptionMenuPtr->option[selection] + 1, 1, 2);
@@ -581,7 +595,11 @@ static void CloseAndSaveOptionMenu(u8 taskId)
     gSaveBlock2Ptr->optionsRtExpBonus = sOptionMenuPtr->option[MENUITEM_EXPBONUS];
     gSaveBlock2Ptr->optionsRtBattleSpeed = sSpeedMenuToSave[sOptionMenuPtr->option[MENUITEM_BATTLESPEED]];
     gSaveBlock2Ptr->optionsSound = sOptionMenuPtr->option[MENUITEM_SOUND];
+#if RT_LC
+    gSaveBlock2Ptr->optionsButtonMode = OPTIONS_BUTTON_MODE_LR; // as Liquid Crystal does
+#else
     gSaveBlock2Ptr->optionsButtonMode = sOptionMenuPtr->option[MENUITEM_BUTTONMODE];
+#endif
     gSaveBlock2Ptr->optionsWindowFrameType = sOptionMenuPtr->option[MENUITEM_FRAMETYPE];
     SetPokemonCryStereo(gSaveBlock2Ptr->optionsSound);
     FREE_AND_SET_NULL(sOptionMenuPtr);

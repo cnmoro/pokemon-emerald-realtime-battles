@@ -29,6 +29,18 @@
 
 #include "data/rt/move_defs.h"
 
+// Physical or special. Liquid Crystal has the per-move split (byte 10 of the move data: 0 physical,
+// 1 special, 2 status); FireRed/Emerald decide by type like generation 3.
+bool8 RtMove_IsPhysical(u16 move, u8 type)
+{
+#if RT_LC
+    u8 cat = ((const u8 *)&gBattleMoves[move])[10];
+    if (cat < 2)
+        return cat == 0;
+#endif
+    return IS_TYPE_PHYSICAL(type);
+}
+
 
 static void ExecuteMove(struct RtActor *a);
 void RtMove_CheckBerries(struct RtActor *a);
@@ -373,7 +385,7 @@ static u16 CalcPower(struct RtActor *a, struct RtActor *t, u16 move)
 s32 RtMove_CalcDamage(struct RtActor *atk, struct RtActor *def, u16 move, u16 power, u8 *outEff, u8 *outCrit)
 {
     u8 type = RtMove_TypeOf(atk, move);
-    bool8 phys = IS_TYPE_PHYSICAL(type);
+    bool8 phys = RtMove_IsPhysical(move, type);
     u32 a, d;
     s32 dmg;
     u8 eff, critStage = 0;
@@ -550,7 +562,7 @@ static bool8 AccuracyCheck(struct RtActor *atk, struct RtActor *def, u16 move)
     if (st < -6) st = -6;
     if (st > 6) st = 6;
     acc = acc * r[st + 6][0] / r[st + 6][1];
-    if (atk->ability == ABILITY_HUSTLE && IS_TYPE_PHYSICAL(RtMove_TypeOf(atk, move)))
+    if (atk->ability == ABILITY_HUSTLE && RtMove_IsPhysical(move, RtMove_TypeOf(atk, move)))
         acc = acc * 80 / 100;
     if (def->ability == ABILITY_SAND_VEIL && gRt->weather == WEATHER_SAND_RT && WeatherActive())
         acc = acc * 80 / 100;
@@ -1002,7 +1014,7 @@ static u32 MoveStrength(struct RtActor *a, u16 move)
     u32 s;
     if (pw <= 1)
         pw = 60; // variable power
-    s = pw * (IS_TYPE_PHYSICAL(type) ? a->atk : a->spa);
+    s = pw * (RtMove_IsPhysical(move, type) ? a->atk : a->spa);
     if (RtActor_HasType(a, type))
         s = s * 3 / 2;
     return s;
@@ -2123,7 +2135,7 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
     // counter / mirror coat window: negate and reflect double
     if (t->counterWin)
     {
-        bool8 phys = IS_TYPE_PHYSICAL(type);
+        bool8 phys = RtMove_IsPhysical(move, type);
         if ((t->counterKind == 0 && phys) || (t->counterKind == 1 && !phys))
         {
             s32 d = RtMove_CalcDamage(atk, t, move, CalcPower(atk, t, move), NULL, NULL);
@@ -2269,7 +2281,7 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
     // apply
     t->damageTakenThisCast += dmg;
     t->lastDamageTaken = dmg;
-    t->lastDamageCat = IS_TYPE_PHYSICAL(type) ? 0 : 1;
+    t->lastDamageCat = RtMove_IsPhysical(move, type) ? 0 : 1;
     if (t->side == RT_SIDE_PLAYER)
         gBattleResults.playerMonWasDamaged = TRUE;
     RtVfx_SetHit(atk->id, t->id);

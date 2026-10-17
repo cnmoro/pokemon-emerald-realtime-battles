@@ -52,7 +52,11 @@ static const struct DebugMon sDebugParty[] =
 
 static const struct { s8 group, num, x, y; } sDebugWarps[] =
 {
+#if RT_LC
+#include "data/rt/debug_warps_lc.h"
+#else
 #include "data/rt/debug_warps.h"
+#endif
 };
 
 void RtDebug_NewGame(void)

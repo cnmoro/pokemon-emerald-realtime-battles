@@ -71,12 +71,28 @@ def main():
 
     # battle start -> real-time engine when supported
     hook(rom, v['CB2_InitBattle'], syms['RtLc_CB2_InitBattle'], vanilla[(v['CB2_InitBattle'] & 0x1FFFFFF):][:4])
+    # OPTION menu with the real-time rows
+    hook(rom, v['CB2_OptionsMenuFromStartMenu'], syms['CB2_OptionsMenuFromStartMenu'])
+    # summary screen: cooldown in seconds where the PP were
+    hook(rom, v['BufferMonMoveI'], syms['RtLc_BufferMonMoveI'])
+    hook(rom, v['PokeSum_PrintMoveName'], syms['RtLc_PokeSum_PrintMoveName'])
     # the engine's RAM sits at the top of gHeap
     hook(rom, v['InitHeap'], syms['RtLc_InitHeap'])
 
     tramps = syms['RtLc_Trampolines']
     if rom[tramps & 0x1FFFFFF:(tramps & 0x1FFFFFF) + 4] != b'RTLT':
         raise SystemExit('trampoline table not found')
+    # Pokemon Center: talking to the nurse heals at once (no dialogue, no Poke Ball machine)
+    nurse = v['EventScript_PkmnCenterNurse'] & 0x1FFFFFF
+    script = (bytes([0x25]) + struct.pack('<H', 0x187)                      # special GetQuestLogState
+              + bytes([0x21]) + struct.pack('<HH', 0x800D, 1)              # compare VAR_RESULT, TRUE
+              + bytes([0x06, 1]) + struct.pack('<I', v['EventScript_ReleaseEnd'])  # goto_if_eq ReleaseEnd
+              + bytes([0xC3, 15])                                          # incrementgamestat USED_POKECENTER
+              + bytes([0x25]) + struct.pack('<H', 0x000)                   # special HealPlayerParty
+              + bytes([0x2F]) + struct.pack('<H', 1)                       # playse SE_USE_ITEM
+              + bytes([0x03]))                                             # return
+    rom[nurse:nurse + len(script)] = script
+
     if debug:
         rom[syms['gRtDebugEnabled'] & 0x1FFFFFF] = 1
         # debug commands polled from the overworld input handler (push {r4-r7,lr}; mov r7,r8; push {r7}; sub sp,#8)
