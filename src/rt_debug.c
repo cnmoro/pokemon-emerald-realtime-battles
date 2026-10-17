@@ -116,6 +116,13 @@ bool8 RtDebug_FieldInput(void)
         AddBagItem(gRtDebugTestMove, 1);
         return FALSE;
     }
+    if (cmd == 25)
+    {
+        // gRtDebugLevel more of item gRtDebugTestMove in the bag (cleared afterwards)
+        AddBagItem(gRtDebugTestMove, gRtDebugLevel);
+        gRtDebugTestMove = 0;
+        return FALSE;
+    }
     if (cmd == 24)
     {
         // the lead holds item gRtDebugTestMove (cleared afterwards so no move test starts)

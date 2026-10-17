@@ -521,6 +521,7 @@ extern const u8 gRtDebugEnabled;
 extern u8 gRtDebugAutoplay;
 
 EWRAM_DATA u32 gRtProf[32] = {0};
+EWRAM_DATA u32 gRtDebugStat = 0; // debug harness: result of a statistics command
 static EWRAM_DATA u16 sFrameStartLine = 0;
 EWRAM_DATA u8 gRtFxHeavy = 0;
 static u16 sProfCur[16];
@@ -808,6 +809,21 @@ static void Rt_UpdateFight(void)
             Rt_EndBattle(B_OUTCOME_MON_FLED);
             return;
         }
+    }
+    if (gRtDebugEnabled && gRtDebugCommand == 0x40)
+    {
+        // catch statistics: 10000 POKe BALL rolls against the first foe at 1 HP -> gRtDebugStat
+        extern u8 RtUi_DebugCountShakes(u16 ball, struct RtActor *t);
+        struct RtActor *e = &gRt->actors[2];
+        u16 hp = e->hp;
+        s32 k;
+        gRtDebugCommand = 0;
+        e->hp = 1;
+        gRtDebugStat = 0;
+        for (k = 0; k < 10000; k++)
+            if (RtUi_DebugCountShakes(ITEM_POKE_BALL, e) >= 4)
+                gRtDebugStat++;
+        e->hp = hp;
     }
     if (gRtDebugEnabled && gRtDebugCommand == 16)
     {

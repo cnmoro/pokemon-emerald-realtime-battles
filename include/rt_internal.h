@@ -710,6 +710,7 @@ struct RtBattle
     u8 waveTimer;        // frames left
     u8 vfxPalCycle;      // misc frame counter for palette flicker
     u8 sideDim;          // dither-dim the scenery left/right of the field (no ring of border blocks there)
+    u8 ballFails;        // balls that hit but broke free this battle: each one raises the next catch chance
 };
 
 extern struct RtBattle *gRt;

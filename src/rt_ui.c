@@ -1748,13 +1748,16 @@ static u8 CountShakes(u16 ball, struct RtActor *t)
     b = Sqrt(b);
     b = Sqrt(b);
     b = 1048560 / b;
-    // catch chance = all four shake checks; every ball gets +10% of it, and never less than 2%
+    // catch chance = all four shake checks; every ball gets +10% of it, and never less than 2%;
+    // every ball that already broke free this battle adds +1% (a real-time throw costs far more
+    // than a turn, so a 1 HP legend at 2% a ball could eat hundreds of them)
     {
         u32 b2 = (b * b) >> 16;
         u32 p = (b2 * b2) >> 16;           // Q16 probability of the original formula
         p = p * 110 / 100;
         if (p < 65536 * 2 / 100)
             p = 65536 * 2 / 100;
+        p += (u32)gRt->ballFails * 65536 / 100;
         if (p >= 65536 || Random() < p)
             return 4;
     }
@@ -1762,6 +1765,11 @@ static u8 CountShakes(u16 ball, struct RtActor *t)
     for (shakes = 0; shakes < 3 && Random() < b; shakes++)
         ;
     return shakes;
+}
+
+u8 RtUi_DebugCountShakes(u16 ball, struct RtActor *t)
+{
+    return CountShakes(ball, t);
 }
 
 void RtMove_ThrowBall(struct RtActor *a, u16 ball, u8 angle)
@@ -1818,6 +1826,39 @@ void RtMove_UpdateBall(struct RtProj *p)
         {
             s32 i;
             s32 tt = p->age * 256 / (p->len ? p->len : 1);
+            if (!gRt->isSafari)
+            {
+                // the ball curves toward the closest wild POKeMON in front of it (moving targets
+                // were dodging most straight throws)
+                s32 best = 0x7FFFFFFF;
+                struct RtActor *tgt = NULL;
+                u8 cur = RtAtan2(p->vx, p->vy);
+                for (i = 2; i < RT_MAX_ACTORS; i++)
+                {
+                    struct RtActor *e = &gRt->actors[i];
+                    s32 dx, dy, d;
+                    if (!e->active || e->state == AST_GONE || !RtActor_IsAlive(e) || e->invuln)
+                        continue;
+                    dx = FROM_FX(e->x - p->x);
+                    dy = FROM_FX(e->y - TO_FX(e->height / 3) - p->y);
+                    d = dx * dx + dy * dy;
+                    if (d < best && (u8)(RtAtan2(dx, dy) - cur + 48) <= 96)
+                    {
+                        best = d;
+                        tgt = e;
+                    }
+                }
+                if (tgt)
+                {
+                    u8 want = RtAtan2(FROM_FX(tgt->x - p->x), FROM_FX(tgt->y - TO_FX(tgt->height / 3) - p->y));
+                    s8 diff = (s8)(want - cur);
+                    if (diff > 4) diff = 4;
+                    if (diff < -4) diff = -4;
+                    cur += diff;
+                    p->vx = RtCos(cur) * 3;
+                    p->vy = RtSin(cur) * 3;
+                }
+            }
             p->x += p->vx;
             p->y += p->vy;
             p->z = 4 + tt * (256 - tt) * 30 / 65536;
@@ -1893,6 +1934,8 @@ void RtMove_UpdateBall(struct RtProj *p)
                     RtFx_Burst(FX_GLOW16, FXP_WHITE, e->x, e->y - TO_FX(e->height / 2), 6, 2, 16);
                     PlaySE(SE_BALL_OPEN);
                     RtUi_Toast(p->delay >= 2 ? sText_AlmostHad : sText_BrokeFree, 70);
+                    if (gRt->ballFails < 255)
+                        gRt->ballFails++;
                     p->kind = PK_NONE;
                     break;
                 }
