@@ -610,10 +610,26 @@ static void CB2_RtMain(void)
         Rt_UpdateIntro();
         break;
     case RTS_FIGHT:
-        if (gRt->pauseFrames)
-            gRt->pauseFrames--;
+        // battle pace: the simulation (movement, moves, timers, animations, effects) advances on
+        // RT_SIM_NUM of every RT_SIM_DEN frames; presses made on the other frames are kept for the next
+        gRt->simAcc += RT_SIM_NUM;
+        gRt->simStep = gRt->simAcc >= RT_SIM_DEN;
+        if (gRt->simStep)
+        {
+            gRt->simAcc -= RT_SIM_DEN;
+            gMain.newKeys |= gRt->latchNew;
+            gMain.newKeysRaw |= gRt->latchNewRaw;
+            gRt->latchNew = gRt->latchNewRaw = 0;
+            if (gRt->pauseFrames)
+                gRt->pauseFrames--;
+            else
+                Rt_UpdateFight();
+        }
         else
-            Rt_UpdateFight();
+        {
+            gRt->latchNew |= gMain.newKeys;
+            gRt->latchNewRaw |= gMain.newKeysRaw;
+        }
         PROF(1);
         break;
     case RTS_MENU:
@@ -633,17 +649,22 @@ static void CB2_RtMain(void)
         return;
     }
 
-    for (i = 0; i < RT_MAX_ACTORS; i++)
     {
-        if (gRt->actors[i].active)
+        // animations and effects keep the fight's pace (outside the fight they run every frame)
+        bool8 step = gRt->state != RTS_FIGHT || gRt->simStep;
+        for (i = 0; i < RT_MAX_ACTORS; i++)
         {
-            RtActor_UpdateAnim(&gRt->actors[i]);
-            RtActor_LoadGfxIfNeeded(&gRt->actors[i]);
+            if (gRt->actors[i].active)
+            {
+                if (step)
+                    RtActor_UpdateAnim(&gRt->actors[i]);
+                RtActor_LoadGfxIfNeeded(&gRt->actors[i]);
+            }
         }
+        PROF(2);
+        if (step && gRt->state != RTS_MENU && gRt->state != RTS_PROMPT)
+            RtFx_UpdateAll();
     }
-    PROF(2);
-    if (gRt->state != RTS_MENU && gRt->state != RTS_PROMPT)
-        RtFx_UpdateAll();
     Rt_UpdateCamera();
     PROF(3);
     RtUi_Update();
