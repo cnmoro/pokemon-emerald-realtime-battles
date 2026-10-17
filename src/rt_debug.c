@@ -117,6 +117,14 @@ bool8 RtDebug_FieldInput(void)
         AddBagItem(gRtDebugTestMove, 1);
         return FALSE;
     }
+    if (cmd == 26)
+    {
+        // warp inside the current map to (gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF)
+        SetWarpDestination(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum, WARP_ID_NONE,
+                           gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF);
+        DoWarp();
+        return TRUE;
+    }
     if (cmd == 25)
     {
         // gRtDebugLevel more of item gRtDebugTestMove in the bag (cleared afterwards)
