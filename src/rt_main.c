@@ -613,11 +613,12 @@ static void CB2_RtMain(void)
         PROF(1);
         break;
     case RTS_MENU:
-        if (RtUi_UpdateMenu())
+        // a menu action may itself end the battle (RUN, a Poke Doll): keep the outro it started
+        if (RtUi_UpdateMenu() && gRt->state == RTS_MENU)
             gRt->state = gRt->menuReturnState ? gRt->menuReturnState : RTS_FIGHT;
         break;
     case RTS_PROMPT:
-        if (RtUi_UpdatePrompt())
+        if (RtUi_UpdatePrompt() && gRt->state == RTS_PROMPT)
             gRt->state = gRt->menuReturnState ? gRt->menuReturnState : RTS_FIGHT;
         break;
     case RTS_OUTRO:
