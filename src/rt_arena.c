@@ -1069,6 +1069,11 @@ void RtArena_Build(void)
                     clean[y][x] = 1;
                 else if (indoorField && m != floorMeta)
                     clean[y][x] = 1; // rooms: one plain floor (rugs, stools and the like go with the furniture)
+#if RT_FIRERED
+                else if (!water && m != floorMeta && !MetatileBehavior_IsTallGrass(BehaviorOf(m)))
+                    clean[y][x] = 1; // Kanto maps are a patchwork of path / grass transition tiles: the field
+                                     // keeps one ground (and its tall grass), so no path piece ends cut in half
+#endif
                 else if (water && m != floorMeta && MetatileBehavior_IsSurfableWaterOrUnderwater(BehaviorOf(m)))
                     clean[y][x] = 1; // at sea: one water (no patchwork of currents and depths)
                 else if (m != floorMeta && freq[m] <= 16
