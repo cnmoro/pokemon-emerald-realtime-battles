@@ -122,7 +122,11 @@ static const u8 sText_AlmostHad[] = _("Aargh! Almost had it!");
 static const u8 sText_AlreadyOut[] = _("{STR_VAR_1} is already in battle!");
 static const u8 sText_NoEnergy[] = _("{STR_VAR_1} has no energy\nleft to battle!");
 static const u8 sText_BallReady[] = _("Aim and press A to throw!");
+#if RT_FIRERED
+static const u8 sText_SafariHelp[] = _("A:BALL B:BAIT L:ROCK START:RUN");
+#else
 static const u8 sText_SafariHelp[] = _("A:BALL B:{POKEBLOCK} L:GO NEAR START:RUN");
+#endif
 static const u8 sText_SafariBalls[] = _("SAFARI BALLS: {STR_VAR_1}");
 static const u8 sText_WatchingCarefully[] = _("{STR_VAR_1} is watching carefully!");
 static const u8 sText_Eating[] = _("{STR_VAR_1} is eating!");
@@ -1960,9 +1964,24 @@ void RtMove_UpdateSafariThrow(struct RtProj *p)
         s32 dist = RtDist(FROM_FX(e->x - p->x), FROM_FX(e->y - p->y));
         GetMonData(e->mon, MON_DATA_NICKNAME, gStringVar1);
         StringGet_Nickname(gStringVar1);
+#if RT_FIRERED
+        if (p->param == 2)
+        {
+            // FireRed ROCK: a hit makes it angry - easier to catch, but more likely to flee
+            RtFx_Burst(FX_ROCK16, FXP_ROCK, p->x, p->y, 4, 2, 18);
+            if (dist < 40)
+            {
+                gRt->safariCatchMod = gRt->safariCatchMod < 30 ? gRt->safariCatchMod + 5 : 30;
+                gRt->safariFleeMod = gRt->safariFleeMod < 30 ? gRt->safariFleeMod + 5 : 30;
+                e->flash = 8;
+                RtUi_ToastFmt(sText_Angry, 50);
+                PlaySE(SE_M_STRENGTH);
+            }
+        }
+#endif
         if (p->param == 1)
         {
-            // pokeblock: lower flee chance if close enough
+            // pokeblock / BAIT: lower flee chance if close enough
             RtFx_Burst(FX_HEART16, FXP_HEART, p->x, p->y, 4, 1, 24);
             if (dist < 40)
             {
@@ -2025,8 +2044,13 @@ void RtUi_SafariInput(void)
             s32 dx, dy, dist;
             p->kind = PK_SAFARI;
             p->param = 1;
+#if RT_FIRERED
+            p->shape = FX_SEED8; // BAIT
+            p->pal = FXP_GRASS;
+#else
             p->shape = FX_HEART16;
             p->pal = FXP_HEART;
+#endif
             p->x = TO_FX(gRt->camX + DISPLAY_WIDTH / 2);
             p->y = TO_FX(gRt->camY + DISPLAY_HEIGHT - 36);
             dx = FROM_FX(sReticleX - p->x);
@@ -2040,6 +2064,32 @@ void RtUi_SafariInput(void)
             PlaySE(SE_BALL_THROW);
         }
     }
+#if RT_FIRERED
+    else if (pressed & L_BUTTON)
+    {
+        // ROCK: thrown at the reticle like the bait
+        struct RtProj *p = RtProj_Alloc();
+        if (p)
+        {
+            s32 dx, dy, dist;
+            p->kind = PK_SAFARI;
+            p->param = 2;
+            p->shape = FX_ROCK16;
+            p->pal = FXP_ROCK;
+            p->x = TO_FX(gRt->camX + DISPLAY_WIDTH / 2);
+            p->y = TO_FX(gRt->camY + DISPLAY_HEIGHT - 36);
+            dx = FROM_FX(sReticleX - p->x);
+            dy = FROM_FX(sReticleY - p->y);
+            dist = RtDist(dx, dy);
+            if (dist == 0) dist = 1;
+            p->vx = dx * 640 / dist;
+            p->vy = dy * 640 / dist;
+            p->life = dist * 256 / 640 + 1;
+            p->len = p->life;
+            PlaySE(SE_BALL_THROW);
+        }
+    }
+#else
     else if (pressed & L_BUTTON)
     {
         // go near: easier to catch, more likely to flee
@@ -2050,6 +2100,7 @@ void RtUi_SafariInput(void)
         RtUi_ToastFmt(sText_Angry, 50);
         PlaySE(SE_EXP);
     }
+#endif
     else if (pressed & (START_BUTTON | R_BUTTON))
     {
         Rt_EndBattle(B_OUTCOME_RAN);
