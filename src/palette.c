@@ -127,6 +127,16 @@ u8 UpdatePaletteFade(void)
     return result;
 }
 
+// real-time mod: the 3x faster battle start transition steps a running normal fade once more in the same frame
+void PaletteFade_StepAgain(void)
+{
+    if (gPaletteFade.active && gPaletteFade.mode == NORMAL_FADE)
+    {
+        sPlttBufferTransferPending = FALSE;
+        UpdatePaletteFade();
+    }
+}
+
 void ResetPaletteFade(void)
 {
     u8 i;

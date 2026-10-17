@@ -655,18 +655,32 @@ static void RunTransitionTaskAgain(TaskFunc func)
         func(id);
 }
 
+// the gray flashes before the transition: 3x the fade steps (data[4]/[5]) instead of 3x the work per frame;
+// data[8] marks the task as done
+static void SpeedUpIntroFlashes(void)
+{
+    u8 id = FindTaskIdByFunc(Task_BattleTransition_Intro);
+    if (id != TASK_NONE && gTasks[id].data[8] == 0)
+    {
+        gTasks[id].data[4] *= 3;
+        gTasks[id].data[5] *= 3;
+        gTasks[id].data[8] = 1;
+    }
+}
+
 static void Task_BattleTransition(u8 taskId)
 {
     u8 k, transitionId;
     while (sTaskHandlers[gTasks[taskId].tState](&gTasks[taskId]));
     transitionId = gTasks[taskId].tTransitionId;
+    SpeedUpIntroFlashes();
     for (k = 0; k < 2; k++)
     {
         if (sTasks_Intro[transitionId] != NULL)
             RunTransitionTaskAgain(sTasks_Intro[transitionId]);
-        RunTransitionTaskAgain(Task_BattleTransition_Intro);
         RunTransitionTaskAgain(sTasks_Main[transitionId]);
         AnimateSprites(); // sprite-based transitions (Poke Ball trail, mugshots) move with them
+        PaletteFade_StepAgain(); // and fades
     }
 }
 
