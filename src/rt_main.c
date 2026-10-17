@@ -2,6 +2,7 @@
 #include "global.h"
 #include "rt_internal.h"
 #include "rt_vfx.h"
+#include "help_system.h"
 #include "battle.h"
 #include "battle_main.h"
 #include "battle_setup.h"
@@ -280,6 +281,9 @@ static void CB1_RtBattle(void)
 
 void CB2_InitRtBattle(void)
 {
+#if RT_FIRERED
+    HelpSystem_Disable(); // L / R are move buttons here, not the help screen
+#endif
     gPreBattleCallback1 = gMain.callback1;
     gMain.callback1 = CB1_RtBattle;
     gRt = AllocZeroed(sizeof(struct RtBattle));
@@ -2087,6 +2091,9 @@ static void CB2_RtEvolutionLoop(void)
 
 static void Rt_Exit(void)
 {
+#if RT_FIRERED
+    HelpSystem_Enable();
+#endif
     // drop the field window / dimming before going back to the overworld
     SetGpuReg(REG_OFFSET_DISPCNT, GetGpuReg(REG_OFFSET_DISPCNT) & ~(DISPCNT_WIN0_ON | DISPCNT_WIN1_ON));
     SetGpuReg(REG_OFFSET_WININ, 0);
