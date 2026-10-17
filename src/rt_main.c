@@ -1779,6 +1779,8 @@ static void Rt_UpdateOutro(void)
             {
                 txt = GetTrainerALoseText();
             }
+            if ((txt == NULL || txt[0] == EOS) && gRtDebugEnabled && gTrainerBattleOpponent_A != TRAINER_SECRET_BASE)
+                txt = sText_OutOfMons; // debug battles have no script text
             if (txt != NULL && txt[0] != EOS)
             {
                 extern void RtUi_ShowTrainerPic(u16 trainerId);

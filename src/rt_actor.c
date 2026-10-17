@@ -388,6 +388,8 @@ bool8 RtActor_AnimDone(struct RtActor *a)
     return !a->animLoop && a->animFrame + 1 >= g->count[a->anim];
 }
 
+bool8 RtUi_TrainerPicShown(void);
+
 void RtActor_LoadPalette(struct RtActor *a)
 {
     LoadPalette(gRtSpeciesPal[a->gfxDex][a->shiny ? 1 : 0], OBJ_PLTT_ID(a->palSlot), PLTT_SIZE_4BPP);
@@ -459,6 +461,9 @@ void RtActor_LoadGfxIfNeeded(struct RtActor *a)
     static const u8 sTiles[3][4] = {{1, 4, 16, 64}, {2, 4, 8, 32}, {2, 4, 8, 32}};
     u8 shape, size;
 
+    // the trainer picture of the outro borrows the tiles and palette of the first enemy slot: leave them alone
+    if (RtUi_TrainerPicShown() && (a->palSlot == 2 || a->vramSlot == 2))
+        return;
     UpdatePaletteFx(a);
     if (a->hidden && a->state == AST_GONE)
         return;

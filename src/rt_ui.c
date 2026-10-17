@@ -728,6 +728,11 @@ void RtUi_HideTrainerPic(void)
     sTrainerPicShown = FALSE;
 }
 
+bool8 RtUi_TrainerPicShown(void)
+{
+    return sTrainerPicShown;
+}
+
 // ---------------------------------------------------------------------------
 // OBJ part of the HUD
 // ---------------------------------------------------------------------------
