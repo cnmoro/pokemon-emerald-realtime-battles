@@ -266,6 +266,29 @@ enum
 #define WILD_CHECK_REPEL    0x1
 #define WILD_CHECK_KEEN_EYE 0x2
 
+// Every species of an area is equally likely (12 slots with 3 species -> 1/3 each, whatever the slots'
+// original weights); the slot (and so the level range) is then picked among that species' slots.
+static u8 ChooseBalancedWildMonIndex(const struct WildPokemon *mons, u8 first, u8 count)
+{
+    u16 species[12];
+    u8 nSpecies = 0, i, j, pick, nSlots = 0, slots[12];
+    for (i = first; i < first + count && nSpecies < NELEMS(species); i++)
+    {
+        for (j = 0; j < nSpecies; j++)
+            if (species[j] == mons[i].species)
+                break;
+        if (j == nSpecies)
+            species[nSpecies++] = mons[i].species;
+    }
+    if (nSpecies == 0)
+        return first;
+    pick = Random() % nSpecies;
+    for (i = first; i < first + count && nSlots < NELEMS(slots); i++)
+        if (mons[i].species == species[pick])
+            slots[nSlots++] = i;
+    return slots[Random() % nSlots];
+}
+
 static bool8 TryGenerateWildMon(const struct WildPokemonInfo * info, u8 area, u8 flags)
 {
     u8 slot = 0;
@@ -273,13 +296,13 @@ static bool8 TryGenerateWildMon(const struct WildPokemonInfo * info, u8 area, u8
     switch (area)
     {
     case WILD_AREA_LAND:
-        slot = ChooseWildMonIndex_Land();
+        slot = ChooseBalancedWildMonIndex(info->wildPokemon, 0, LAND_WILD_COUNT);
         break;
     case WILD_AREA_WATER:
-        slot = ChooseWildMonIndex_WaterRock();
+        slot = ChooseBalancedWildMonIndex(info->wildPokemon, 0, WATER_WILD_COUNT);
         break;
     case WILD_AREA_ROCKS:
-        slot = ChooseWildMonIndex_WaterRock();
+        slot = ChooseBalancedWildMonIndex(info->wildPokemon, 0, ROCK_WILD_COUNT);
         break;
     }
     level = ChooseWildMonLevel(&info->wildPokemon[slot]);
@@ -293,7 +316,10 @@ static bool8 TryGenerateWildMon(const struct WildPokemonInfo * info, u8 area, u8
 
 static u16 GenerateFishingEncounter(const struct WildPokemonInfo * info, u8 rod)
 {
-    u8 slot = ChooseWildMonIndex_Fishing(rod);
+    // each rod has its own slots: old 0-1, good 2-4, super 5-9
+    u8 slot = rod == OLD_ROD ? ChooseBalancedWildMonIndex(info->wildPokemon, 0, 2)
+            : rod == GOOD_ROD ? ChooseBalancedWildMonIndex(info->wildPokemon, 2, 3)
+            : ChooseBalancedWildMonIndex(info->wildPokemon, 5, 5);
     u8 level = ChooseWildMonLevel(&info->wildPokemon[slot]);
     GenerateWildMon(info->wildPokemon[slot].species, level, slot);
     return info->wildPokemon[slot].species;

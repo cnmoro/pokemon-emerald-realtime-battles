@@ -1792,6 +1792,16 @@ bool8 ScrCmd_checkpartymove(struct ScriptContext * ctx)
             break;
         }
     }
+    // the HM in the bag is enough: the first POKeMON of the party uses it
+    if (gSpecialVar_Result == PARTY_SIZE && PlayerHasHmForFieldMove(moveId))
+    {
+        i = FirstUsablePartyMonForHm();
+        if (i < PARTY_SIZE)
+        {
+            gSpecialVar_Result = i;
+            gSpecialVar_0x8004 = GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL);
+        }
+    }
     return FALSE;
 }
 

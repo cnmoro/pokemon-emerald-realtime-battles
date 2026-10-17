@@ -1,4 +1,5 @@
 #include "global.h"
+#include "rt_battle.h"
 #include "gflib.h"
 #include "script.h"
 #include "task.h"
@@ -135,9 +136,9 @@ struct LearnMoveGfxResources
     u8 unk_1C;
     u8 unk_1D;
     u8 unk_1E;
-    struct ListMenuItem listMenuItems[25];
-    u16 learnableMoves[25];
-    u8 listMenuStrbufs[25][13];
+    struct ListMenuItem listMenuItems[MAX_RELEARNABLE_MOVES + 1];
+    u16 learnableMoves[MAX_RELEARNABLE_MOVES + 1];
+    u8 listMenuStrbufs[MAX_RELEARNABLE_MOVES + 1][13];
     bool8 scheduleMoveInfoUpdate;
     u8 selectedPartyMember;
     u8 selectedMoveSlot;
@@ -364,8 +365,19 @@ static void VBlankCB_MoveRelearner(void)
     TransferPlttBuffer();
 }
 
+// set when the relearner is opened from the party menu (MOVES): where to go back to
+static EWRAM_DATA MainCallback sRelearnerReturnCB = NULL;
+
+void OpenMoveRelearnerFromParty(u8 partySlot, MainCallback returnCB)
+{
+    gSpecialVar_0x8004 = partySlot;
+    sRelearnerReturnCB = returnCB;
+    SetMainCallback2(CB2_MoveRelearner_Init);
+}
+
 void TeachMoveRelearnerMove(void)
 {
+    sRelearnerReturnCB = NULL;
     LockPlayerFieldControls();
     CreateTask(Task_InitMoveRelearnerMenu, 10);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
@@ -619,7 +631,16 @@ static void MoveRelearnerStateMachine(void)
         {
             FreeAllWindowBuffers();
             Free(sMoveRelearner);
-            SetMainCallback2(CB2_ReturnToField);
+            if (sRelearnerReturnCB != NULL)
+            {
+                MainCallback cb = sRelearnerReturnCB;
+                sRelearnerReturnCB = NULL;
+                SetMainCallback2(cb);
+            }
+            else
+            {
+                SetMainCallback2(CB2_ReturnToField);
+            }
         }
         break;
     case MENU_STATE_FADE_FROM_SUMMARY_SCREEN:
@@ -837,8 +858,16 @@ static void PrintMoveInfo(u16 move)
         ConvertIntToDecimalStringN(buffer, gBattleMoves[move].accuracy, STR_CONV_MODE_RIGHT_ALIGN, 3);
         PrintTextOnWindow(3, buffer, 1, 18, 0, 1);
     }
-    ConvertIntToDecimalStringN(buffer, gBattleMoves[move].pp, STR_CONV_MODE_LEFT_ALIGN, 2);
-    PrintTextOnWindow(4, buffer, 2, 2, 0, 0);
+    {
+        // cooldown in seconds instead of PP (real-time battles)
+        u32 tenths = (RtBattle_GetMoveCooldownFrames(move, 0, 0) * 10 + 30) / 60;
+        u8 *p = ConvertIntToDecimalStringN(buffer, tenths / 10, STR_CONV_MODE_LEFT_ALIGN, 2);
+        *p++ = CHAR_PERIOD;
+        p = ConvertIntToDecimalStringN(p, tenths % 10, STR_CONV_MODE_LEFT_ALIGN, 1);
+        *p++ = CHAR_s;
+        *p = EOS;
+    }
+    PrintTextOnWindow(4, buffer, 0, 2, 0, 0);
     PrintTextOnWindow(5, gMoveDescriptionPointers[move - 1], 1, 0, 0, 0);
 }
 

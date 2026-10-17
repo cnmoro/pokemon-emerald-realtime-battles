@@ -1,4 +1,6 @@
 #include "global.h"
+#include "party_menu.h"
+#include "constants/moves.h"
 #include "gflib.h"
 #include "bg_regs.h"
 #include "cable_club.h"
@@ -955,6 +957,9 @@ bool32 Overworld_IsBikingAllowed(void)
 
 static void SetDefaultFlashLevel(void)
 {
+    // dark caves light up by themselves once HM05 is in the bag (with the BOULDERBADGE that allows FLASH)
+    if (gMapHeader.cave && !FlagGet(FLAG_SYS_FLASH_ACTIVE) && FlagGet(FLAG_BADGE01_GET) && PlayerHasHmForFieldMove(MOVE_FLASH))
+        FlagSet(FLAG_SYS_FLASH_ACTIVE);
     if (!gMapHeader.cave)
         gSaveBlock1Ptr->flashLevel = 0;
     else if (FlagGet(FLAG_SYS_FLASH_ACTIVE))

@@ -117,10 +117,11 @@ void CreateInitialRoamerMon(void)
     sRoamerLocation[MAP_NUM] = sRoamerLocations[Random() % NUM_LOCATION_SETS][0];
 }
 
+// Real-time mod: Raikou, Entei and Suicune all roam through RtLegends (rt_legends.c) from the start,
+// so the original single post-game roamer is not created.
 void InitRoamer(void)
 {
     ClearRoamerData();
-    CreateInitialRoamerMon();
 }
 
 void UpdateLocationHistoryForRoamer(void)
@@ -227,6 +228,9 @@ void CreateRoamerMonInstance(void)
 
 bool8 TryStartRoamerEncounter(void)
 {
+    extern bool8 RtLegends_TryEncounter(void);
+    if (RtLegends_TryEncounter())
+        return TRUE;
     if (IsRoamerAt(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum) == TRUE && (Random() % 4) == 0)
     {
         CreateRoamerMonInstance();
