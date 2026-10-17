@@ -120,13 +120,20 @@ bool8 RtDebug_FieldInput(void)
         return FALSE;
     }
 #if RT_LC
-    if (cmd == 29)
+    if (cmd == 30)
     {
         // Liquid Crystal: the debug party and bag on an existing save
         RtDebug_NewGame();
         return FALSE;
     }
 #endif
+    if (cmd == 29)
+    {
+        // party of 5: the last party POKeMON is removed (capture-to-party test)
+        ZeroMonData(&gPlayerParty[PARTY_SIZE - 1]);
+        CalculatePlayerPartyCount();
+        return FALSE;
+    }
     if (cmd == 28)
     {
         // warp to map gRtDebugSpecies (MAP_* constant: num | group << 8) at (gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF)

@@ -642,6 +642,7 @@ struct RtBattle
     u16 payDay;
     u8 runAttempts;
     u8 caught;
+    u8 nickPending;     // the caught POKeMON gets its nickname after the battle is torn down
     u16 ballItem;
     u8 ballReady;        // player has a ball equipped to throw
     u8 safariBalls;

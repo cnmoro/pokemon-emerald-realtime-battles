@@ -823,6 +823,24 @@ static void UpdateBullet(struct RtProj *p)
             rate = 1;
         TurnTowards(p, rate);
     }
+    if ((p->param & 0x100) && p->life > 1 && p->homingTarget < RT_MAX_ACTORS)
+    {
+        // lob that lands on its target: steer the landing point to where the target is now
+        struct RtActor *t = &gRt->actors[p->homingTarget];
+        if (t->active && RtActor_IsAlive(t) && t->state != AST_GONE)
+        {
+            s32 off = (s8)p->maxRadius;
+            s32 tx = t->x + RtCos(p->angle + 64) * off;
+            s32 ty = t->y - TO_FX(t->height) / 3 + RtSin(p->angle + 64) * off / 2;
+            s32 vx = (tx - p->x) / p->life, vy = (ty - p->y) / p->life;
+            if (vx > TO_FX(4)) vx = TO_FX(4);
+            if (vx < -TO_FX(4)) vx = -TO_FX(4);
+            if (vy > TO_FX(4)) vy = TO_FX(4);
+            if (vy < -TO_FX(4)) vy = -TO_FX(4);
+            p->vx = vx;
+            p->vy = vy;
+        }
+    }
     p->x += p->vx;
     p->y += p->vy;
     p->age++;
@@ -2593,6 +2611,22 @@ static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot)
     a->act.tx = tx;
     a->act.ty = ty;
     a->act.targetId = tid;
+    // Leech Seed is planted on the foe: when the aim cone finds nobody, it goes to the nearest foe in reach
+    if (gBattleMoves[move].effect == EFFECT_LEECH_SEED && tid == 0xFF && a->side == RT_SIDE_PLAYER)
+    {
+        struct RtActor *f = Rt_NearestFoe(a);
+        if (f != NULL)
+        {
+            s32 fdx = FROM_FX(f->x - a->x), fdy = FROM_FX(f->y - a->y);
+            if (RtDist(fdx, fdy) <= RtMove_GetRange(move) + 24)
+            {
+                a->act.angle = RtAtan2(fdx, fdy);
+                a->act.tx = f->x;
+                a->act.ty = f->y;
+                a->act.targetId = f->id;
+            }
+        }
+    }
     a->act.sx = a->x;
     a->act.sy = a->y;
     // melee with the target a little out of reach: dash up to it first
@@ -2868,6 +2902,13 @@ static void SpawnBullet(struct RtActor *a, const struct RtMoveDef *d, u8 angle, 
         {
             p->life = dist * 16 / sp + 1;
             p->len = p->life;
+            // the player's Leech Seed follows the foe while in the air and lands on it (seeds a few px apart)
+            if (gBattleMoves[a->act.move].effect == EFFECT_LEECH_SEED && a->side == RT_SIDE_PLAYER && a->act.targetId < RT_MAX_ACTORS)
+            {
+                p->param |= 0x100;
+                p->homingTarget = a->act.targetId;
+                p->maxRadius = (u8)(s8)((s8)(angle - a->act.angle) / 2);
+            }
         }
     }
 }

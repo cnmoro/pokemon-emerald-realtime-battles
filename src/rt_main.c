@@ -114,6 +114,7 @@ static const u8 sText_NoSafariBalls[] = _("Announcer: You're out of\nSAFARI BALL
 static const u8 sText_Teleported[] = _("{STR_VAR_1} fled the battle!");
 static const u8 sText_GiveNickname[] = _("Give a nickname to the\ncaptured {STR_VAR_1}?");
 static EWRAM_DATA u8 sNickBuf[POKEMON_NAME_LENGTH + 2] = {0};
+static EWRAM_DATA struct Pokemon *sNickMon = NULL;
 static void CB2_RtAfterNickname(void);
 
 u16 Rt_Random(u16 n)
@@ -307,7 +308,13 @@ void CB2_InitRtBattle(void)
     {
         s32 i;
         for (i = 0; i < PARTY_SIZE; i++)
-            gRt->expStart[i] = GetMonData(&gPlayerParty[i], MON_DATA_EXP);
+        {
+            // empty slots get no snapshot: a POKeMON caught into them is not shown on the EXP panel
+            if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE)
+                gRt->expStart[i] = 0xFFFFFFFF;
+            else
+                gRt->expStart[i] = GetMonData(&gPlayerParty[i], MON_DATA_EXP);
+        }
     }
     // there is always a POKe BALL in the bag (it is never used up, see RemoveItem in rt_ui.c)
     if (!(gBattleTypeFlags & BATTLE_TYPE_FRONTIER) && !CheckBagHasItem(ITEM_POKE_BALL, 1))
@@ -879,6 +886,20 @@ static void Rt_UpdateFight(void)
             if (RtUi_DebugCountShakes(ITEM_POKE_BALL, e) >= 4)
                 gRtDebugStat++;
         e->hp = hp;
+    }
+    if (gRtDebugEnabled && gRtDebugCommand == 0x41)
+    {
+        // debug: the first foe is caught in a POKe BALL (capture outro test)
+        struct RtActor *e = &gRt->actors[2];
+        gRtDebugCommand = 0;
+        if (e->active && RtActor_IsAlive(e) && !gRt->isTrainer)
+        {
+            gRt->ballItem = ITEM_POKE_BALL;
+            e->state = AST_CAUGHT;
+            e->hidden = TRUE;
+            Rt_HandleCaught();
+            return;
+        }
     }
     if (gRtDebugEnabled && gRtDebugCommand == 16)
     {
@@ -2012,10 +2033,13 @@ static void Rt_UpdateOutro(void)
             RtUi_HideMessageBox();
             if (r == 1)
             {
-                GetMonData(e->mon, MON_DATA_NICKNAME, sNickBuf);
-                DoNamingScreen(NAMING_SCREEN_CAUGHT_MON, sNickBuf, GetMonData(e->mon, MON_DATA_SPECIES), GetMonGender(e->mon),
-                               GetMonData(e->mon, MON_DATA_PERSONALITY), CB2_RtAfterNickname);
-                return;
+                // the naming screen needs heap the battle is still holding: it opens from Rt_Exit, after the
+                // battle has been freed (opening it from here ran out of memory and froze the game)
+                // (with a full party the naming screen itself says the POKeMON went to the PC)
+                gRt->nickPending = TRUE;
+                sNickMon = e->mon;
+                gRt->subState = 4;
+                break;
             }
             if (GiveMonToPlayer(e->mon) == MON_GIVEN_TO_PC)
             {
@@ -2078,11 +2102,11 @@ static u8 sEvoIndex;
 
 static void CB2_RtAfterNickname(void)
 {
-    struct RtActor *e = &gRt->actors[2];
-    SetMonData(e->mon, MON_DATA_NICKNAME, sNickBuf);
-    GetMonData(e->mon, MON_DATA_NICKNAME, gBattleResults.caughtMonNick);
-    GiveMonToPlayer(e->mon);
-    Rt_Exit();
+    SetMonData(sNickMon, MON_DATA_NICKNAME, sNickBuf);
+    GetMonData(sNickMon, MON_DATA_NICKNAME, gBattleResults.caughtMonNick);
+    GiveMonToPlayer(sNickMon);
+    sNickMon = NULL;
+    Rt_FinalReturn();
 }
 
 static void CB2_RtEvolutionLoop(void)
@@ -2108,6 +2132,7 @@ static void CB2_RtEvolutionLoop(void)
 
 static void Rt_Exit(void)
 {
+    bool8 nick;
 #if RT_FIRERED
     HelpSystem_Enable();
 #endif
@@ -2125,7 +2150,16 @@ static void Rt_Exit(void)
     TryPutPokemonTodayOnAir();
     if (gBattleResults.shinyWildMon && gBattleOutcome != B_OUTCOME_CAUGHT && !gRt->isTrainer)
         TryPutBreakingNewsOnAir();
+    nick = gRt->nickPending && sNickMon != NULL;
     Rt_FreeAll();
+    if (nick)
+    {
+        // caught POKeMON being nicknamed: the naming screen, then the mon joins the party / PC
+        GetMonData(sNickMon, MON_DATA_NICKNAME, sNickBuf);
+        DoNamingScreen(NAMING_SCREEN_CAUGHT_MON, sNickBuf, GetMonData(sNickMon, MON_DATA_SPECIES), GetMonGender(sNickMon),
+                       GetMonData(sNickMon, MON_DATA_PERSONALITY), CB2_RtAfterNickname);
+        return;
+    }
     if (gLeveledUpInBattle && gBattleOutcome == B_OUTCOME_WON)
     {
         sEvoIndex = 0;
