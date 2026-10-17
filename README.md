@@ -81,7 +81,8 @@ O menu de opções do FireRed ganhou cinco linhas (dez no total, o título "OPTI
 - **Botões L/R:** o sistema de ajuda do FireRed (que usa L/R) é desligado durante as batalhas em tempo real, porque L e R são botões de golpe.
 - **Ghost da Pokémon Tower:** o Marowak fantasma não pode ser capturado; sem o Silph Scope a batalha continua a original (por turnos).
 - **Rival:** usa o nome que você deu a ele.
-- **Continuam por turnos:** o tutorial do velho em Viridian, as batalhas de demonstração do Pokédude, Trainer Tower e Battle Tower (Sevii) e batalhas por cabo/wireless.
+- **Trainer Tower (Seven Island) em tempo real:** os quatro modos (SINGLE, DOUBLE, KNOCKOUT, MIXED) viram batalhas na arena, com o nome, a classe, a foto e as falas de cada treinador da torre, o cronômetro do desafio correndo e as regras originais da torre: sem EXP, sem dinheiro e sem roubar itens. Perder volta para o saguão, como no original.
+- **Continuam por turnos:** o tutorial do velho em Viridian, as batalhas de demonstração do Pokédude e batalhas por cabo/wireless. (A Battle Tower que existe no código do FireRed não tem mapa no jogo.)
 
 ## Prints
 
@@ -164,14 +165,14 @@ O motor é o mesmo da versão Emerald (veja o [README do Emerald](https://github
 
 Mapeia os nomes do Emerald para o pokefirered:
 
-- tipos de batalha inexistentes em Kanto (Frontier, Pyramid, Trainer Hill, dois oponentes, parceiro) viram `0`, então os ramos correspondentes somem na compilação;
+- tipos de batalha inexistentes em Kanto (Pyramid, Trainer Hill, dois oponentes, parceiro) viram `0`, então os ramos correspondentes somem na compilação; o papel da Battle Frontier (treinadores de instalação, sem EXP nem dinheiro) fica com a Trainer Tower, cujos nomes, fotos e falas vêm de `trainer_tower.c`;
 - `gBattleEnvironment` → `gBattleTerrain`; funções de item, bolsa e terreno renomeadas; fontes e músicas equivalentes;
 - **atributos de metatile:** o FireRed guarda 32 bits por metatile (comportamento em 9 bits, camada nos bits 29–30) e o tileset primário tem 640 metatiles e 7 paletas — `RtMetatileAttributes()` lê os atributos direto dos tilesets;
 - comportamentos de metatile que só existem no Emerald apontam para um valor que nunca casa.
 
 ### Ganchos no jogo original
 
-- `battle_main.c`: `CB2_InitBattle` desvia para o motor novo quando `RtBattle_IsSupported()` (que recusa Pokédude, Trainer Tower, Battle Tower, o tutorial e o ghost sem Silph Scope).
+- `battle_main.c`: `CB2_InitBattle` desvia para o motor novo quando `RtBattle_IsSupported()` (que recusa Pokédude, a Battle Tower sem uso, o tutorial e o ghost sem Silph Scope).
 - `battle_setup.c`, `battle_script_commands.c` (Pickup), `pokemon_summary_screen.c` / `learn_move.c` (cooldown em vez de PP), `option_menu.c` (as cinco opções novas), `party_menu.c` (MOVES, HMs), `pokemon.c` / `evolution.h` (evoluções), `wild_encounter.c` e `roamer.c` (encontros e lendários), `help_system` desligado durante a luta.
 - Memória: a EWRAM do FireRed está quase cheia, então os buffers de efeitos que no Emerald são estáticos ficam na estrutura da batalha, alocada no heap.
 
@@ -183,7 +184,7 @@ O runner headless do mGBA (`tools/rt_harness`) roda os mesmos tipos de teste do 
 
 ## Limitações conhecidas
 
-- Continuam por turnos: batalhas por cabo/wireless, tutorial do velho, Pokédude, Trainer Tower, Battle Tower e o ghost sem Silph Scope.
+- Continuam por turnos: batalhas por cabo/wireless, tutorial do velho, Pokédude e o ghost sem Silph Scope.
 - Com Repel ativo, os lendários errantes também não aparecem.
 - Objetos do mapa que não são metatiles (NPCs, árvores cortáveis, pedras) não aparecem na arena.
 - O campo de luta é sempre 18×10; em salas menores ele passa por cima das paredes em volta.

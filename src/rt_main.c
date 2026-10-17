@@ -129,9 +129,9 @@ bool8 RtBattle_IsSupported(void)
                           | BATTLE_TYPE_WALLY_TUTORIAL | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_RECORDED_IS_MASTER))
         return FALSE;
 #if RT_FIRERED
-    // FireRed: tutorials (the old man, the POKeDUDE), the Trainer Tower / Battle Tower and the
+    // FireRed: tutorials (the old man, the POKeDUDE), the unused Battle Tower and the
     // unidentifiable GHOSTs of the POKeMON TOWER keep the original turn-based battle
-    if (gBattleTypeFlags & (BATTLE_TYPE_POKEDUDE | BATTLE_TYPE_TRAINER_TOWER | BATTLE_TYPE_BATTLE_TOWER))
+    if (gBattleTypeFlags & (BATTLE_TYPE_POKEDUDE | BATTLE_TYPE_BATTLE_TOWER))
         return FALSE;
     if (IS_BATTLE_TYPE_GHOST_WITHOUT_SCOPE(gBattleTypeFlags))
         return FALSE;
@@ -297,6 +297,9 @@ void CB2_InitRtBattle(void)
 {
 #if RT_FIRERED
     HelpSystem_Disable(); // L / R are move buttons here, not the help screen
+    // Trainer Tower: the floor's trainer (name, class, picture, speech); freed by FreeBattleResources() on exit
+    if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_TOWER)
+        InitTrainerTowerBattleStruct();
 #endif
     gPreBattleCallback1 = gMain.callback1;
     gMain.callback1 = CB1_RtBattle;

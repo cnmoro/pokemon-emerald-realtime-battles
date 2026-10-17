@@ -11,11 +11,16 @@
 #include "new_menu_helpers.h"
 #include "text.h"
 #include "constants/songs.h"
+#include "string_util.h"
+#include "trainer_tower.h"
+#include "data.h"
 
 #define RT_FIRERED 1
 
 // battle types FireRed doesn't have
-#define BATTLE_TYPE_FRONTIER        0
+// The Trainer Tower (Seven Island) plays the role of Emerald's Battle Frontier: facility trainers built from
+// the tower's own data (name, class, picture and speech), no EXP, no prize money, no item stealing.
+#define BATTLE_TYPE_FRONTIER        BATTLE_TYPE_TRAINER_TOWER
 #define BATTLE_TYPE_TRAINER_HILL    0
 #define BATTLE_TYPE_GROUDON         0
 #define BATTLE_TYPE_KYOGRE          0
@@ -89,10 +94,18 @@ u32 RtMetatileAttributes(u16 metatile);
 extern const u8 gPPUpClearMask[];
 
 // Emerald features FireRed doesn't have: no-ops
-static inline void GetFrontierTrainerName(u8 *dst, u16 id) { dst[0] = 0xFF; }
+static inline void GetFrontierTrainerName(u8 *dst, u16 id)
+{
+    u8 name[12];
+    GetTrainerTowerOpponentName(name);
+    name[11] = EOS;
+    dst = StringCopy(dst, gTrainerClassNames[GetTrainerTowerOpponentClass()]);
+    *dst++ = CHAR_SPACE;
+    StringCopy(dst, name);
+}
 static inline void GetTrainerHillTrainerName(u8 *dst, u16 id) { dst[0] = 0xFF; }
-static inline void CopyFrontierTrainerText(u8 which, u16 id) { }
-static inline u8 GetFrontierTrainerFrontSpriteId(u16 id) { return 0; }
+static inline void CopyFrontierTrainerText(u8 which, u16 id) { GetTrainerTowerOpponentLoseText(gStringVar4, 0); }
+static inline u8 GetFrontierTrainerFrontSpriteId(u16 id) { return GetTrainerTowerTrainerFrontSpriteId(); }
 static inline u8 GetTrainerHillTrainerFrontSpriteId(u16 id) { return 0; }
 static inline void TryPutPokemonTodayOnAir(void) { }
 static inline void TryPutBreakingNewsOnAir(void) { }

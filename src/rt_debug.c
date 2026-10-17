@@ -117,6 +117,13 @@ bool8 RtDebug_FieldInput(void)
         AddBagItem(gRtDebugTestMove, 1);
         return FALSE;
     }
+    if (cmd == 28)
+    {
+        // warp to map gRtDebugSpecies (MAP_* constant: num | group << 8) at (gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF)
+        SetWarpDestination(gRtDebugSpecies >> 8, gRtDebugSpecies & 0xFF, WARP_ID_NONE, gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF);
+        DoWarp();
+        return TRUE;
+    }
     if (cmd == 27)
     {
         // static legendary battle (gRtDebugSpecies, Lv gRtDebugLevel) the way the overworld scripts start it
