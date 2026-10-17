@@ -116,6 +116,8 @@ static const u8 sText_LearnPrompt[] = _("{STR_VAR_1} wants to learn\n{STR_VAR_2}
 static const u8 sText_DontLearn[] = _("DON'T LEARN");
 static const u8 sText_DidNotLearn[] = _("{STR_VAR_1} did not learn\n{STR_VAR_2}.");
 static const u8 sText_ForgotLearned[] = _("{STR_VAR_1} forgot {STR_VAR_3} and\nlearned {STR_VAR_2}!");
+static const u8 sText_ConfirmForget[] = _("Forget {STR_VAR_3}\nand learn {STR_VAR_2}?");
+static const u8 sText_ConfirmGiveUp[] = _("Stop learning\n{STR_VAR_2}?");
 static const u8 sText_ItemUsed[] = _("Used {STR_VAR_2} on {STR_VAR_1}.");
 static const u8 sText_NoEffect[] = _("It won't have any effect.");
 static const u8 sText_BallBlocked[] = _("The TRAINER blocked the BALL!\nDon't be a thief!");
@@ -1367,6 +1369,12 @@ void RtUi_OpenYesNo(void)
     DrawYesNo();
 }
 
+static void OpenYesNoAt(u8 cursor)
+{
+    sYesNoCursor = cursor;
+    DrawYesNo();
+}
+
 // 0 = pending, 1 = yes, 2 = no
 u8 RtUi_UpdateYesNo(void)
 {
@@ -1395,8 +1403,18 @@ u8 RtUi_UpdateYesNo(void)
     return 0;
 }
 
+// learn-move prompt guards: it can pop up mid-fight while the move buttons are being mashed,
+// so input is ignored for a moment, A/B must be released first, and every choice is confirmed
+static EWRAM_DATA u8 sLearnLock = 0;
+static EWRAM_DATA bool8 sLearnNeedRelease = FALSE;
+static EWRAM_DATA bool8 sLearnConfirm = FALSE;
+static EWRAM_DATA u8 sLearnChoice = 0;
+
 void RtUi_OpenLearnPrompt(void)
 {
+    sLearnLock = 40;
+    sLearnNeedRelease = TRUE;
+    sLearnConfirm = FALSE;
     GetMonData(&gPlayerParty[gRt->pendingLearnMons[0]], MON_DATA_NICKNAME, gStringVar1);
     StringGet_Nickname(gStringVar1);
     StringCopy(gStringVar2, gMoveNames[gRt->pendingLearnMoves[0]]);
@@ -1417,8 +1435,49 @@ static void PopLearn(void)
     gRt->pendingLearnCount--;
 }
 
+static bool8 LearnApply(u8 choice);
+
+static void LearnNamesToVars(void)
+{
+    struct Pokemon *mon = &gPlayerParty[gRt->pendingLearnMons[0]];
+    GetMonData(mon, MON_DATA_NICKNAME, gStringVar1);
+    StringGet_Nickname(gStringVar1);
+    StringCopy(gStringVar2, gMoveNames[gRt->pendingLearnMoves[0]]);
+    if (sLearnChoice < MAX_MON_MOVES)
+        StringCopy(gStringVar3, gMoveNames[GetMonData(mon, MON_DATA_MOVE1 + sLearnChoice)]);
+}
+
 bool8 RtUi_UpdatePrompt(void)
 {
+    if (sLearnLock)
+    {
+        sLearnLock--;
+        return FALSE;
+    }
+    if (sLearnNeedRelease)
+    {
+        if (gMain.heldKeys & (A_BUTTON | B_BUTTON))
+            return FALSE;
+        sLearnNeedRelease = FALSE;
+    }
+    if (sLearnConfirm)
+    {
+        u8 r = RtUi_UpdateYesNo();
+        if (r == 0)
+            return FALSE;
+        sLearnConfirm = FALSE;
+        if (r == 2)
+        {
+            // back to the move list, cursor where it was
+            u8 cursor = gRt->menuCursor;
+            RtUi_OpenLearnPrompt();
+            sLearnLock = 8;
+            gRt->menuCursor = cursor;
+            DrawMenu();
+            return FALSE;
+        }
+        return LearnApply(sLearnChoice);
+    }
     if (gMain.newKeys & DPAD_UP)
     {
         gRt->menuCursor = gRt->menuCursor ? gRt->menuCursor - 1 : 4;
@@ -1433,11 +1492,24 @@ bool8 RtUi_UpdatePrompt(void)
     }
     else if (gMain.newKeys & (A_BUTTON | B_BUTTON))
     {
+        PlaySE(SE_SELECT);
+        sLearnChoice = (gMain.newKeys & B_BUTTON) ? MAX_MON_MOVES : gRt->menuCursor;
+        LearnNamesToVars();
+        RtUi_ShowMessageBox(sLearnChoice < MAX_MON_MOVES ? sText_ConfirmForget : sText_ConfirmGiveUp);
+        OpenYesNoAt(1); // NO preselected: a stray press never changes the moves
+        sLearnConfirm = TRUE;
+        sLearnNeedRelease = TRUE;
+        sLearnLock = 12;
+    }
+    return FALSE;
+}
+
+static bool8 LearnApply(u8 choice)
+{
+    {
         u8 monIdx = gRt->pendingLearnMons[0];
         u16 move = gRt->pendingLearnMoves[0];
         struct Pokemon *mon = &gPlayerParty[monIdx];
-        u8 choice = (gMain.newKeys & B_BUTTON) ? 4 : gRt->menuCursor;
-        PlaySE(SE_SELECT);
         GetMonData(mon, MON_DATA_NICKNAME, gStringVar1);
         StringGet_Nickname(gStringVar1);
         StringCopy(gStringVar2, gMoveNames[move]);
