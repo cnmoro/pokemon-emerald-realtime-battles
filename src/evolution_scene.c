@@ -638,7 +638,7 @@ static void Task_EvolutionScene(u8 taskId)
 
     // Automatically cancel if the Pokemon would evolve into a species you have not
     // yet unlocked, such as Crobat.
-    if (!IsNationalPokedexEnabled()
+    if (FALSE // real-time mod: Johto evolutions are allowed before the National Pokedex
         && gTasks[taskId].tState == EVOSTATE_WAIT_CYCLE_MON_SPRITE
         && gTasks[taskId].tPostEvoSpecies > SPECIES_MEW)
     {
@@ -1096,7 +1096,7 @@ static void Task_TradeEvolutionScene(u8 taskId)
 
     // Automatically cancel if the Pokemon would evolve into a species you have not
     // yet unlocked, such as Crobat.
-    if (!IsNationalPokedexEnabled()
+    if (FALSE // real-time mod: Johto evolutions are allowed before the National Pokedex
         && gTasks[taskId].tState == T_EVOSTATE_WAIT_CYCLE_MON_SPRITE
         && gTasks[taskId].tPostEvoSpecies > SPECIES_MEW)
     {

@@ -148,6 +148,7 @@ struct PartyMenuBox
 static void BlitBitmapToPartyWindow_LeftColumn(u8 windowId, u8 x, u8 y, u8 width, u8 height, bool8 hideHP);
 static void BlitBitmapToPartyWindow_RightColumn(u8 windowId, u8 x, u8 y, u8 width, u8 height, bool8 hideHP);
 static void CursorCB_Summary(u8 taskId);
+static void CursorCB_Relearn(u8 taskId);
 static void CursorCB_Switch(u8 taskId);
 static void CursorCB_Cancel1(u8 taskId);
 static void CursorCB_Item(u8 taskId);
@@ -2978,6 +2979,24 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
             }
         }
     }
+    // MOVES: relearn level-up moves (up to the current level) and egg moves, like a TM
+    // (the action window holds 8 rows: summary, field moves, MOVES, extra HMs, switch, item, cancel)
+    if (sPartyMenuInternal->numActions <= 4 && GetNumberOfRelearnableMoves(&mons[slotId]) != 0)
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, CURSOR_OPTION_RELEARN);
+    // HMs in the bag whose field move is used from this menu (FLASH in dark caves, STRENGTH)
+    // are offered on every POKeMON, as long as there is room in the list
+    {
+        static const u16 sMenuHms[] = {MOVE_FLASH, MOVE_STRENGTH};
+        for (i = 0; i < NELEMS(sMenuHms); i++)
+        {
+            if (sPartyMenuInternal->numActions >= 5 || !PlayerHasHmForFieldMove(sMenuHms[i])
+             || MonKnowsMove(&mons[slotId], sMenuHms[i]))
+                continue;
+            for (j = 0; sFieldMoves[j] != FIELD_MOVE_END; j++)
+                if (sFieldMoves[j] == sMenuHms[i])
+                    AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, j + CURSOR_OPTION_FIELD_MOVES);
+        }
+    }
     if (GetMonData(&mons[1], MON_DATA_SPECIES) != SPECIES_NONE)
         AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, CURSOR_OPTION_SWITCH);
     if (ItemIsMail(GetMonData(&mons[slotId], MON_DATA_HELD_ITEM)))
@@ -3096,6 +3115,20 @@ static void CursorCB_Summary(u8 taskId)
 {
     PlaySE(SE_SELECT);
     sPartyMenuInternal->exitCallback = CB2_ShowPokemonSummaryScreen;
+    Task_ClosePartyMenu(taskId);
+}
+
+extern void OpenMoveRelearnerFromParty(u8 partySlot, MainCallback returnCB);
+
+static void CB2_OpenMoveRelearnerFromParty(void)
+{
+    OpenMoveRelearnerFromParty(gPartyMenu.slotId, CB2_ReturnToPartyMenuFromSummaryScreen);
+}
+
+static void CursorCB_Relearn(u8 taskId)
+{
+    PlaySE(SE_SELECT);
+    sPartyMenuInternal->exitCallback = CB2_OpenMoveRelearnerFromParty;
     Task_ClosePartyMenu(taskId);
 }
 
@@ -4721,14 +4754,43 @@ u16 ItemIdToBattleMoveId(u16 item)
     return sTMHMMoves[tmNumber];
 }
 
+// HMs can be forgotten / replaced like any other move (they are used from the bag)
 bool8 IsMoveHm(u16 move)
 {
-    u8 i;
-
-    for (i = 0; i < NUM_HIDDEN_MACHINES - 1; ++i) // no dive
-        if (sTMHMMoves[i + NUM_TECHNICAL_MACHINES] == move)
-            return TRUE;
     return FALSE;
+}
+
+// Owning an HM is enough to use its field move outside battle: no POKeMON has to know it
+// (the badge checks stay where they were). FLY is the exception: still picked from a POKeMON that knows it.
+bool8 PlayerHasHmForFieldMove(u16 move)
+{
+    u16 item;
+    switch (move)
+    {
+    case MOVE_CUT:        item = ITEM_HM01; break;
+    case MOVE_SURF:       item = ITEM_HM03; break;
+    case MOVE_STRENGTH:   item = ITEM_HM04; break;
+    case MOVE_FLASH:      item = ITEM_HM05; break;
+    case MOVE_ROCK_SMASH: item = ITEM_HM06; break;
+    case MOVE_WATERFALL:  item = ITEM_HM07; break;
+    default:
+        return FALSE;
+    }
+    return CheckBagHasItem(item, 1);
+}
+
+// the POKeMON shown using an HM nobody knows: the first one that isn't an egg
+u8 FirstUsablePartyMonForHm(void)
+{
+    u8 i;
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE)
+            break;
+        if (!GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG))
+            return i;
+    }
+    return PARTY_SIZE;
 }
 
 bool8 MonKnowsMove(struct Pokemon *mon, u16 move)
@@ -5295,7 +5357,12 @@ void ItemUseCB_EvolutionStone(u8 taskId, TaskFunc func)
     bool8 noEffect;
 
     PlaySE(SE_SELECT);
-    noEffect = PokemonItemUseNoEffect(&gPlayerParty[gPartyMenu.slotId], gSpecialVar_ItemId, gPartyMenu.slotId, 0);
+    // the former trade-evolution items (Metal Coat, King's Rock, Dragon Scale, Up-Grade, Deep Sea Tooth/Scale)
+    // have no entry in the item effect table: they work straight from the evolution table
+    if (!IS_POKEMON_ITEM(gSpecialVar_ItemId))
+        noEffect = GetEvolutionTargetSpecies(&gPlayerParty[gPartyMenu.slotId], EVO_MODE_ITEM_USE, gSpecialVar_ItemId) == SPECIES_NONE;
+    else
+        noEffect = PokemonItemUseNoEffect(&gPlayerParty[gPartyMenu.slotId], gSpecialVar_ItemId, gPartyMenu.slotId, 0);
     if (noEffect)
     {
         gPartyMenuUseExitCallback = FALSE;
@@ -5310,18 +5377,25 @@ void ItemUseCB_EvolutionStone(u8 taskId, TaskFunc func)
 static void CB2_UseEvolutionStone(void)
 {
     gCB2_AfterEvolution = gPartyMenu.exitCallback;
-    ExecuteTableBasedItemEffect_(gPartyMenu.slotId, gSpecialVar_ItemId, 0);
+    if (!IS_POKEMON_ITEM(gSpecialVar_ItemId))
+    {
+        struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
+        u16 target = GetEvolutionTargetSpecies(mon, EVO_MODE_ITEM_USE, gSpecialVar_ItemId);
+        if (target != SPECIES_NONE)
+            BeginEvolutionScene(mon, target, FALSE, gPartyMenu.slotId);
+    }
+    else
+    {
+        ExecuteTableBasedItemEffect_(gPartyMenu.slotId, gSpecialVar_ItemId, 0);
+    }
     ItemUse_SetQuestLogEvent(QL_EVENT_USED_ITEM, &gPlayerParty[gPartyMenu.slotId], gSpecialVar_ItemId, 0xFFFF);
     RemoveBagItem(gSpecialVar_ItemId, 1);
 }
 
 static bool8 MonCanEvolve(void)
 {
-    if (!IsNationalPokedexEnabled()
-     && GetEvolutionTargetSpecies(&gPlayerParty[gPartyMenu.slotId], EVO_MODE_ITEM_USE, gSpecialVar_ItemId) > KANTO_DEX_COUNT)
-        return FALSE;
-    else
-        return TRUE;
+    // real-time mod: every POKeMON can evolve, National Pokedex or not
+    return TRUE;
 }
 
 u8 GetItemEffectType(u16 item)

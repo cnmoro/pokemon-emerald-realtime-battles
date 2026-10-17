@@ -1,4 +1,5 @@
 #include "global.h"
+#include "rt_battle.h"
 #include "gflib.h"
 #include "pokemon.h"
 #include "pokemon_summary_screen.h"
@@ -2252,6 +2253,18 @@ static void BufferMonMoves(void)
 
 #define GetRightAlignXpos_NDigits(a, b) ((6 * (a)) - StringLength((b)) * 6)
 
+// cooldown frames -> "x.ys"
+static u8 *FormatCooldown(u8 *dst, u16 frames)
+{
+    u32 tenths = (frames * 10 + 30) / 60;
+    dst = ConvertIntToDecimalStringN(dst, tenths / 10, STR_CONV_MODE_LEFT_ALIGN, 2);
+    *dst++ = CHAR_PERIOD;
+    dst = ConvertIntToDecimalStringN(dst, tenths % 10, STR_CONV_MODE_LEFT_ALIGN, 1);
+    *dst++ = CHAR_s;
+    *dst = EOS;
+    return dst;
+}
+
 static void BufferMonMoveI(u8 i)
 {
     if (i < 4)
@@ -2272,21 +2285,13 @@ static void BufferMonMoveI(u8 i)
     sMonSummaryScreen->moveTypes[i] = gBattleMoves[sMonSummaryScreen->moveIds[i]].type;
     StringCopy(sMonSummaryScreen->summary.moveNameStrBufs[i], gMoveNames[sMonSummaryScreen->moveIds[i]]);
 
+    // real-time battles use cooldowns instead of PP: the cooldown in seconds
     if (i >= 4 && sMonSummaryScreen->mode == PSS_MODE_SELECT_MOVE)
-    {
-        ConvertIntToDecimalStringN(sMonSummaryScreen->summary.moveCurPpStrBufs[i],
-                                   gBattleMoves[sMonSummaryScreen->moveIds[i]].pp, STR_CONV_MODE_LEFT_ALIGN, 3);
-        ConvertIntToDecimalStringN(sMonSummaryScreen->summary.moveMaxPpStrBufs[i],
-                                   gBattleMoves[sMonSummaryScreen->moveIds[i]].pp, STR_CONV_MODE_LEFT_ALIGN, 3);
-    }
+        FormatCooldown(sMonSummaryScreen->summary.moveCurPpStrBufs[i], RtBattle_GetMoveCooldownFrames(sMonSummaryScreen->moveIds[i], 0, 0));
     else
-    {
-        ConvertIntToDecimalStringN(sMonSummaryScreen->summary.moveCurPpStrBufs[i],
-                                   GetMonPpByMoveSlot(&sMonSummaryScreen->currentMon, i), STR_CONV_MODE_LEFT_ALIGN, 3);
-        ConvertIntToDecimalStringN(sMonSummaryScreen->summary.moveMaxPpStrBufs[i],
-                                   CalculatePPWithBonus(sMonSummaryScreen->moveIds[i], GetMonData(&sMonSummaryScreen->currentMon, MON_DATA_PP_BONUSES), i),
-                                   STR_CONV_MODE_LEFT_ALIGN, 3);
-    }
+        FormatCooldown(sMonSummaryScreen->summary.moveCurPpStrBufs[i],
+                       RtBattle_GetMoveCooldownFrames(sMonSummaryScreen->moveIds[i], GetMonData(&sMonSummaryScreen->currentMon, MON_DATA_PP_BONUSES), i));
+    sMonSummaryScreen->summary.moveMaxPpStrBufs[i][0] = EOS;
 
     sMonSkillsPrinterXpos->curPp[i] = GetRightAlignXpos_NDigits(2, sMonSummaryScreen->summary.moveCurPpStrBufs[i]);
     sMonSkillsPrinterXpos->maxPp[i] = GetRightAlignXpos_NDigits(2, sMonSummaryScreen->summary.moveMaxPpStrBufs[i]);
@@ -2566,15 +2571,11 @@ static void PokeSum_PrintMoveName(u8 i)
           colorIdx = 1;
     }
 
-    AddTextPrinterParameterized3(sMonSummaryScreen->windowIds[POKESUM_WIN_RIGHT_PANE], FONT_NORMAL, 36, GetMovePpPrinterYpos(i), sPrintMoveTextColors[colorIdx], TEXT_SKIP_DRAW,
-        gText_PokeSum_PP);
-    AddTextPrinterParameterized3(sMonSummaryScreen->windowIds[POKESUM_WIN_RIGHT_PANE], FONT_NORMAL, 46 + sMonSkillsPrinterXpos->curPp[i], GetMovePpPrinterYpos(i), sPrintMoveTextColors[colorIdx], TEXT_SKIP_DRAW, sMonSummaryScreen->summary.moveCurPpStrBufs[i]);
-
-    if (sMonSummaryScreen->moveIds[i] != MOVE_NONE)
-    {
-        AddTextPrinterParameterized3(sMonSummaryScreen->windowIds[POKESUM_WIN_RIGHT_PANE], FONT_NORMAL, 58, GetMovePpPrinterYpos(i), sPrintMoveTextColors[colorIdx], TEXT_SKIP_DRAW, gText_Slash);
-        AddTextPrinterParameterized3(sMonSummaryScreen->windowIds[POKESUM_WIN_RIGHT_PANE], FONT_NORMAL, 64 + sMonSkillsPrinterXpos->maxPp[i], GetMovePpPrinterYpos(i), sPrintMoveTextColors[colorIdx], TEXT_SKIP_DRAW, sMonSummaryScreen->summary.moveMaxPpStrBufs[i]);
-    }
+    // cooldown (seconds) where the PP were, right-aligned to the old PP column
+    colorIdx = 0;
+    AddTextPrinterParameterized3(sMonSummaryScreen->windowIds[POKESUM_WIN_RIGHT_PANE], FONT_NORMAL,
+        80 - GetStringWidth(FONT_NORMAL, sMonSummaryScreen->summary.moveCurPpStrBufs[i], 0), GetMovePpPrinterYpos(i),
+        sPrintMoveTextColors[colorIdx], TEXT_SKIP_DRAW, sMonSummaryScreen->summary.moveCurPpStrBufs[i]);
 }
 
 static void PokeSum_PrintBottomPaneText(void)
