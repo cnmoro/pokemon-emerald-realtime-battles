@@ -8,9 +8,11 @@ CPPFLAGS="-iquote include -Wno-trigraphs -DFIRERED -DREVISION=0 -DENGLISH -DMODE
 CFLAGS="-mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast -mlong-calls"
 SRCS="${SRCS:-src/rt_lc_glue.c src/rt_main.c src/rt_arena.c src/rt_actor.c src/rt_moves.c src/rt_fx.c src/rt_ai.c src/rt_ui.c src/rt_props.c src/rt_vfx.c src/rt_data.c src/rt_debug.c src/option_menu.c src/rt_lc_summary.c}"
 OBJS=""
+# headers (and the generated data headers) changed since the last build -> recompile everything
+NEWEST_H=$(ls -t include/*.h src/data/rt/*.h | head -1)
 for s in $SRCS; do
   o=$B/$(basename ${s%.c}).o
-  if [ ! -f $o ] || [ $s -nt $o ] || [ -n "$FORCE" ] || [ include/rt_internal.h -nt $o ] || [ include/rt_compat.h -nt $o ]; then
+  if [ ! -f $o ] || [ $s -nt $o ] || [ -n "$FORCE" ] || [ $NEWEST_H -nt $o ]; then
     arm-none-eabi-cpp $CPPFLAGS $s | tools/preproc/preproc -i $s charmap.txt | $CC1 -quiet $CFLAGS -o - - | cat - <(echo -e ".text\n\t.align\t2, 0") | arm-none-eabi-as -mcpu=arm7tdmi -o $o -
   fi
   OBJS="$OBJS $o"
