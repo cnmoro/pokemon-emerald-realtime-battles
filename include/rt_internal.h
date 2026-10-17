@@ -238,6 +238,8 @@ struct RtActiveMove
     u8 subTimer;
     u16 power;
     u16 calledFrom;
+    u8 lunge;       // melee: frames of the closing dash left before the strike
+    u8 lungeTarget;
 };
 
 struct RtActor
@@ -779,6 +781,7 @@ void RtActor_Draw(struct RtActor *a);
 void RtActor_Withdraw(struct RtActor *a);
 void RtActor_SendOut(struct RtActor *a, u8 partyIdx, bool8 instant);
 u8 RtActor_MoveSlotUsable(struct RtActor *a, u8 slot);
+bool8 RtMove_ContactArmor(struct RtActor *a);
 bool8 RtActor_StatusMove(struct RtActor *a, u16 move);
 
 // rt_moves.c

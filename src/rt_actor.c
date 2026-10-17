@@ -1246,6 +1246,13 @@ void RtActor_Update(struct RtActor *a)
             a->stateTimer = 10;
             a->iframes = 14;
             a->dashCd = 42;
+            if (a->atk > a->spa)
+            {
+                // physical attackers (they have to close in): a slightly longer dash, back sooner
+                a->stateTimer = 12;
+                a->iframes = 16;
+                a->dashCd = 32;
+            }
             a->aim = ang;
             RtActor_SetFacingFromAngle(a, ang);
             RtActor_SetAnim(a, RTA_WALK, TRUE);

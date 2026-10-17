@@ -110,12 +110,48 @@ bool8 RtMove_IsOffensive(u16 move)
     return gBattleMoves[move].power != 0;
 }
 
+// --- melee balance -------------------------------------------------------------------------
+// every melee move reaches at least this far (hitbox centre ahead of the body / hitbox radius)
+#define MELEE_MIN_LEN    30
+#define MELEE_MIN_RADIUS 14
+// a melee move used with the target a little out of reach first dashes up to it
+#define LUNGE_MAX        64   // px of closing dash at most
+#define LUNGE_SPEED      4    // px per frame
+// a melee hit landing on an incoming shot in its first frames bats it back (if it hits harder)
+#define PARRY_WINDOW     3
+// damage taken while performing a melee / rush move (and no knockback)
+#define CONTACT_ARMOR    80
+// shots lose damage over their flight: full up to 40 % of the range, 75 % at the very end
+#define FALLOFF_START    102  // /256 of the flight
+#define FALLOFF_MIN      75
+
+static u8 MeleeLen(const struct RtMoveDef *d)
+{
+    u16 l = d->range + 10;
+    return l < MELEE_MIN_LEN ? MELEE_MIN_LEN : (l > 255 ? 255 : l);
+}
+
+static u8 MeleeRadius(const struct RtMoveDef *d)
+{
+    return d->radius < MELEE_MIN_RADIUS ? MELEE_MIN_RADIUS : d->radius;
+}
+
+// performing a contact move (melee strike or rush): takes less damage and is not pushed around
+bool8 RtMove_ContactArmor(struct RtActor *a)
+{
+    u8 pat;
+    if (a->state != AST_CAST || a->act.move == MOVE_NONE)
+        return FALSE;
+    pat = Def(a->act.move)->pattern;
+    return pat == RTP_MELEE || pat == RTP_RUSH;
+}
+
 u8 RtMove_GetRange(u16 move)
 {
     const struct RtMoveDef *d = Def(move);
     switch (d->pattern)
     {
-    case RTP_MELEE: return d->range + d->radius + 14;
+    case RTP_MELEE: return MeleeLen(d) + MeleeRadius(d) + 8 + LUNGE_MAX;
     case RTP_RUSH: return (d->speed * d->duration) / 16 + 10;
     case RTP_BULLET:
     case RTP_STREAM:
@@ -940,6 +976,73 @@ static void UpdateZone(struct RtProj *p)
     }
 }
 
+// how hard a move hits coming from this POKeMON (power x attacking stat x STAB), for parries
+static u32 MoveStrength(struct RtActor *a, u16 move)
+{
+    u8 type = RtMove_TypeOf(a, move);
+    u32 pw = gBattleMoves[move].power;
+    u32 s;
+    if (pw <= 1)
+        pw = 60; // variable power
+    s = pw * (IS_TYPE_PHYSICAL(type) ? a->atk : a->spa);
+    if (RtActor_HasType(a, type))
+        s = s * 3 / 2;
+    return s;
+}
+
+// a melee strike meeting an incoming shot in its first frames bats it back at the shooter,
+// but only when the strike hits harder than the shot
+static void TryParry(struct RtProj *p, struct RtActor *o)
+{
+    s32 i;
+    u32 mine = 0;
+    for (i = 0; i < RT_MAX_PROJ; i++)
+    {
+        struct RtProj *q = &gRt->proj[i];
+        struct RtActor *shooter;
+        s32 dx, dy, r;
+        u8 ang;
+        s32 sp;
+        if (q->kind != PK_BULLET || q->side == p->side || q->delay || (q->param & (4 | 8)) || q->move == MOVE_NONE)
+            continue;
+        dx = FROM_FX(q->x - p->x);
+        dy = FROM_FX(q->y - p->y);
+        r = p->radius + q->radius + 2;
+        if (dx * dx + dy * dy > r * r)
+            continue;
+        shooter = &gRt->actors[q->owner < RT_MAX_ACTORS ? q->owner : 0];
+        if (!mine)
+            mine = MoveStrength(o, p->move);
+        if (mine <= MoveStrength(shooter, q->move))
+            continue;
+        // batted back toward whoever shot it
+        ang = RtAtan2(FROM_FX(shooter->x - q->x), FROM_FX(shooter->y - q->y));
+        sp = RtDist(q->vx, q->vy) * 5 / 4;
+        q->angle = ang;
+        q->vx = RtCos(ang) * sp / 256;
+        q->vy = RtSin(ang) * sp / 256;
+        q->side = o->side;
+        q->owner = o->id;
+        q->hitMask = 0;
+        q->homingTarget = shooter->id;
+        q->age = 0;
+        if (q->life < q->len / 2 + 8)
+            q->life = q->len / 2 + 8;
+        q->flags &= ~RTMF_BOOMERANG;
+        RtFx_Burst(FX_SPARK8, FXP_WHITE, q->x, q->y, 6, 3, 14);
+        RtFx_Spawn(FX_GLOW16, FXP_GOLD, q->x, q->y, 8);
+        RtFx_Word(q->x, q->y - TO_FX(12), FX_W_BLOCK);
+        PlaySE(SE_M_REFLECT);
+        gRt->pauseFrames = 4;
+        {
+            extern const u8 gRtDebugEnabled;
+            extern u32 gRtDebugStat;
+            if (gRtDebugEnabled)
+                gRtDebugStat = ((gRtDebugStat & 0xFF) + 1) | (p->owner << 8) | (shooter->id << 12) | ((u32)p->move << 16); // harness: parry log
+        }
+    }
+}
+
 static void UpdateMelee(struct RtProj *p)
 {
     s32 i;
@@ -951,16 +1054,18 @@ static void UpdateMelee(struct RtProj *p)
             PlaySE(Def(p->move)->sfx);
         return;
     }
-    // follow owner
+    // follow owner (the same reach in every direction)
     {
         s32 reach = o->radius + p->len;
         p->x = o->x + RtCos(p->angle) * reach;
-        p->y = o->y + RtSin(p->angle) * reach / 2 - TO_FX(o->height / 3);
+        p->y = o->y + RtSin(p->angle) * reach - TO_FX(o->height / 3);
         p->z = 0;
     }
     p->age++;
     if (p->life)
         p->life--;
+    if (p->age <= PARRY_WINDOW)
+        TryParry(p, o);
     for (i = 0; i < RT_MAX_ACTORS; i++)
     {
         struct RtActor *t = &gRt->actors[i];
@@ -1413,7 +1518,10 @@ static void ShowEffectiveness(struct RtActor *t, u8 eff)
 
 static void Knockback(struct RtActor *atk, struct RtActor *t, s32 strength)
 {
-    u8 ang = RtAtan2(FROM_FX(t->x - atk->x), FROM_FX(t->y - atk->y));
+    u8 ang;
+    if (RtMove_ContactArmor(t))
+        return; // committed to a contact move: holds its ground
+    ang = RtAtan2(FROM_FX(t->x - atk->x), FROM_FX(t->y - atk->y));
     t->vx += RtCos(ang) * strength;
     t->vy += RtSin(ang) * strength;
 }
@@ -2071,6 +2179,23 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
         dmg = RtMove_CalcDamage(atk, t, move, power, &eff, &crit);
         break;
     }
+    if (dmg > 0 && effect != EFFECT_OHKO)
+    {
+        // shots lose some punch over a long flight
+        if (p->kind == PK_BULLET && !(p->flags & RTMF_ARC) && !(p->param & (4 | 8)) && p->len)
+        {
+            u32 f = (u32)p->age * 256 / p->len;
+            if (f > 256)
+                f = 256;
+            if (f > FALLOFF_START)
+                dmg = dmg * (100 - (100 - FALLOFF_MIN) * (f - FALLOFF_START) / (256 - FALLOFF_START)) / 100;
+        }
+        // contact armor
+        if (RtMove_ContactArmor(t) && t != atk)
+            dmg = dmg * CONTACT_ARMOR / 100;
+        if (dmg < 1)
+            dmg = 1;
+    }
     if (effect == EFFECT_FAKE_OUT && gRt->frame - atk->sentOutFrame > 240)
     {
         RtFx_Word(t->x, t->y - TO_FX(t->height + 8), FX_W_MISS);
@@ -2470,11 +2595,26 @@ static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot)
     a->act.targetId = tid;
     a->act.sx = a->x;
     a->act.sy = a->y;
+    // melee with the target a little out of reach: dash up to it first
+    if (d->pattern == RTP_MELEE && tid < RT_MAX_ACTORS && !a->trap && !a->ingrain)
+    {
+        struct RtActor *t = &gRt->actors[tid];
+        s32 dist = RtDist(FROM_FX(t->x - a->x), FROM_FX(t->y - a->y));
+        s32 stop = a->radius + MeleeLen(d);
+        if (!t->invuln && dist > stop + 4 && dist <= stop + LUNGE_MAX)
+        {
+            a->act.lunge = (dist - stop) / LUNGE_SPEED + 1;
+            a->act.lungeTarget = tid;
+        }
+    }
     a->damageTakenThisCast = 0;
     a->aim = a->act.angle;
     if (d->pattern != RTP_SELF && d->pattern != RTP_FIELD)
         RtActor_SetFacingFromAngle(a, a->act.angle);
-    RtActor_SetAnim(a, d->windup > 16 ? RTA_CHARGE : (d->anim == RTA_WALK ? RTA_WALK : d->anim), d->windup > 16);
+    if (a->act.lunge)
+        RtActor_SetAnim(a, RTA_WALK, TRUE);
+    else
+        RtActor_SetAnim(a, d->windup > 16 ? RTA_CHARGE : (d->anim == RTA_WALK ? RTA_WALK : d->anim), d->windup > 16);
     a->gcd = 0;
 
     // hit counts
@@ -2765,8 +2905,8 @@ static void ExecuteMove(struct RtActor *a)
                 if (!p)
                     break;
                 p->angle = a->act.angle;
-                p->len = d->range + 10;
-                p->radius = d->radius;
+                p->len = MeleeLen(d);
+                p->radius = MeleeRadius(d);
                 p->life = d->duration ? d->duration : 6;
                 p->param2 = a->act.castId;
                 p->delay = 1 + hitDelay + i * d->spread;
@@ -3037,6 +3177,48 @@ static void SteerChannel(struct RtActor *a, u8 rate)
     }
 }
 
+// closing dash before a melee strike: re-aims at the target every frame, stops at striking range,
+// at a wall, or when the target is gone
+static void MeleeLunge(struct RtActor *a, const struct RtMoveDef *d)
+{
+    struct RtActor *t = &gRt->actors[a->act.lungeTarget < RT_MAX_ACTORS ? a->act.lungeTarget : 0];
+    s32 dist, stop, step, nx, ny;
+    u8 ang;
+    a->act.lunge--;
+    if (!t->active || t->side == a->side || !RtActor_IsAlive(t) || t->state == AST_GONE || t->invuln)
+    {
+        a->act.lunge = 0;
+        return;
+    }
+    dist = RtDist(FROM_FX(t->x - a->x), FROM_FX(t->y - a->y));
+    stop = a->radius + MeleeLen(d);
+    if (dist <= stop + 2)
+    {
+        a->act.lunge = 0;
+        return;
+    }
+    ang = RtAtan2(FROM_FX(t->x - a->x), FROM_FX(t->y - a->y));
+    step = dist - stop < LUNGE_SPEED ? dist - stop : LUNGE_SPEED;
+    nx = a->x + RtCos(ang) * step;
+    ny = a->y + RtSin(ang) * step;
+    if (RtArena_CircleBlocked(FROM_FX(nx), FROM_FX(ny), a->radius / 2))
+    {
+        a->act.lunge = 0;
+        return;
+    }
+    a->x = nx;
+    a->y = ny;
+    a->act.angle = ang;
+    a->aim = ang;
+    RtActor_SetFacingFromAngle(a, ang);
+    if ((a->act.lunge & 1) == 0)
+    {
+        struct RtPart *pt = RtFx_Spawn(gRt->floorKind == 1 ? FX_DROP8 : FX_SMOKE16, gRt->floorKind == 1 ? FXP_WATER : FXP_SMOKE, a->x, a->y, 10);
+        if (pt)
+            pt->flags |= PF_BLEND;
+    }
+}
+
 void RtMove_UpdateCast(struct RtActor *a)
 {
     const struct RtMoveDef *d = Def(a->act.move);
@@ -3051,6 +3233,11 @@ void RtMove_UpdateCast(struct RtActor *a)
     if (d->pattern == RTP_TARGETED)
         windup = 10; // warnings are on the projectile, the user just gestures
 
+    if (a->act.phase == 0 && a->act.lunge)
+    {
+        MeleeLunge(a, d);
+        return;
+    }
     a->act.timer++;
     switch (a->act.phase)
     {
