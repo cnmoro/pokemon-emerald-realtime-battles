@@ -64,13 +64,13 @@ O menu de opções do FireRed ganhou cinco linhas (dez no total, o título "OPTI
 
 - **Todos os 251 Pokémon da 1ª e 2ª geração obtíveis**, espalhados pelas rotas, cavernas e águas de Kanto e das Sevii Islands em lugares coerentes com tipo e nível ([lista](docs/POKEMON_LOCAIS.md)).
 - **Encontros equilibrados:** em cada grama/água/rocha/vara, toda espécie da área tem a mesma chance.
-- **Sem evolução por troca:** Kadabra, Machoke, Graveler e Haunter evoluem por nível; Onix/Scyther com Metal Coat, Seadra com Dragon Scale, Porygon com Up-Grade, Poliwhirl/Slowpoke com King's Rock — usados na bolsa como pedra de evolução. Espeon e Umbreon evoluem com Sun Stone e Moon Stone. Os itens de evolução são vendidos em Celadon.
+- **Sem evolução por troca:** Kadabra, Machoke, Graveler e Haunter evoluem no nível 37; Onix/Scyther com Metal Coat, Seadra com Dragon Scale, Porygon com Up-Grade, Poliwhirl/Slowpoke com King's Rock — usados na bolsa como pedra de evolução. Como o FireRed não tem relógio, Espeon evolui com Sun Stone e Umbreon com Moon Stone. As pedras e os itens de evolução são vendidos no 4º andar da loja de departamentos de Celadon e no Mart de Vermilion.
 - **MOVES no menu do Pokémon:** reensina de graça os golpes por nível até o nível atual, mais os egg moves da família.
 - **HMs sem "HM slave":** ter a HM na bolsa (e a insígnia) basta para Cut, Rock Smash, Strength, Surf e Waterfall; cavernas escuras acendem sozinhas com a HM05. FLY continua precisando de um Pokémon que conheça o golpe.
 
 ### Lendários de Kanto
 
-- **Raikou, Entei e Suicune** andam livres por Kanto (nível 35) e podem surgir em qualquer encontro em terra; o dano que levam é guardado entre encontros.
+- **Raikou, Entei e Suicune** andam livres por Kanto desde o início (nível 35) e podem surgir em ~1/48 dos encontros em terra; o dano que levam é guardado entre encontros, e eles voltam a vagar se forem derrotados (até serem capturados). O roamer único original do pós-jogo foi desativado.
 - Os lendários fixos do FireRed (Articuno, Zapdos, Moltres, Snorlax, Mewtwo) são batalhas em tempo real nos lugares originais.
 - **Depois do Hall da Fama:** Celebi aparece na Viridian Forest e Mew na Pokémon Mansion, e o **Mystic Ticket** e o **Aurora Ticket** são entregues automaticamente (Navel Rock: Lugia e Ho-Oh; Birth Island: Deoxys).
 
