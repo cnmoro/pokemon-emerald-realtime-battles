@@ -137,7 +137,7 @@ static const struct BgTemplate sOptionMenuBgTemplates[] =
 
 static const u16 sOptionMenuPalette[] = INCBIN_U16("graphics/misc/option_menu.gbapal");
 static const u16 sOptionMenuItemCounts[MENUITEM_COUNT] = {
-    [MENUITEM_TEXTSPEED] = 3, [MENUITEM_BATTLESCENE] = 3, [MENUITEM_BATTLESTYLE] = 2, [MENUITEM_EXPSHARE] = 6,
+    [MENUITEM_TEXTSPEED] = 4, [MENUITEM_BATTLESCENE] = 3, [MENUITEM_BATTLESTYLE] = 2, [MENUITEM_EXPSHARE] = 6,
     [MENUITEM_EXPBONUS] = 8, [MENUITEM_BATTLESPEED] = 5, [MENUITEM_SOUND] = 2,
 #if !RT_LC
     [MENUITEM_BUTTONMODE] = 3,
@@ -209,7 +209,8 @@ static const u8 *const sTextSpeedOptions[] =
 {
     gText_TextSpeedSlow, 
     gText_TextSpeedMid, 
-    gText_TextSpeedFast
+    gText_TextSpeedFast,
+    gText_TextSpeedInstant
 };
 
 static const u8 *const sBattleSceneOptions[] =
