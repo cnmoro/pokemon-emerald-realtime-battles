@@ -902,11 +902,15 @@ UIPAL=[(0,0,0),(16,16,16),(70,70,80),(140,140,150),(250,250,250),(230,50,40),(13
 def c555(c): return (int(c[0])>>3)|((int(c[1])>>3)<<5)|((int(c[2])>>3)<<10)
 
 # ---------------------------------------------------------------- arena props
-# Real Emerald overworld object graphics (Rock Smash rock, Cut tree, Strength boulder, moving box),
+# Real overworld object graphics of the game (Rock Smash rock, Cut tree, Strength boulder; the moving box
+# comes from Emerald),
 # with their own palettes.
 PROP_PALS={}
 def prop_frames(png, frames, pal_name):
-    im=Image.open(os.path.join(PE,'graphics/object_events/pics/misc',png))
+    path=os.path.join(PE,'graphics/object_events/pics/misc',png)
+    if not os.path.exists(path):  # FireRed has no moving box: the Emerald one is kept under tools/rt
+        path=os.path.join(os.path.dirname(os.path.abspath(__file__)),png)
+    im=Image.open(path)
     pal=im.getpalette()[:48]
     PROP_PALS[pal_name]=[tuple(pal[i*3:i*3+3]) for i in range(16)]
     out=[]
@@ -917,9 +921,9 @@ def prop_frames(png, frames, pal_name):
                 c.p[y][x]=im.getpixel((f*16+x,y)) & 15
         out.append(c)
     return out
-add('PROP_ROCK',16,16,prop_frames('breakable_rock.png',[0,2,3],'PROP_ROCK'))
-add('PROP_TREE',16,16,prop_frames('cuttable_tree.png',[0,2,3],'PROP_TREE'))
-add('PROP_BOULDER',16,16,prop_frames('pushable_boulder.png',[0],'PROP_BOULDER'))
+add('PROP_ROCK',16,16,prop_frames('rock_smash_rock.png',[0,2,3],'PROP_ROCK'))
+add('PROP_TREE',16,16,prop_frames('cut_tree.png',[0,2,3],'PROP_TREE'))
+add('PROP_BOULDER',16,16,prop_frames('strength_boulder.png',[0],'PROP_BOULDER'))
 add('PROP_BOX',16,16,prop_frames('moving_box.png',[0],'PROP_BOX'))
 for k,v in PROP_PALS.items():
     P[k]=v
