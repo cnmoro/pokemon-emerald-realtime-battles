@@ -499,6 +499,9 @@ static void VBlankCB_Rt(void)
         sx += (Random() % (gRt->shakeMag * 2 + 1)) - gRt->shakeMag;
         sy += (Random() % (gRt->shakeMag * 2 + 1)) - gRt->shakeMag;
     }
+    // the HUD layer never scrolls (a mugshot transition, as the Elite Four's, leaves BG0 shifted)
+    SetGpuReg(REG_OFFSET_BG0HOFS, 0);
+    SetGpuReg(REG_OFFSET_BG0VOFS, 0);
     SetGpuReg(REG_OFFSET_BG1HOFS, sx);
     SetGpuReg(REG_OFFSET_BG1VOFS, sy);
     SetGpuReg(REG_OFFSET_BG2HOFS, sx);
