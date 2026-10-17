@@ -186,7 +186,8 @@ Mudanças em arquivos do jogo original (pequenas): `battle_main.c` (desvio para 
 3. A janela vencedora é copiada como está (layers *normal/covered/split* idênticas às do overworld, com animações de tileset).
 4. **Campo de luta — sempre 18×10 metatiles (288×160 px):** o retângulo é posicionado (alinhado aos blocos de borda do mapa) onde menos coisa precisa ser limpa: cada célula que não é chão limpo do nível do jogador custa, e o vazio fora de uma sala custa mais. Dentro dele tudo vira chão: o que não é chão limpo é agrupado em objetos (8-conectados) e cada objeto é pintado com o chão que mais aparece em volta dele (votação de maioria), então trilhas continuam trilhas e grama continua grama; objetos pequenos que encostam no campo são apagados inteiros; degraus, crateras e peças raras também somem; em interiores o piso fica uniforme.
    - **Moldura:** em volta do campo, onde algum objeto cortado pela borda apareceria (meio prédio, meio penhasco), é desenhado um anel de 2 metatiles com os *blocos de borda* do próprio mapa — as árvores das rotas e cidades, a rocha das cavernas. O campo vira uma clareira em vez de um buraco recortado no cenário. Em mapas cuja borda é água ou vazio (interiores) o anel não é desenhado.
-5. Fora do campo fica o cenário real, **escurecido** por hardware: a janela 0 do GBA cobre o campo (atualizada a cada quadro com o scroll da câmera) e o efeito de escurecimento (`BLDCNT`/`BLDY`) só vale fora dela. Assim fica óbvio onde dá e onde não dá para andar.
+5. Fora do campo fica o cenário real, **escurecido** por hardware, com transição suave: uma tabela de `BLDY` por linha de varredura (copiada por DMA no H-Blank) escurece as linhas acima e abaixo do campo com uma rampa de 8 px, e colunas de sprites semitransparentes com borda em degradê (dither) escurecem as laterais. A mesma tabela faz o escurecimento dramático de golpes como Thunder e Hyper Beam. Assim fica óbvio onde dá e onde não dá para andar, sem cortes secos.
+   - **Acabamento das bordas:** o anel de blocos de borda é alinhado à grade 2×2 dos blocos do mapa (sempre árvores/rochas inteiras), os cantos do campo são arredondados com um bloco de borda e as bordas longas ganham alguns recortes de bloco inteiro, para que o contorno pareça uma clareira natural em vez de uma grade recortada (ex.: praia de Dewford).
 6. Os pontos de spawn ficam dentro do campo, na diagonal (jogador embaixo à esquerda, inimigo em cima à direita), porque a tela é larga e baixa; a câmera enquadra os dois.
 
 ### Objetos da arena (`src/rt_props.c`)
@@ -241,17 +242,19 @@ O script lê `species_info.h`, `evolution.h` e `wild_encounters.json`, calcula o
 ### Gráficos
 
 - **Sprites**: os sprites do PMD SpriteCollab (animações Walk/Idle/Attack/Shoot/Hurt/Sleep/Charge, 5 direções + espelhamento) foram quantizados para 15 cores, recortados em formatos de OAM válidos, deduplicados e comprimidos em LZ77 (~3,8 MB para os 386 Pokémon). O quadro de impacto de cada animação de ataque é guardado para sincronizar a hitbox corpo a corpo. Paletas shiny são derivadas mapeando a paleta normal→shiny dos sprites originais do Emerald.
-- **Efeitos**: um atlas procedural (81 formas, 34 paletas) gerado por script: chamas, raios, gotas, folhas, rochas, cristais, notas, anéis, feixes, ondas, números, palavras…
+- **Efeitos**: mais de 140 formas e ~67 paletas geradas por script (`tools/rt/fxgen.py` + `fxart.py`): chamas, raios ramificados, jatos d'água, cristais, garras, mandíbulas, punhos, mãos, correntes/anéis de constrição, teias, olhos, véus de vidro, ondas quebrando, sinos, ovos… As formas mais usadas ficam fixas na VRAM; as demais são **transmitidas sob demanda** para um cache de tiles (LRU), então não há limite prático de arte.
 - **VRAM**: tileset do mapa no charblock 0 (igual ao overworld, para as animações funcionarem), três camadas de mapa 512×256 nos BG1–3, HUD no BG0; OBJ: 4 slots de 64 tiles para os atores, barras de UI, atlas de efeitos; paletas OBJ 5–15 alocadas dinamicamente (LRU) para efeitos.
-- **Efeitos dos golpes** (por cima dos padrões):
-  - golpes com tempo de preparação mostram energia **convergindo** para o usuário (partículas que vêm de fora para dentro, brilho que cresce e anel no chão);
-  - golpes de status/buff em si mesmo têm aura: anel que se expande no chão, o emblema do golpe (escudo, espada, aura…) crescendo sobre o Pokémon e partículas subindo em coluna;
-  - projéteis deixam um rastro de faíscas na cor do golpe, e os pequenos são desenhados maiores (matriz afim);
-  - jatos (Flamethrower, Hydro Pump…) começam pequenos e crescem enquanto avançam;
-  - raios soltam faíscas ao longo do feixe e na ponta;
-  - golpes que caem do céu (Thunder, Blizzard, Rock Slide…) acumulam energia sobre o marcador no chão antes de cair; o Thunder é um raio de 4 segmentos com anel de choque;
-  - todo impacto gera uma onda de choque em anel, além das partículas do tipo.
-- **Sombras** em xadrez (dither) em vez de transparência por hardware, que agora fica reservada para escurecer o cenário fora do campo.
+- **Efeitos dos golpes** (`src/rt_vfx.c`, uma "assinatura" visual por golpe, gerada por `tools/rt/vfxgen.py`):
+  - cada golpe tem estilo, cores e impacto próprios: Hydro Pump solta **dois jatos d'água entrelaçados girando**, Thunderbolt é um **raio ramificado** redesenhado a cada 2 quadros, Dragon Breath é uma coluna **reta e densa** de fogo azul-violeta, Surf/Muddy Water são **uma parede de ondas quebrando**, Solar Beam/Hyper Beam/Ice Beam/Aurora Beam/Psybeam têm feixes com núcleo e halo próprios, Hydro Cannon é uma torrente com espuma em espiral, Future Sight/Doom Desire mandam um orbe para o céu e depois caem como **pilar de luz**;
+  - golpes de contato carimbam o próprio motivo no alvo e o mantêm visível (~0,4 s): palma aberta (Pound, Double Slap), golpe de caratê (Karate Chop, Brick Break com estilhaços), punhos elementais (Thunder/Fire/Ice Punch), arcos de lâmina, garras, mandíbulas, chifres e bicos, **anéis apertando o alvo** (Bind, Wrap, Constrict), língua (Lick), osso girando, chute rasteiro com poeira…;
+  - golpes de status mostram o efeito no alvo: X vermelho (Disable), veia de raiva (Taunt, Torment), mira se fechando (Lock-On), olho (Foresight, Mean Look, Leer), teia (Spider Web, String Shot), Z's (Yawn), corações (Attract, Charm), estrelas girando (Dynamic Punch, Swagger);
+  - buffs e defesas têm visual próprio: véus de vidro (Reflect, Light Screen, Safeguard), cúpula hexagonal (Protect), olho brilhando (Detect), aura de fogo (Endure, Bulk Up), anéis orbitando (Charge, Recycle), sino tocando (Heal Bell), névoa (Mist);
+  - clima: sol com raios (Sunny Day), chuva, tempestade de areia, granizo, gotas e lama caindo (Water/Mud Sport);
+  - golpes de drenagem fazem a energia **voltar** do alvo para o usuário;
+  - preparação (Solar Beam, Sky Attack…): energia convergindo, brilho crescendo e, nos golpes mais fortes, a arena escurece;
+  - **orçamento de sprites por linha**: o GBA desenha os sprites na ordem da OAM e corta o resto da linha quando acaba o tempo de desenho; por isso cada sprite é contabilizado por faixa de 4 linhas antes de ir para a OAM, o HUD e os Pokémon têm o tempo reservado, o "corpo" do golpe (feixe, raio) vem antes das partículas, e partículas cosméticas que estourariam o orçamento são omitidas inteiras em vez de aparecerem cortadas;
+  - todo impacto tem a explosão do tipo (faíscas, respingo, folhas, cristais, poeira…), brilhos aditivos (blend alpha do hardware) e tremor de tela nos golpes pesados.
+- **Sombras** em xadrez (dither) em vez de transparência por hardware, que fica reservada para os brilhos dos efeitos.
 
 ### Desempenho
 

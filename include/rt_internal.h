@@ -503,6 +503,7 @@ struct RtPartX
 #define PX_HOMEIN   (1 << 2)  // drifts toward its owner (absorb effects)
 #define PX_STRETCH  (1 << 3)  // oriented along its velocity
 #define PX_FADE     (1 << 4)  // semi-transparent in the last third of its life
+#define PX_HOLD     (1 << 5)  // animation stops on its last frame instead of looping
 
 // ---------------------------------------------------------------------------
 // Global battle state

@@ -141,6 +141,8 @@ static void BoltLine(s32 x0, s32 y0, s32 x1, s32 y1, u8 pal, u32 seed, s32 jag, 
     s32 px[16], py[16];
     if (len < 4)
         return;
+    if (bucket == 1)
+        bucket = 5; // the bolt is the move: it gets its scanline time before the particles
     n = len / 16 + 1;
     if (n > 15)
         n = 15;
@@ -424,12 +426,14 @@ static void DoImpact(u8 vi, u8 pal, u8 pal2, s32 x, s32 y, bool8 heavy)
     case VI_FIGHT:
     case VI_NORMAL:
     case VI_DEFAULT:
-        p = Sp(FX_BOOM32, vi == VI_FIGHT ? FXP_E_FIGHT : FXP_E_HOT, x, y, 9);
-        if (heavy)
-            Scale(p, 18, 1);
+        // white comic burst; fighting moves get a hot red-orange shock ring around it
+        p = Sp(FX_BOOM32, FXP_E_WHITE, x, y, 11);
+        Scale(p, heavy ? 20 : 15, 1);
+        if (vi == VI_FIGHT)
+            ImpactRing(FXP_E_FIGHT, x, y, 6, 3, 10);
         for (k = 0; k < 6; k++)
         {
-            p = Fly(FX_SPEED16, FXP_E_WHITE, x, y, k * 43 + (Random() & 15), 520, 8, FALSE);
+            p = Fly(FX_SPEED16, FXP_E_WHITE, x, y, k * 43 + (Random() & 15), 520, 9, FALSE);
             Stretch(p);
         }
         break;
@@ -495,56 +499,816 @@ static void DoImpact(u8 vi, u8 pal, u8 pal2, s32 x, s32 y, bool8 heavy)
     (void)pal2;
 }
 
-// the move's own shape stamped on the target when it connects (claws, jaws, fists...), so contact moves read
-static void HitEmblem(u16 move, const struct RtVfxDef *v, s32 x, s32 y)
+// ---------------------------------------------------------------------------
+// hit signatures: the move's own motif stamped on the target when it connects, held long enough to read
+// ---------------------------------------------------------------------------
+static EWRAM_DATA u8 sHitAtk = 0xFF; // attacker / target of the hit being drawn (0xFF = unknown)
+static EWRAM_DATA u8 sHitTgt = 0xFF;
+
+void RtVfx_SetHit(u8 atk, u8 tgt)
+{
+    sHitAtk = atk;
+    sHitTgt = tgt;
+}
+
+static struct RtActor *ActorAt(s32 x, s32 y, u8 notId)
+{
+    s32 i, best = 0x7FFFFFFF;
+    struct RtActor *r = NULL;
+    for (i = 0; i < RT_MAX_ACTORS; i++)
+    {
+        struct RtActor *t = &gRt->actors[i];
+        s32 d;
+        if (!t->active || t->state == AST_GONE || t->id == notId)
+            continue;
+        d = RtDist(FROM_FX(t->x - x), FROM_FX(t->y - TO_FX(t->height / 2) - y));
+        if (d < best)
+        {
+            best = d;
+            r = t;
+        }
+    }
+    return r;
+}
+
+static struct RtActor *HitTarget(s32 x, s32 y)
+{
+    if (sHitTgt < RT_MAX_ACTORS && gRt->actors[sHitTgt].active)
+        return &gRt->actors[sHitTgt];
+    return ActorAt(x, y, 0xFF);
+}
+
+static struct RtActor *HitAttacker(s32 x, s32 y)
+{
+    struct RtActor *t;
+    if (sHitAtk < RT_MAX_ACTORS && gRt->actors[sHitAtk].active)
+        return &gRt->actors[sHitAtk];
+    t = HitTarget(x, y);
+    return ActorAt(x, y, t ? t->id : 0xFF);
+}
+
+// a held motif: fixed frame or animated, faded out over its last third
+static struct RtPart *Mark(u8 shape, u8 pal, s32 x, s32 y, u8 life, u8 scale, u8 angle, u8 rate)
+{
+    struct RtPart *p = Sp(shape, pal, x, y, life);;
+    if (p)
+    {
+        p->angle = angle;
+        p->frameRate = rate;
+        p->frame = 0;
+        RtFx_X(p)->flags |= PX_FADE | PX_HOLD;
+    }
+    Scale(p, scale, 0);
+    return p;
+}
+
+// the white comic hit star every solid contact gets
+static void HitStar(s32 x, s32 y, u8 size)
+{
+    struct RtPart *p = Sp(FX_FLARE32, FXP_E_WHITE, x, y, 10);
+    Scale(p, size, -1);
+    Spin(p, 7);
+    p = Sp(FX_GLOW32, FXP_E_WHITE, x, y, 6);
+    Scale(p, size / 2, 1);
+    Blend(p);
+}
+
+static void SpeedBurst(s32 x, s32 y, u8 n, u8 pal, u8 ang0)
+{
+    u8 k;
+    for (k = 0; k < n; k++)
+    {
+        struct RtPart *p = Fly(FX_SPEED16, pal, x, y, ang0 + k * (256 / n) + (Random() & 15), 560, 9, FALSE);
+        Stretch(p);
+    }
+}
+
+// something glued to an actor (coils, orbiting dizzy stars)
+static struct RtPart *Glue(struct RtActor *t, u8 shape, u8 pal, s8 dx, u8 h, u8 life)
+{
+    struct RtPart *p;
+    if (!t)
+        return NULL;
+    p = Sp(shape, pal, t->x + TO_FX(dx), t->y - TO_FX(h), life);
+    if (p)
+    {
+        struct RtPartX *x = RtFx_X(p);
+        x->flags |= PX_FOLLOW;
+        x->owner = t->id;
+        x->orbitAng = (u8)dx;
+        x->orbit = h;
+    }
+    return p;
+}
+
+static void OrbitAround(struct RtActor *t, u8 shape, u8 pal, u8 n, u8 radius, s8 speed, u8 life, u8 h)
+{
+    u8 k;
+    if (!t)
+        return;
+    for (k = 0; k < n; k++)
+    {
+        struct RtPart *p = Sp(shape, pal, t->x, t->y - TO_FX(h), life);
+        if (p)
+        {
+            struct RtPartX *x = RtFx_X(p);
+            x->flags |= PX_ORBIT;
+            x->owner = t->id;
+            x->orbit = radius;
+            x->orbitAng = k * 256 / n;
+            x->ay = speed;
+            if (gRtFxShapes[shape].frames > 1)
+                p->frameRate = 3;
+        }
+    }
+}
+
+static void Coils(struct RtActor *t, u8 pal)
+{
+    u8 k, h;
+    if (!t)
+        return;
+    h = t->height;
+    for (k = 0; k < 3; k++)
+    {
+        struct RtPart *p = Glue(t, FX_COIL32, pal, 0, h / 5 + k * h / 4, 44 - k * 4);
+        if (p)
+        {
+            p->frameRate = 5; // loose / squeezed
+            RtFx_X(p)->flags |= PX_FADE;
+            p->flags |= PF_SCALE;
+            p->scale = (u8)(14 + (t->radius > 12 ? 4 : 0) - k);
+            p->dscale = 0;
+        }
+    }
+    RtFx_Shake(1, 6);
+}
+
+static void Hearts(s32 x, s32 y, u8 n)
+{
+    u8 k;
+    for (k = 0; k < n; k++)
+    {
+        struct RtPart *p = Fly(FX_HEART16, FXP_HEART, x, y, 160 + k * (96 / (n ? n : 1)) + (Random() & 15), 220, 30, FALSE);
+        Drag(p, 14);
+        Accel(p, 0, -2);
+        FadeOut(p);
+    }
+}
+
+static void Debris(s32 x, s32 y, u8 shape, u8 pal, u8 n)
+{
+    u8 k;
+    for (k = 0; k < n; k++)
+    {
+        struct RtPart *p = Fly(shape, pal, x, y, 128 + 24 + Random() % 80 + 32, 420 + (Random() & 255), 24, FALSE);
+        Accel(p, 0, 12);
+        Drag(p, 15);
+        Spin(p, (Random() & 1) ? 12 : -12);
+    }
+}
+
+// returns TRUE when the signature replaces the generic emblem of the style
+static bool8 SigHit(u16 move, const struct RtVfxDef *v, s32 x, s32 y)
+{
+    struct RtPart *p;
+    struct RtActor *t, *a;
+    s32 k;
+    u8 ang = Random();
+    switch (move)
+    {
+    // ---- open hand
+    case MOVE_POUND:
+    case MOVE_DOUBLE_SLAP:
+    case MOVE_SLAM:
+    case MOVE_FAKE_OUT:
+    case MOVE_ARM_THRUST:
+    case MOVE_SMELLING_SALT:
+        {
+            s32 oy = (move == MOVE_DOUBLE_SLAP || move == MOVE_ARM_THRUST) ? TO_FX((Random() % 13) - 6) : 0;
+            a = HitAttacker(x, y);
+            p = Mark(FX_PALM16, move == MOVE_ARM_THRUST ? FXP_E_FIGHT : FXP_E_GOLD, x - TO_FX(8), y + oy, 24, move == MOVE_SLAM ? 30 : 24, 0, 0);
+            if (p)
+            {
+                p->vx = 170;
+                if (a && a->x > x) { p->flags |= PF_HFLIP; p->x += TO_FX(16); p->vx = -170; }
+            }
+            Drag(p, 12);
+            HitStar(x + TO_FX(4), y + oy, move == MOVE_SLAM ? 26 : 20);
+            if (move == MOVE_SMELLING_SALT)
+                for (k = 0; k < 4; k++)
+                {
+                    p = Sp(FX_CRACKLE16, (k & 1) ? FXP_E_BOLT : FXP_E_ELEC, x + TO_FX((Random() % 25) - 12), y + TO_FX((Random() % 21) - 10), 12 + k * 3);
+                    if (p) p->frameRate = 2;
+                }
+            if (move == MOVE_FAKE_OUT)
+                RtFx_Flash(0, 3);
+        }
+        return TRUE;
+    // ---- chops
+    case MOVE_KARATE_CHOP:
+    case MOVE_BRICK_BREAK:
+    case MOVE_CROSS_CHOP:
+        Mark(FX_CHOP32, FXP_E_WHITE, x, y, 24, 26, 40, 4);
+        p = Sp(FX_GLOW32, FXP_E_FIGHT, x, y, 8);
+        Scale(p, 10, 1);
+        Blend(p);
+        if (move == MOVE_CROSS_CHOP)
+            Mark(FX_CHOP32, FXP_E_WHITE, x, y, 24, 26, 216, 4);
+        if (move == MOVE_BRICK_BREAK)
+        {
+            Debris(x, y, FX_DEBRIS8, FXP_E_FIGHT, 6);
+            Debris(x, y, FX_DEBRIS8, FXP_E_ROCK, 3);
+        }
+        HitStar(x, y, 18);
+        return TRUE;
+    // ---- blades
+    case MOVE_CUT:
+    case MOVE_SLASH:
+    case MOVE_FALSE_SWIPE:
+    case MOVE_AERIAL_ACE:
+    case MOVE_FURY_CUTTER:
+    case MOVE_STEEL_WING:
+    case MOVE_WING_ATTACK:
+    case MOVE_POISON_TAIL:
+    case MOVE_IRON_TAIL:
+        {
+            u8 big = (move == MOVE_IRON_TAIL || move == MOVE_SLASH) ? 32 : 28;
+            Mark(FX_ARC32, v->pal2, x, y, 26, big + 4, ang, 6);
+            p = Mark(FX_ARC32, v->pal, x, y, 26, big, ang, 6);
+            if (move == MOVE_SLASH || move == MOVE_FURY_CUTTER || move == MOVE_AERIAL_ACE)
+                Mark(FX_CHOP32, FXP_E_WHITE, x, y, 22, 24, ang + 96, 4);
+            if (move == MOVE_AERIAL_ACE)
+                SpeedBurst(x, y, 6, FXP_E_WHITE, ang);
+            if (move == MOVE_STEEL_WING || move == MOVE_WING_ATTACK)
+                for (k = 0; k < 4; k++)
+                {
+                    p = Fly(FX_FEATHER16, move == MOVE_STEEL_WING ? FXP_STEEL : FXP_FLYING, x, y, Random(), 240, 26, FALSE);
+                    Accel(p, 0, 2);
+                    Spin(p, 5);
+                }
+            if (move == MOVE_IRON_TAIL || move == MOVE_STEEL_WING)
+                for (k = 0; k < 6; k++)
+                {
+                    p = Fly(FX_SPARKLE8, (k & 1) ? FXP_E_WHITE : FXP_E_GOLD, x, y, 128 + Random() % 128 + 64, 450 + (Random() & 255), 16, FALSE);
+                    Accel(p, 0, 9);
+                    Stretch(p);
+                }
+            if (move == MOVE_POISON_TAIL)
+                Debris(x, y, FX_GOO16, FXP_E_POISON, 3);
+            HitStar(x, y, 16);
+        }
+        return TRUE;
+    // ---- coils
+    case MOVE_BIND:
+    case MOVE_WRAP:
+    case MOVE_CONSTRICT:
+        Coils(HitTarget(x, y), move == MOVE_BIND ? FXP_E_SAND : (move == MOVE_WRAP ? FXP_E_GOLD : FXP_E_PINK));
+        HitStar(x, y, 14);
+        return TRUE;
+    case MOVE_LICK:
+        Mark(FX_ARC32, FXP_E_PINK, x, y + TO_FX(4), 26, 28, 192, 6);
+        Debris(x, y, FX_GOO16, FXP_E_PINK, 3);
+        HitStar(x, y, 14);
+        return TRUE;
+    case MOVE_ASTONISH:
+        p = Mark(FX_WISP16, FXP_E_GHOST, x, y, 24, 34, 0, 3);
+        Blend(p);
+        t = HitTarget(x, y);
+        p = Glue(t, FX_EXCLAIM8, FXP_GOLD, 0, t ? t->height + 10 : 30, 30);
+        Scale(p, 26, 0);
+        RtFx_Shake(1, 8);
+        RtFx_Dim(4, 6);
+        return TRUE;
+    case MOVE_BONE_CLUB:
+    case MOVE_BONE_RUSH:
+    case MOVE_BONEMERANG:
+        p = Mark(FX_BONE16, FXP_WHITE, x - TO_FX(6), y - TO_FX(6), 24, 28, 192, 0);
+        Spin(p, 18);
+        if (p) { p->vx = 140; p->vy = 140; }
+        p = Sp(FX_BOOM32, FXP_E_DUST, x, y, 10);
+        Scale(p, 16, 1);
+        HitStar(x, y, 16);
+        return TRUE;
+    case MOVE_NEEDLE_ARM:
+        for (k = 0; k < 8; k++)
+        {
+            p = Fly(FX_NEEDLE8, FXP_GRASS, x, y, k * 32 + (Random() & 7), 380, 14, FALSE);
+            Stretch(p);
+        }
+        p = Sp(FX_BOOM32, FXP_E_GRASS, x, y, 10);
+        Scale(p, 16, 1);
+        return TRUE;
+    // ---- kicks
+    case MOVE_LOW_KICK:
+        Mark(FX_ARC32, FXP_E_WHITE, x, y + TO_FX(10), 24, 30, 0, 5);
+        for (k = 0; k < 4; k++)
+        {
+            p = Fly(FX_PUFF16, FXP_E_DUST, x, y + TO_FX(12), (k & 1) ? 0 : 128, 160 + k * 30, 22, TRUE);
+            Blend(p);
+        }
+        HitStar(x, y + TO_FX(8), 18);
+        return TRUE;
+    case MOVE_ROLLING_KICK:
+    case MOVE_BLAZE_KICK:
+    case MOVE_MEGA_KICK:
+    case MOVE_DOUBLE_KICK:
+    case MOVE_TRIPLE_KICK:
+        p = Mark(FX_ARC32, move == MOVE_BLAZE_KICK ? FXP_E_FIRE : FXP_E_WHITE, x, y, 22, move == MOVE_MEGA_KICK ? 32 : 26, ang, 4);
+        Spin(p, move == MOVE_ROLLING_KICK ? 24 : 6);
+        p = Sp(FX_BOOM32, move == MOVE_BLAZE_KICK ? FXP_E_HOT : FXP_E_WHITE, x, y, 12);
+        Scale(p, move == MOVE_MEGA_KICK ? 24 : 16, 1);
+        HitStar(x, y, move == MOVE_MEGA_KICK ? 26 : 18);
+        return TRUE;
+    case MOVE_STOMP:
+        ImpactRing(FXP_E_DUST, x, y + TO_FX(10), 8, 3, 12);
+        p = Sp(FX_BOOM32, FXP_E_WHITE, x, y, 12);
+        Scale(p, 20, 1);
+        Debris(x, y + TO_FX(8), FX_DEBRIS8, FXP_E_ROCK, 4);
+        RtFx_Shake(2, 6);
+        return TRUE;
+    // ---- fists
+    case MOVE_THUNDER_PUNCH:
+    case MOVE_FIRE_PUNCH:
+    case MOVE_ICE_PUNCH:
+    case MOVE_MACH_PUNCH:
+    case MOVE_COMET_PUNCH:
+    case MOVE_MEGA_PUNCH:
+    case MOVE_DYNAMIC_PUNCH:
+    case MOVE_FOCUS_PUNCH:
+    case MOVE_DIZZY_PUNCH:
+    case MOVE_ROCK_SMASH:
+    case MOVE_SKY_UPPERCUT:
+    case MOVE_METEOR_MASH:
+    case MOVE_KNOCK_OFF:
+    case MOVE_BEAT_UP:
+    case MOVE_SUPERPOWER:
+        {
+            bool8 big = move == MOVE_MEGA_PUNCH || move == MOVE_DYNAMIC_PUNCH || move == MOVE_FOCUS_PUNCH || move == MOVE_METEOR_MASH || move == MOVE_SUPERPOWER;
+            u8 fang = move == MOVE_SKY_UPPERCUT ? 192 : 0;
+            a = HitAttacker(x, y);
+            if (a && a->x > x && fang == 0)
+                fang = 128;
+            p = Mark(FX_FIST32, (v->pal == FXP_E_FIGHT || v->pal == FXP_E_DARK) ? FXP_E_WHITE : v->pal, x - RtCos(fang) * 8, y - RtSin(fang) * 8, 24, big ? 24 : 20, fang, 0);
+            if (p) { p->vx = RtCos(fang) * 3 / 4; p->vy = RtSin(fang) * 3 / 4; }
+            Drag(p, 12);
+            if (v->pal == FXP_E_FIGHT)
+                ImpactRing(FXP_E_FIGHT, x, y, 6, 3, 12);
+            p = Sp(FX_BOOM32, v->pal == FXP_E_FIGHT ? FXP_E_WHITE : v->pal2, x, y, 12);
+            Scale(p, big ? 24 : 16, 1);
+            HitStar(x, y, big ? 28 : 18);
+            switch (move)
+            {
+            case MOVE_THUNDER_PUNCH:
+                for (k = 0; k < 6; k++)
+                {
+                    p = Sp(FX_CRACKLE16, (k & 1) ? FXP_E_BOLT : FXP_E_ELEC, x + TO_FX((Random() % 33) - 16), y + TO_FX((Random() % 25) - 12), 10 + k * 3);
+                    if (p) p->frameRate = 2;
+                }
+                for (k = 0; k < 4; k++)
+                {
+                    p = Fly(FX_LBOLT16, FXP_E_ELEC, x, y, k * 64 + 32 + (Random() & 15), 300, 10, FALSE);
+                    Stretch(p);
+                }
+                break;
+            case MOVE_FIRE_PUNCH:
+                for (k = 0; k < 6; k++)
+                {
+                    p = Sp(FX_FIRE16, FXP_E_FIRE, x + TO_FX((k - 3) * 5), y + TO_FX(4 - (k & 1) * 6), 20);
+                    if (p) p->vy = -120 - (Random() & 63);
+                    Fade(p, FXP_E_SMOKE, 4, 0xFF, 0);
+                }
+                break;
+            case MOVE_ICE_PUNCH:
+                p = Mark(FX_ICEBLOCK32, FXP_ICE, x, y, 32, 18, 0, 0);
+                Blend(p);
+                break;
+            case MOVE_MACH_PUNCH:
+            case MOVE_COMET_PUNCH:
+                SpeedBurst(x, y, 6, FXP_E_WHITE, 0);
+                if (move == MOVE_COMET_PUNCH)
+                    for (k = 0; k < 3; k++)
+                        Fly(FX_STAR16B, FXP_E_GOLD, x, y, Random(), 260, 14, FALSE);
+                break;
+            case MOVE_DIZZY_PUNCH:
+            case MOVE_DYNAMIC_PUNCH:
+                t = HitTarget(x, y);
+                OrbitAround(t, FX_DIZZY8, FXP_GOLD, 3, 12, 10, 40, t ? t->height + 4 : 20);
+                if (move == MOVE_DYNAMIC_PUNCH)
+                    ImpactRing(FXP_E_FIGHT, x, y, 8, 3, 14);
+                break;
+            case MOVE_ROCK_SMASH:
+                Debris(x, y, FX_DEBRIS8, FXP_E_ROCK, 6);
+                Debris(x, y, FX_ROCK16B, FXP_E_ROCK, 2);
+                break;
+            case MOVE_SKY_UPPERCUT:
+                for (k = 0; k < 5; k++)
+                {
+                    p = Sp(FX_SPEED16, FXP_E_SKY, x + TO_FX((k - 2) * 6), y + TO_FX(6), 12);
+                    if (p) { p->angle = 192; p->vy = -500; }
+                    Stretch(p);
+                }
+                break;
+            case MOVE_METEOR_MASH:
+                for (k = 0; k < 5; k++)
+                    Fly(FX_STAR16B, FXP_E_GOLD, x, y, k * 51, 360, 16, FALSE);
+                RtFx_Shake(2, 8);
+                break;
+            case MOVE_FOCUS_PUNCH:
+            case MOVE_MEGA_PUNCH:
+            case MOVE_SUPERPOWER:
+                ImpactRing(FXP_E_WHITE, x, y, 8, 3, 14);
+                if (move != MOVE_MEGA_PUNCH)
+                    ImpactRing(FXP_E_FIGHT, x, y, 4, 2, 18);
+                RtFx_Shake(2, 10);
+                break;
+            case MOVE_KNOCK_OFF:
+                p = Sp(FX_ORB8, FXP_GOLD, x, y - TO_FX(8), 28);
+                if (p) { p->vx = (a && a->x > x) ? -260 : 260; p->vy = -420; }
+                Accel(p, 0, 9);
+                Drag(p, 16);
+                break;
+            }
+        }
+        return TRUE;
+    // ---- horns / beaks
+    case MOVE_HORN_ATTACK:
+    case MOVE_FURY_ATTACK:
+    case MOVE_PECK:
+    case MOVE_DRILL_PECK:
+    case MOVE_HORN_DRILL:
+        {
+            u8 shp = (move == MOVE_DRILL_PECK || move == MOVE_HORN_DRILL) ? FX_DRILL16 : FX_HORN16;
+            u8 fang = 0;
+            a = HitAttacker(x, y);
+            if (a && a->x > x) fang = 128;
+            p = Mark(shp, (move == MOVE_PECK || move == MOVE_DRILL_PECK) ? FXP_GOLD : FXP_WHITE, x - RtCos(fang) * 14, y, 22, 28, fang, shp == FX_DRILL16 ? 2 : 0);
+            if (p) p->vx = RtCos(fang) * 3 / 2;
+            Drag(p, 12);
+            HitStar(x, y, 18);
+            SpeedBurst(x, y, 4, FXP_E_WHITE, fang + 96);
+        }
+        return TRUE;
+    // ---- fangs
+    case MOVE_HYPER_FANG:
+    case MOVE_SUPER_FANG:
+    case MOVE_CRUNCH:
+        p = Mark(FX_JAWS32, FXP_E_WHITE, x, y - TO_FX(2), 28, move == MOVE_HYPER_FANG ? 28 : 26, 0, 6);
+        if (move == MOVE_CRUNCH)
+        {
+            p = Sp(FX_CRACK32, FXP_E_DARK, x, y, 18);
+            Scale(p, 14, 0);
+        }
+        HitStar(x, y, 16);
+        return TRUE;
+    case MOVE_CRABHAMMER:
+        Mark(FX_JAWS32, FXP_E_WATER, x, y, 26, 28, 64, 6);
+        p = Sp(FX_SPLASH32, FXP_E_WATER, x, y + TO_FX(4), 16);
+        Scale(p, 20, 0);
+        HitStar(x, y, 18);
+        return FALSE; // plus the water burst
+    // ---- grapples
+    case MOVE_SEISMIC_TOSS:
+    case MOVE_VITAL_THROW:
+    case MOVE_SUBMISSION:
+    case MOVE_STRENGTH:
+        ImpactRing(FXP_E_DUST, x, y + TO_FX(12), 8, 3, 16);
+        for (k = 0; k < 6; k++)
+        {
+            p = Fly(FX_PUFF16, FXP_E_DUST, x, y + TO_FX(12), k * 43, 200, 22, TRUE);
+            Blend(p);
+        }
+        p = Sp(FX_BOOM32, FXP_E_WHITE, x, y, 12);
+        Scale(p, 22, 1);
+        RtFx_Shake(2, 10);
+        return TRUE;
+    case MOVE_RAGE:
+    case MOVE_FRUSTRATION:
+    case MOVE_REVENGE:
+    case MOVE_REVERSAL:
+        p = Sp(FX_BOOM32, FXP_E_WHITE, x, y, 12);
+        Scale(p, move == MOVE_RAGE ? 16 : 22, 1);
+        ImpactRing(FXP_E_RED, x, y, 6, 3, 12);
+        HitStar(x, y, 22);
+        SpeedBurst(x, y, 8, FXP_E_WHITE, ang);
+        if (move != MOVE_REVERSAL)
+        {
+            a = (move == MOVE_RAGE) ? HitAttacker(x, y) : HitTarget(x, y);
+            p = Glue(a ? a : HitTarget(x, y), FX_ANGER16, FXP_E_RED, 8, (a ? a->height : 20) + 2, 30);
+            Scale(p, 22, 0);
+            if (p) p->frameRate = 0;
+        }
+        else
+            RtFx_Flash(0, 4);
+        return TRUE;
+    case MOVE_RETURN:
+        p = Sp(FX_BOOM32, FXP_E_WHITE, x, y, 12);
+        Scale(p, 20, 1);
+        Hearts(x, y, 4);
+        return TRUE;
+    case MOVE_STRUGGLE:
+        p = Sp(FX_BOOM32, FXP_E_WHITE, x, y, 10);
+        Scale(p, 16, 1);
+        for (k = 0; k < 3; k++)
+        {
+            p = Fly(FX_DROP8, FXP_WATER, x, y - TO_FX(10), 160 + k * 32, 300, 16, FALSE);
+            Accel(p, 0, 10);
+        }
+        return TRUE;
+    case MOVE_THIEF:
+    case MOVE_COVET:
+        a = HitAttacker(x, y);
+        p = Sp(FX_BOOM32, move == MOVE_THIEF ? FXP_E_DARK : FXP_E_WHITE, x, y, 10);
+        Scale(p, 16, 1);
+        if (a)
+            for (k = 0; k < 6; k++)
+            {
+                p = Fly(FX_SPARKLE8, FXP_E_GOLD, x, y, Random(), 200, 30, FALSE);
+                if (p)
+                {
+                    RtFx_X(p)->flags |= PX_HOMEIN;
+                    RtFx_X(p)->owner = a->id;
+                }
+            }
+        return TRUE;
+    case MOVE_WATERFALL:
+        for (k = 0; k < 4; k++)
+        {
+            p = Sp(FX_JET16, (k & 1) ? FXP_E_FOAM : FXP_E_WATER, x + TO_FX((k - 2) * 5), y + TO_FX(8), 18);
+            if (p) { p->angle = 192; p->vy = -360 - k * 40; }
+            Scale(p, 18, 0);
+        }
+        return FALSE; // plus the water burst
+    case MOVE_MEGAHORN:
+        a = HitAttacker(x, y);
+        p = Mark(FX_HORN16, FXP_E_BUG, x - TO_FX((a && a->x > x) ? -16 : 16), y, 24, 34, (a && a->x > x) ? 128 : 0, 0);
+        if (p) p->vx = (a && a->x > x) ? -260 : 260;
+        Drag(p, 12);
+        HitStar(x, y, 26);
+        return FALSE;
+    case MOVE_RAPID_SPIN:
+        p = Mark(FX_ARC32, FXP_E_WHITE, x, y, 22, 28, ang, 4);
+        Spin(p, 30);
+        HitStar(x, y, 16);
+        return TRUE;
+    case MOVE_EXTREME_SPEED:
+    case MOVE_QUICK_ATTACK:
+        SpeedBurst(x, y, 8, FXP_E_WHITE, ang);
+        HitStar(x, y, 20);
+        return FALSE;
+    // ---- status motifs that land on the target
+    case MOVE_DISABLE:
+    case MOVE_IMPRISON:
+        t = HitTarget(x, y);
+        p = Glue(t, FX_CROSS16, FXP_BLOOD, 0, t ? t->height / 2 + 2 : 16, 34);
+        Scale(p, 28, 0);
+        ImpactRing(FXP_E_RED, x, y, 6, 2, 14);
+        return TRUE;
+    case MOVE_TAUNT:
+    case MOVE_TORMENT:
+        t = HitTarget(x, y);
+        p = Glue(t, FX_ANGER16, FXP_E_RED, -6, t ? t->height + 4 : 24, 36);
+        Scale(p, 20, 0);
+        p = Glue(t, FX_ANGER16, FXP_E_RED, 8, t ? t->height - 4 : 16, 30);
+        Scale(p, 14, 0);
+        if (move == MOVE_TORMENT)
+        {
+            p = Glue(t, FX_SKULL16, FXP_SHADOW, 0, t ? t->height + 14 : 30, 30);
+            Scale(p, 18, 0);
+        }
+        return TRUE;
+    case MOVE_LOCK_ON:
+    case MOVE_MIND_READER:
+        t = HitTarget(x, y);
+        p = Glue(t, FX_TARGET32, move == MOVE_LOCK_ON ? FXP_BLOOD : FXP_PSYCHIC, 0, t ? t->height / 2 : 16, 34);
+        Scale(p, 34, -1);
+        if (p) { p->frameRate = 0; RtFx_X(p)->spin = 3; }
+        return TRUE;
+    case MOVE_FORESIGHT:
+    case MOVE_ODOR_SLEUTH:
+    case MOVE_MEAN_LOOK:
+    case MOVE_BLOCK:
+        t = HitTarget(x, y);
+        if (move == MOVE_BLOCK)
+        {
+            p = Glue(t, FX_CROSS16, FXP_WHITE, 0, t ? t->height / 2 : 16, 34);
+            Scale(p, 30, 0);
+            p = Sp(FX_HEX32, FXP_E_WHITE, x, y, 24);
+            Scale(p, 20, 0);
+            Blend(p);
+            return TRUE;
+        }
+        p = Glue(t, FX_EYE16B, move == MOVE_MEAN_LOOK ? FXP_E_RED : FXP_E_GOLD, 0, t ? t->height + 10 : 28, 36);
+        Scale(p, 26, 0);
+        if (p) { p->frameRate = 0; p->frame = move == MOVE_MEAN_LOOK; RtFx_X(p)->flags |= PX_FADE; }
+        if (move == MOVE_ODOR_SLEUTH)
+            for (k = 0; k < 3; k++)
+            {
+                p = Sp(FX_PSYWAVE32, FXP_E_GOLD, x, y, 12 + k * 5);
+                Scale(p, 4 + k * 3, 2);
+                Blend(p);
+            }
+        else
+            ImpactRing(move == MOVE_MEAN_LOOK ? FXP_E_DARK : FXP_E_GOLD, x, y, 6, 3, 14);
+        if (move == MOVE_MEAN_LOOK)
+            RtFx_Dim(5, 16);
+        return TRUE;
+    case MOVE_YAWN:
+        t = HitTarget(x, y);
+        for (k = 0; k < 3; k++)
+        {
+            p = Sp(FX_Z8, FXP_SLEEP, x + TO_FX(k * 6 - 4), y - TO_FX(4 + k * 4), 30 + k * 6);
+            if (p) { p->vy = -70; p->vx = 40; }
+            Scale(p, 20 + k * 4, 0);
+            FadeOut(p);
+        }
+        p = Sp(FX_PUFF32, FXP_E_WHITE, x, y, 24);
+        Blend(p);
+        return TRUE;
+    case MOVE_SPITE:
+    case MOVE_NIGHTMARE:
+    case MOVE_CURSE:
+        t = HitTarget(x, y);
+        OrbitAround(t, FX_WISP16, FXP_E_GHOST, 3, 16, 7, 34, t ? t->height / 2 : 16);
+        if (move == MOVE_NIGHTMARE)
+        {
+            p = Glue(t, FX_SKULL16, FXP_SHADOW, 0, t ? t->height + 12 : 28, 34);
+            Scale(p, 20, 0);
+        }
+        RtFx_Dim(4, 12);
+        return TRUE;
+    case MOVE_ENCORE:
+        t = HitTarget(x, y);
+        OrbitAround(t, FX_NOTE16, FXP_GOLD, 3, 18, 8, 36, t ? t->height : 20);
+        OrbitAround(t, FX_STAR16B, FXP_E_GOLD, 2, 12, -9, 30, t ? t->height + 8 : 26);
+        return TRUE;
+    case MOVE_TRICK:
+    case MOVE_SKILL_SWAP:
+    case MOVE_ROLE_PLAY:
+        t = HitTarget(x, y);
+        OrbitAround(t, FX_ORB16, move == MOVE_ROLE_PLAY ? FXP_E_PINK : FXP_E_GOLD, 1, 14, 12, 30, t ? t->height / 2 : 16);
+        OrbitAround(t, FX_ORB16, FXP_E_PSY, 1, 14, -12, 30, t ? t->height / 2 : 16);
+        ImpactGlow(FXP_E_PSY, x, y, 6, 1, 12);
+        return TRUE;
+    case MOVE_SWEET_KISS:
+    case MOVE_LOVELY_KISS:
+    case MOVE_ATTRACT:
+    case MOVE_CHARM:
+    case MOVE_FLATTER:
+        Hearts(x, y, move == MOVE_ATTRACT ? 6 : 4);
+        p = Sp(FX_HEART16, FXP_HEART, x, y, 20);
+        Scale(p, 28, 0);
+        FadeOut(p);
+        return TRUE;
+    case MOVE_SPIDER_WEB:
+    case MOVE_STRING_SHOT:
+        t = HitTarget(x, y);
+        p = Glue(t, FX_WEB32, FXP_E_WHITE, 0, t ? t->height / 2 : 16, 44);
+        Scale(p, move == MOVE_SPIDER_WEB ? 26 : 20, 0);
+        if (p) RtFx_X(p)->flags |= PX_FADE;
+        return TRUE;
+    case MOVE_PAY_DAY:
+        for (k = 0; k < 7; k++)
+        {
+            p = Fly(FX_COIN8, FXP_GOLD, x, y, 128 + 32 + Random() % 64 + 32, 380 + (Random() & 127), 26, FALSE);
+            Accel(p, 0, 10);
+            if (p) p->frameRate = 2;
+        }
+        HitStar(x, y, 14);
+        return TRUE;
+    case MOVE_TRI_ATTACK:
+        {
+            static const u8 sVi[3] = {VI_FIRE, VI_ICE, VI_ELEC};
+            for (k = 0; k < 3; k++)
+            {
+                u8 a3 = 192 + k * 85;
+                DoImpact(sVi[k], 0, 0, x + RtCos(a3) * 10, y + RtSin(a3) * 10, FALSE);
+            }
+        }
+        return TRUE;
+    case MOVE_EGG_BOMB:
+    case MOVE_BARRAGE:
+        Debris(x, y, FX_DEBRIS8, FXP_E_WHITE, 6);
+        p = Sp(FX_BOOM32, FXP_E_HOT, x, y, 12);
+        Scale(p, move == MOVE_EGG_BOMB ? 24 : 16, 1);
+        HitStar(x, y, 18);
+        return TRUE;
+    case MOVE_PRESENT:
+        for (k = 0; k < 6; k++)
+            Fly(FX_STAR16B, (k & 1) ? FXP_E_PINK : FXP_E_GOLD, x, y, k * 43, 300, 18, FALSE);
+        p = Sp(FX_BOOM32, FXP_E_GOLD, x, y, 12);
+        Scale(p, 18, 1);
+        return TRUE;
+    case MOVE_CONFUSION:
+    case MOVE_EXTRASENSORY:
+        for (k = 0; k < 3; k++)
+        {
+            p = Sp(FX_PSYWAVE32, (k & 1) ? FXP_E_PINK : FXP_E_PSY, x, y, 14 + k * 5);
+            Scale(p, 4 + k * 4, 2);
+            Blend(p);
+        }
+        if (move == MOVE_EXTRASENSORY)
+        {
+            p = Sp(FX_EYE16B, FXP_E_PSY, x, y - TO_FX(16), 24);
+            if (p) { p->frameRate = 0; p->frame = 1; }
+            Scale(p, 22, 0);
+            FadeOut(p);
+        }
+        RtFx_Wave(2, 16);
+        return FALSE;
+    case MOVE_ABSORB:
+    case MOVE_MEGA_DRAIN:
+    case MOVE_GIGA_DRAIN:
+    case MOVE_LEECH_LIFE:
+    case MOVE_DREAM_EATER:
+        a = HitAttacker(x, y);
+        if (a)
+            for (k = 0; k < (move == MOVE_GIGA_DRAIN || move == MOVE_DREAM_EATER ? 8 : 5); k++)
+            {
+                p = Fly((k & 1) ? FX_SPARKLE8 : FX_MOTE8, move == MOVE_DREAM_EATER ? ((k & 1) ? FXP_E_PSY : FXP_E_PINK) : ((k & 1) ? FXP_E_HEAL : FXP_E_GRASS), x, y, Random(), 260 + (Random() & 127), 40, FALSE);
+                if (p)
+                {
+                    RtFx_X(p)->flags |= PX_HOMEIN;
+                    RtFx_X(p)->owner = a->id;
+                    p->prio = 5;
+                }
+            }
+        return FALSE;
+    case MOVE_PSYCHO_BOOST:
+        for (k = 0; k < 4; k++)
+        {
+            p = Sp(FX_PSYWAVE32, (k & 1) ? FXP_E_PINK : FXP_E_PSY, x, y, 16 + k * 5);
+            Scale(p, 6 + k * 5, 3);
+            Blend(p);
+        }
+        RtFx_Flash(0, 6);
+        RtFx_Wave(4, 30);
+        RtFx_Shake(2, 12);
+        return FALSE;
+    case MOVE_PAIN_SPLIT:
+        t = HitTarget(x, y);
+        OrbitAround(t, FX_GLOW16, FXP_E_RED, 2, 12, 10, 26, t ? t->height / 2 : 16);
+        ImpactRing(FXP_E_RED, x, y, 6, 2, 14);
+        return TRUE;
+    case MOVE_SWAGGER:
+        t = HitTarget(x, y);
+        p = Glue(t, FX_ANGER16, FXP_E_RED, 0, t ? t->height + 4 : 24, 30);
+        Scale(p, 20, 0);
+        OrbitAround(t, FX_DIZZY8, FXP_GOLD, 3, 12, 10, 36, t ? t->height + 4 : 20);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static bool8 HitEmblem(u16 move, const struct RtVfxDef *v, s32 x, s32 y)
 {
     struct RtPart *p;
     s32 k;
     u8 ang = Random();
+    if (SigHit(move, v, x, y))
+        return TRUE;
     switch (v->style)
     {
     case VS_SLASH:
-        p = Sp(FX_ARC32, v->pal, x, y, 12);
-        if (p) { p->angle = ang; p->frameRate = 4; }
-        Scale(p, 22, 0);
-        p = Sp(FX_ARC32, v->pal2, x, y, 12);
-        if (p) { p->angle = ang; p->frameRate = 4; }
-        Scale(p, 26, 0);
-        Blend(p);
+        Mark(FX_ARC32, v->pal2, x, y, 26, 30, ang, 6);
+        Mark(FX_ARC32, v->pal, x, y, 26, 26, ang, 6);
+        HitStar(x, y, 14);
         break;
     case VS_CLAW:
-        p = Sp(FX_CLAW32, v->pal, x, y, 14);
-        if (p) { p->angle = (Random() & 1) ? 0 : 224; p->frameRate = 5; }
-        Scale(p, 20, 0);
-        p = Sp(FX_CLAW32, v->pal2, x, y, 14);
-        if (p) { p->angle = (Random() & 1) ? 0 : 224; p->frameRate = 5; }
-        Scale(p, 24, 0);
-        Blend(p);
+        k = (Random() & 1) ? 0 : 224;
+        Mark(FX_CLAW32, v->pal2, x, y, 28, 28, k, 6);
+        Mark(FX_CLAW32, v->pal, x, y, 28, 24, k, 6);
+        HitStar(x, y, 12);
         break;
     case VS_BITE:
-        p = Sp(FX_JAWS32, v->pal, x, y - TO_FX(2), 15);
-        if (p) p->frameRate = 5;
-        Scale(p, 24, 0);
+        Mark(FX_JAWS32, v->pal, x, y - TO_FX(2), 28, 26, 0, 6);
+        HitStar(x, y, 12);
         break;
     case VS_PUNCH:
-        p = Sp(FX_FIST32, v->pal, x - TO_FX(6), y, 10);
-        if (p) { p->vx = 200; p->angle = 0; }
-        Scale(p, 18, 0);
-        p = Sp(FX_BOOM32, v->pal2, x + TO_FX(4), y, 10);
-        Scale(p, 14, 1);
+        p = Mark(FX_FIST32, (v->pal == FXP_E_FIGHT || v->pal == FXP_E_DARK) ? FXP_E_WHITE : v->pal, x - TO_FX(6), y, 24, 20, 0, 0);
+        if (p) p->vx = 150;
+        Drag(p, 12);
+        p = Sp(FX_BOOM32, v->pal2, x + TO_FX(4), y, 12);
+        Scale(p, 16, 1);
+        HitStar(x, y, 16);
         break;
     case VS_KICK:
-        p = Sp(FX_BOOM32, v->pal, x, y, 12);
-        Scale(p, 16, 1);
+        p = Sp(FX_BOOM32, v->pal, x, y, 14);
+        Scale(p, (v->flags & VF_BIG) ? 22 : 18, 1);
+        HitStar(x, y, (v->flags & VF_BIG) ? 26 : 18);
         break;
     case VS_HORN:
-        p = Sp(FX_HORN16, v->pal, x - TO_FX(10), y, 10);
-        if (p) { p->vx = 300; }
-        Scale(p, 24, 0);
+        p = Mark(FX_HORN16, v->pal, x - TO_FX(12), y, 22, 26, 0, 0);
+        if (p) p->vx = 300;
+        Drag(p, 12);
+        HitStar(x, y, 16);
         break;
     case VS_DASH:
-        p = Sp(FX_BOOM32, v->pal == FXP_E_WHITE ? FXP_E_HOT : v->pal, x, y, 10);
-        Scale(p, (v->flags & VF_HEAVY) ? 20 : 15, 1);
+        p = Sp(FX_BOOM32, (v->pal == FXP_E_WHITE || v->pal == FXP_E_FIGHT) ? FXP_E_WHITE : v->pal, x, y, 14);
+        Scale(p, (v->flags & VF_HEAVY) ? 22 : 17, 1);
+        HitStar(x, y, (v->flags & VF_HEAVY) ? 26 : 18);
+        if (v->flags & VF_HEAVY)
+            ImpactRing(FXP_E_WHITE, x, y, 8, 3, 12);
         break;
     case VS_FIREBALL:
         if (move == MOVE_FIRE_BLAST)
@@ -556,7 +1320,7 @@ static void HitEmblem(u16 move, const struct RtVfxDef *v, s32 x, s32 y)
                 s32 r;
                 for (r = 0; r < 3; r++)
                 {
-                    p = Sp(FX_FIRE16, r == 0 ? FXP_E_HOT : FXP_E_FIRE, x + RtCos(a) * (6 + r * 9), y + RtSin(a) * (6 + r * 9), 22 - r * 2);
+                    p = Sp(FX_FIRE16, r == 0 ? FXP_E_HOT : FXP_E_FIRE, x + RtCos(a) * (6 + r * 9), y + RtSin(a) * (6 + r * 9), 24 - r * 2);
                     if (p) { p->vx = RtCos(a) / 3; p->vy = RtSin(a) / 3; }
                     Fade(p, FXP_E_FIRE, 10, FXP_E_SMOKE, 4);
                 }
@@ -565,23 +1329,35 @@ static void HitEmblem(u16 move, const struct RtVfxDef *v, s32 x, s32 y)
         }
         break;
     }
+    return FALSE;
 }
 
 void RtVfx_Impact(u16 move, u8 style, u8 pal, s32 x, s32 y)
 {
-    sPrio = 1;
     const struct RtVfxDef *v = V(move);
     u8 vi = v->impact;
+    sPrio = 1;
     if (move == MOVE_NONE || move >= MOVES_COUNT)
     {
         RtFx_Impact(style, pal, x, y);
+        sHitAtk = sHitTgt = 0xFF;
         return;
     }
     if (vi == VI_DEFAULT)
         vi = TypeImpact(gBattleMoves[move].type);
-    sPrio = 1;
-    HitEmblem(move, v, x, y);
-    DoImpact(vi, v->pal, v->pal2, x, y, (v->flags & VF_HEAVY) != 0);
+    if (HitEmblem(move, v, x, y) && gBattleMoves[move].power == 0)
+        ; // status moves with a motif show only that
+    else if (gBattleMoves[move].power == 0 && vi == VI_NORMAL)
+    {
+        // plain status move: a soft ring of sparkles instead of a hit burst
+        s32 k;
+        ImpactRing(v->pal, x, y, 6, 2, 14);
+        for (k = 0; k < 5; k++)
+            Fly(FX_SPARKLE8, (k & 1) ? v->pal : v->pal2, x, y, k * 51 + (Random() & 15), 240, 16, FALSE);
+    }
+    else
+        DoImpact(vi, v->pal, v->pal2, x, y, (v->flags & VF_HEAVY) != 0);
+    sHitAtk = sHitTgt = 0xFF;
 }
 
 // ---------------------------------------------------------------------------
@@ -710,6 +1486,24 @@ void RtVfx_Execute(struct RtActor *a, u16 move)
     case VS_QUAKE:
         RtFx_Shake(4, 30);
         break;
+    case VS_METEOR:
+        {
+            s32 k;
+            p = Sp(FX_ORB16, v->pal, a->x, CenterY(a), 26);
+            if (p) p->vy = -700;
+            Drag(p, 16);
+            p = Sp(FX_GLOW32, v->pal, a->x, CenterY(a), 26);
+            if (p) p->vy = -700;
+            Drag(p, 16);
+            Blend(p);
+            for (k = 0; k < 3; k++)
+            {
+                p = Sp(FX_PSYWAVE32, v->pal2, a->x, CenterY(a), 14 + k * 5);
+                Scale(p, 4 + k * 3, 2);
+                Blend(p);
+            }
+        }
+        break;
     case VS_LAND:
         {
             s32 k;
@@ -735,22 +1529,99 @@ void RtVfx_Execute(struct RtActor *a, u16 move)
             {
             case MOVE_SUNNY_DAY:
                 RtFx_Flash(0, 10);
+                // the sun itself, blazing over the arena, and its rays sweeping down
+                p = Sp(FX_GLOW32, FXP_E_SOLAR, TO_FX(gRt->camX + 200), TO_FX(gRt->camY + 34), 60);
+                Scale(p, 28, 0);
+                Blend(p);
+                p = Sp(FX_FLARE32, FXP_E_SOLAR, TO_FX(gRt->camX + 200), TO_FX(gRt->camY + 34), 60);
+                Scale(p, 24, 0);
+                Spin(p, 2);
                 for (k = 0; k < 10; k++)
                 {
-                    p = Sp(FX_SUNRAY16, FXP_E_SOLAR, TO_FX(gRt->camX + 12 + k * 24), TO_FX(gRt->camY + 10), 30);
-                    if (p) p->vy = 300;
+                    p = Sp(FX_SUNRAY16, FXP_E_SOLAR, TO_FX(gRt->camX + 12 + k * 24), TO_FX(gRt->camY + 10 + (k & 1) * 12), 36);
+                    if (p) { p->vy = 300; p->vx = -60; }
                     Blend(p);
                 }
                 break;
             case MOVE_RAIN_DANCE:
                 RtFx_Dim(5, 40);
+                for (k = 0; k < 16; k++)
+                {
+                    p = Sp(FX_RAIN8, FXP_RAIN, TO_FX(gRt->camX + (Random() % 250)), TO_FX(gRt->camY + 16 + (Random() % 60)), 24);
+                    if (p) { p->vx = -2 * 256; p->vy = 6 * 256; }
+                    Drag(p, 16);
+                }
+                break;
+            case MOVE_SANDSTORM:
+                for (k = 0; k < 12; k++)
+                {
+                    p = Sp(FX_PUFF32, FXP_E_SAND, TO_FX(gRt->camX - 20 - (Random() % 60)), TO_FX(gRt->camY + 30 + (Random() % 110)), 50);
+                    if (p) { p->vx = 5 * 256 + (Random() & 255); p->vy = 40; }
+                    Drag(p, 16);
+                    Blend(p);
+                }
+                RtFx_Dim(3, 30);
+                break;
+            case MOVE_HAIL:
+                for (k = 0; k < 16; k++)
+                {
+                    p = Sp((k & 3) ? FX_HAIL8 : FX_SNOW8, FXP_E_WHITE, TO_FX(gRt->camX + 20 + (Random() % 240)), TO_FX(gRt->camY + 10 + (Random() % 40)), 30);
+                    if (p) { p->vx = -256; p->vy = 5 * 256; }
+                    Drag(p, 16);
+                }
+                RtFx_Dim(2, 20);
+                break;
+            case MOVE_WATER_SPORT:
+            case MOVE_MUD_SPORT:
+                for (k = 0; k < 14; k++)
+                {
+                    u8 sh = move == MOVE_WATER_SPORT ? FX_DROP8 : FX_MUD16;
+                    p = Sp(sh, move == MOVE_WATER_SPORT ? FXP_WATER : FXP_MUD, TO_FX(gRt->camX + 16 + (Random() % 220)), TO_FX(gRt->camY + 10 + (Random() % 30)), 26 + (Random() & 7));
+                    if (p) { p->vy = 4 * 256 + (Random() & 255); }
+                    Drag(p, 16);
+                }
+                for (k = 0; k < 8; k++)
+                {
+                    p = Fly(move == MOVE_WATER_SPORT ? FX_FOAM8 : FX_DEBRIS8, move == MOVE_WATER_SPORT ? FXP_E_FOAM : FXP_E_MUD, a->x, a->y, 160 + k * 9, 420, 20, FALSE);
+                    Accel(p, 0, 12);
+                }
+                break;
+            case MOVE_HEAL_BELL:
+                p = Sp(FX_BELL16, FXP_E_GOLD, a->x, a->y - TO_FX(a->height + 14), 40);
+                if (p) p->frameRate = 5;
+                Scale(p, 22, 0);
+                for (k = 0; k < 3; k++)
+                {
+                    p = Sp(FX_PSYWAVE32, FXP_E_GOLD, a->x, a->y - TO_FX(a->height + 10), 16 + k * 8);
+                    Scale(p, 4 + k * 3, 2);
+                    Blend(p);
+                }
+                for (k = 0; k < 6; k++)
+                {
+                    p = Fly(FX_NOTE16, FXP_GOLD, a->x, CenterY(a), k * 43, 260, 30, FALSE);
+                    Drag(p, 14);
+                    FadeOut(p);
+                }
+                break;
+            case MOVE_PERISH_SONG:
+                RtFx_Dim(6, 30);
+                for (k = 0; k < 8; k++)
+                {
+                    p = Fly(FX_NOTE16, FXP_SHADOW, a->x, CenterY(a), k * 32, 300, 34, FALSE);
+                    Drag(p, 14);
+                    FadeOut(p);
+                }
+                p = Sp(FX_SKULL16, FXP_SHADOW, a->x, a->y - TO_FX(a->height + 12), 34);
+                Scale(p, 18, 0);
                 break;
             case MOVE_HAZE:
-                for (k = 0; k < 10; k++)
+                for (k = 0; k < 7; k++)
                 {
-                    p = Sp(FX_PUFF32, FXP_E_FOAM, TO_FX(gRt->camX + 12 + k * 24), TO_FX(gRt->camY + 60 + (Random() % 50)), 50);
-                    if (p) p->vx = 120;
+                    p = Sp(FX_PUFF32, FXP_E_FOAM, TO_FX(gRt->camX + 16 + k * 34), TO_FX(gRt->camY + 50 + (Random() % 70)), 46);
+                    if (p) { p->vx = 90; p->frameRate = 10; }
+                    Scale(p, 14, 0);
                     Blend(p);
+                    FadeOut(p);
                 }
                 break;
             default:
@@ -778,10 +1649,11 @@ void RtVfx_Execute(struct RtActor *a, u16 move)
                 Fade(p, FXP_E_SMOKE, 8, 0xFF, 0);
                 Accel(p, 0, -2);
             }
-            for (k = 0; k < 6; k++)
+            for (k = 0; k < 4; k++)
             {
-                p = Fly(FX_PUFF32, FXP_E_SMOKE, a->x, cy, k * 43, 200, 36, FALSE);
+                p = Fly(FX_PUFF32, FXP_E_SMOKE, a->x, cy, k * 64 + 32, 260, 26, FALSE);
                 Blend(p);
+                FadeOut(p);
             }
         }
         break;
@@ -1020,6 +1892,8 @@ static bool8 DrawStream(struct RtProj *p, const struct RtVfxDef *v, s32 sx, s32 
         sc = StreamScale(p, 10, 28);
         return RtFx_Draw(frac < 8 ? FX_PUFF16 : FX_PUFF32, frac < 8 ? (frac >> 2) : ((frac - 8) >> 2) % 3, v->pal, sx, sy, 4, 0, frac < 8 ? sc : sc / 2 + 4, RFD_BLEND);
     case VS_POWDERS:
+        if (p->move == MOVE_STRING_SHOT)
+            return RtFx_Draw(FX_BEAMTHIN32, 0, FXP_E_WHITE, sx, sy, 4, p->angle, 10, RFD_AFFINE);
         RtFx_Draw(FX_SPARKLE8, (p->age >> 1) & 3, v->pal, sx + RtSin(p->age * 20) * 4 / 256, sy, 4, 0, 16, 0);
         return RtFx_Draw(FX_POWDER8, 0, v->pal2, sx - RtSin(p->age * 20) * 4 / 256, sy + 3, 4, 0, 20, RFD_AFFINE);
     case VS_SNOWS:
@@ -1061,8 +1935,10 @@ static s32 BeamEnd(struct RtProj *p, s32 *ex, s32 *ey)
 
 static void DrawBeamBody(struct RtProj *p, u8 shape, u8 pal, u8 glowPal, u8 coreScale, u8 glowScale, s32 len)
 {
+    // core: rotated segments in the key-effect bucket (they are the move); halo: soft unrotated discs behind
+    // it, which cost a fraction of the scanline time of rotated double-size sprites
     s32 x0 = FROM_FX(p->x) - gRt->camX, y0 = FROM_FX(p->y) - gRt->camY;
-    s32 step = 32 * coreScale / 16 - 6, d;
+    s32 step = 32 * coreScale / 16 - 4, d;
     u8 fr = (p->age >> 1) % 3;
     if (step < 10)
         step = 10;
@@ -1074,10 +1950,14 @@ static void DrawBeamBody(struct RtProj *p, u8 shape, u8 pal, u8 glowPal, u8 core
             dd = step / 3;
         x = x0 + RtCos(p->angle) * dd / 256;
         y = y0 + RtSin(p->angle) * dd / 256;
-        if (glowScale)
-            RtFx_Draw(shape, fr, glowPal, x, y, 4, p->angle, glowScale, RFD_BLEND | RFD_AFFINE);
-        RtFx_Draw(shape, fr, pal, x, y, 4, p->angle, coreScale, RFD_AFFINE);
+        RtFx_Draw(shape, fr, pal, x, y, 5, p->angle, coreScale, RFD_AFFINE);
     }
+    if (glowScale)
+        for (d = 10 + ((p->age >> 1) & 7); d < len; d += 22)
+        {
+            s32 x = x0 + RtCos(p->angle) * d / 256, y = y0 + RtSin(p->angle) * d / 256;
+            RtFx_Draw(FX_GLOW32, 0, glowPal, x, y, 4, 0, 16, RFD_BLEND);
+        }
 }
 
 static bool8 DrawBeamStyle(struct RtProj *p, const struct RtVfxDef *v)
@@ -1104,7 +1984,7 @@ static bool8 DrawBeamStyle(struct RtProj *p, const struct RtVfxDef *v)
         DrawBeamBody(p, FX_BEAM32, FXP_E_HOT, FXP_E_GOLD, 17 + pulse, 26 + pulse * 2, len);
         break;
     case VS_SOLAR:
-        DrawBeamBody(p, FX_BEAM32, FXP_E_SOLAR, FXP_E_SOLAR, 20 + pulse, 30 + pulse * 2, len);
+        DrawBeamBody(p, FX_BEAM32, FXP_E_SOLAR, FXP_E_GOLD, 20 + pulse, 30 + pulse * 2, len);
         break;
     case VS_ICEBEAM:
         DrawBeamBody(p, FX_BEAMTHIN32, FXP_E_ICE, FXP_E_ICE, 16, 24, len);
@@ -1141,6 +2021,31 @@ static bool8 DrawBeamStyle(struct RtProj *p, const struct RtVfxDef *v)
         break;
     case VS_BEAM:
     default:
+        if (p->move == MOVE_HYDRO_CANNON)
+        {
+            s32 d;
+            u8 perp = p->angle + 64;
+            DrawBeamBody(p, FX_BEAM32, FXP_WATER, FXP_E_WATER, 18 + pulse, 1, len);
+            for (d = 12 + (p->age * 5) % 20; d < len; d += 20)
+            {
+                s32 o = RtSin(d * 9 - p->age * 20) * 7 / 256;
+                s32 x = x0 + RtCos(p->angle) * d / 256 + RtCos(perp) * o / 256, y = y0 + RtSin(p->angle) * d / 256 + RtSin(perp) * o / 256;
+                RtFx_Draw(FX_FOAM8, 0, FXP_E_FOAM, x, y, 5, 0, 16, 0);
+                RtFx_Draw(FX_FOAM8, 1, FXP_E_WATER, x - RtCos(perp) * o / 128, y - RtSin(perp) * o / 128, 5, 0, 16, 0);
+            }
+            break;
+        }
+        if (p->move == MOVE_AEROBLAST)
+        {
+            s32 d;
+            DrawBeamBody(p, FX_BEAMTHIN32, FXP_E_WHITE, FXP_E_SKY, 16, 1, len);
+            for (d = (p->age * 6) % 24; d < len; d += 24)
+            {
+                s32 x = x0 + RtCos(p->angle) * d / 256, y = y0 + RtSin(p->angle) * d / 256;
+                RtFx_Draw(FX_TWISTER32, (p->age >> 1) % 3, FXP_E_SKY, x, y, 4, p->angle + 64, 12, RFD_AFFINE | RFD_BLEND);
+            }
+            break;
+        }
         DrawBeamBody(p, FX_BEAM32, v->pal, v->pal2, 14 + pulse, 20, len);
         break;
     }
@@ -1187,18 +2092,40 @@ static bool8 DrawWaveStyle(struct RtProj *p, const struct RtVfxDef *v, s32 sx, s
     switch (v->style)
     {
     case VS_SURF:
-        step = 22;
-        n = (half * 2) / step + 1;
-        for (i = 0; i < n; i++)
         {
-            s32 k = n == 1 ? 0 : -half + (half * 2) * i / (n - 1);
-            s32 x = sx + RtCos(perp) * k / 256, y = sy + RtSin(perp) * k / 256;
-            RtFx_Draw(FX_CREST32, ((p->age >> 2) + i) % 3, FXP_E_WATER, x, y - 6, 4, p->angle + 64, 16, RFD_AFFINE);
+            // a wall of breaking waves: curling crests side by side along the whole front, foam on the lips
+            bool8 across = RtCos(p->angle) > 181 || RtCos(p->angle) < -181; // travelling mostly sideways
+            u8 flip = RtCos(p->angle) < 0 ? RFD_HFLIP : 0;
+            step = across ? 12 : 22;
+            n = (half * 2) / step + 1;
+            if (n > 8)
+                n = 8;
+            for (i = 0; i < n; i++)
+            {
+                s32 k = n == 1 ? 0 : -half + (half * 2) * i / (n - 1);
+                s32 st = RtSin(i * 90 + p->age * 10) * 4 / 256; // ragged front
+                s32 x = sx + RtCos(perp) * k / 256 + RtCos(p->angle) * st / 256, y = sy + RtSin(perp) * k / 256 + RtSin(p->angle) * st / 512;
+                RtFx_Draw(FX_SURGE32, ((p->age >> 2) + i) % 3, v->pal, x, y - 10, i == n / 2 ? 5 : 4, 0, 16, flip);
+            }
+            return TRUE;
         }
-        return TRUE;
     case VS_QUAKE:
         return TRUE;
     case VS_SOUND:
+        if (p->move == MOVE_SILVER_WIND)
+        {
+            step = 14;
+            n = (half * 2) / step + 1;
+            for (i = 0; i < n; i++)
+            {
+                s32 k = n == 1 ? 0 : -half + (half * 2) * i / (n - 1);
+                s32 x = sx + RtCos(perp) * k / 256 + RtSin(i * 70 + p->age * 12) * 4 / 256, y = sy + RtSin(perp) * k / 256;
+                RtFx_Draw(FX_SPEED16, (p->age >> 1) & 1, FXP_E_STEEL, x, y - 8, 4, p->angle, 22, RFD_AFFINE);
+                if ((i + p->age) & 1)
+                    RtFx_Draw(FX_SPARKLE8, (p->age >> 1) & 3, FXP_E_WHITE, x - RtCos(p->angle) * 8 / 256, y - 12, 4, 0, 16, 0);
+            }
+            return TRUE;
+        }
         if (p->shape == FX_NOTE16)
         {
             step = 16;
@@ -1252,7 +2179,7 @@ static bool8 DrawZone(struct RtProj *p, const struct RtVfxDef *v, s32 sx, s32 sy
             if (shape == FX_JET16)
                 RtFx_Draw(shape, fr, (k & 1) ? FXP_E_WATER : FXP_E_FOAM, x, y - 6, RtSin(a) > 0 ? 1 : 4, a + 64, 16, RFD_AFFINE);
             else
-                RtFx_Draw(shape, fr, v->pal, x, y - 6 - (k & 1) * 4, RtSin(a) > 0 ? 1 : 4, 0, 16, shape == FX_PUFF16 ? RFD_BLEND : 0);
+                RtFx_Draw(shape, fr, v->pal, x, y - 6 - (k & 1) * 4, RtSin(a) > 0 ? 1 : 4, 0, shape == FX_PUFF16 ? 22 : 16, shape == FX_PUFF16 ? RFD_BLEND : 0);
         }
         return TRUE;
     case VS_CLOUD:
@@ -1262,7 +2189,7 @@ static bool8 DrawZone(struct RtProj *p, const struct RtVfxDef *v, s32 sx, s32 sy
             u8 a = k * 256 / n + p->age * 2;
             s32 r = p->maxRadius * ((k * 37 + p->age / 2) % 16) / 16;
             s32 x = sx + RtCos(a) * r / 256, y = sy + RtSin(a) * r / 512;
-            RtFx_Draw(FX_PUFF16, (p->age / 8 + k) % 3, v->pal, x, y - 6, 4, 0, 16 + (k & 1) * 6, RFD_BLEND);
+            RtFx_Draw(FX_PUFF16, (p->age / 8 + k) % 3, v->pal, x, y - 6, 4, 0, 20 + (k & 1) * 8, RFD_BLEND);
         }
         RtFx_Draw(FX_SPARKLE8, (p->age >> 1) & 3, v->pal2, sx + RtSin(p->age * 7) * p->maxRadius / 512, sy - 8, 4, 0, 16, 0);
         return TRUE;
@@ -1316,6 +2243,66 @@ bool8 RtVfx_Cone(struct RtActor *a, u16 move)
     u8 dur = d->duration ? d->duration : 16;
     s32 mx = a->x + RtCos(a->act.angle) * a->radius, my = CenterY(a) + RtSin(a->act.angle) * a->radius / 2;
     sPrio = 1;
+    switch (move)
+    {
+    case MOVE_TAIL_WHIP:
+        for (k = 0; k < 2; k++)
+        {
+            p = Sp(FX_ARC32, FXP_E_WHITE, a->x - RtCos(a->act.angle) * a->radius, a->y - TO_FX(6), 12 + k * 6);
+            if (p) { p->angle = a->act.angle + 128 + (k ? 40 : -40); p->frameRate = 4; }
+            Scale(p, 22, 0);
+        }
+        for (k = 0; k < 4; k++)
+        {
+            p = Fly(FX_ARROWDN8, FXP_WATER, mx, my, a->act.angle + (s8)(Random() % 33 - 16), range * 256 / dur, dur, TRUE);
+            Scale(p, 22, 0);
+        }
+        return TRUE;
+    case MOVE_FEATHER_DANCE:
+    case MOVE_TICKLE:
+        for (k = 0; k < (move == MOVE_TICKLE ? 5 : 10); k++)
+        {
+            p = Fly(FX_FEATHER16, move == MOVE_TICKLE ? FXP_GOLD : FXP_WHITE, mx, my, a->act.angle + (s8)(Random() % 49 - 24), range * 256 / (dur + 8) * (160 + (Random() & 95)) / 256, dur + 10 + (Random() & 7), TRUE);
+            Drag(p, 15);
+            Spin(p, (k & 1) ? 6 : -6);
+            FadeOut(p);
+        }
+        if (move == MOVE_TICKLE)
+            for (k = 0; k < 6; k++)
+                Fly(FX_SPARKLE8, FXP_E_GOLD, mx, my, a->act.angle + (s8)(Random() % 49 - 24), range * 256 / dur, dur, TRUE);
+        return TRUE;
+    case MOVE_FAKE_TEARS:
+        for (k = 0; k < 8; k++)
+        {
+            p = Fly(FX_DROP8, FXP_WATER, a->x + TO_FX((k & 1) ? 6 : -6), a->y - TO_FX(a->height * 2 / 3), (k & 1) ? 224 - k * 4 : 160 + k * 4, 300, 22, FALSE);
+            Accel(p, 0, 9);
+        }
+        for (k = 0; k < 4; k++)
+        {
+            p = Fly(FX_DROP8, FXP_WATER, mx, my, a->act.angle + (s8)(Random() % 33 - 16), range * 256 / dur, dur, TRUE);
+            Scale(p, 20, 0);
+        }
+        return TRUE;
+    case MOVE_KINESIS:
+        for (k = 0; k < 4; k++)
+        {
+            p = Fly(FX_PSYWAVE32, (k & 1) ? FXP_E_PINK : FXP_E_PSY, mx, my, a->act.angle, range * 256 / (dur + 4), dur + 4 + k * 3, TRUE);
+            if (p) { p->angle = a->act.angle; p->x -= p->vx * k * 3; p->y -= p->vy * k * 3; }
+            Scale(p, 6 + k * 2, 1);
+            Blend(p);
+        }
+        RtFx_Wave(2, 20);
+        return TRUE;
+    case MOVE_SWAGGER:
+        for (k = 0; k < 6; k++)
+        {
+            p = Fly((k & 1) ? FX_SPARKLE8 : FX_ARROWUP8, (k & 1) ? FXP_E_GOLD : FXP_BLOOD, mx, my, a->act.angle + (s8)(Random() % 41 - 20), range * 256 / dur, dur, TRUE);
+            Scale(p, 20, 0);
+        }
+        p = Sp(FX_FLARE32, FXP_E_GOLD, a->x, a->y - TO_FX(a->height), 14);
+        Spin(p, 6);
+        return TRUE;
+    }
     switch (v->style)
     {
     case VS_SPRAY:
@@ -1356,12 +2343,25 @@ bool8 RtVfx_Cone(struct RtActor *a, u16 move)
                 p->y -= p->vy * k * 3;
             }
         }
+        if (move == MOVE_METAL_SOUND)
+            for (k = 0; k < 5; k++)
+            {
+                p = Fly(FX_LBOLT16, FXP_E_STEEL, mx, my, a->act.angle + (s8)(Random() % 41 - 20), range * 256 / (dur + 2), dur, TRUE);
+                Stretch(p);
+            }
+        if (move == MOVE_SNORE)
+            for (k = 0; k < 4; k++)
+            {
+                p = Fly(FX_Z8, FXP_SLEEP, mx, my, a->act.angle + (s8)(Random() % 41 - 20), range * 256 / (dur + 6), dur + 8, TRUE);
+                Scale(p, 20, 0);
+            }
         if (v->flags & VF_SHAKE1)
             RtFx_Shake(1, 12);
         return TRUE;
     case VS_GAZE:
-        p = Sp(FX_EYE16, v->pal, a->x, CenterY(a) - TO_FX(18), 24);
-        Scale(p, 12, 1);
+        p = Sp(FX_EYE16B, v->pal, a->x, CenterY(a) - TO_FX(18), 30);
+        Scale(p, 18, 1);
+        if (p) { p->frameRate = 0; p->frame = 1; RtFx_X(p)->flags |= PX_FADE; }
         ImpactGlow(v->pal, a->x, CenterY(a) - TO_FX(18), 6, 1, 14);
         for (k = 0; k < 6; k++)
         {
@@ -1390,24 +2390,39 @@ bool8 RtVfx_DrawProj(struct RtProj *p, s32 sx, s32 sy)
         switch (v->style)
         {
         case VS_ORB:
+            if (p->move == MOVE_EGG_BOMB || p->move == MOVE_BARRAGE)
+            {
+                RtFx_Draw(FX_EGG16, 0, FXP_E_WHITE, sx, sy, 5, p->age * 9, p->move == MOVE_EGG_BOMB ? 24 : 18, RFD_AFFINE);
+                return TRUE;
+            }
             RtFx_Draw(FX_GLOW32, 0, v->pal2, sx, sy, 4, 0, 14 + ((p->age >> 1) & 1) * 2, RFD_BLEND);
-            RtFx_Draw(FX_ORB16, (p->age >> 2) & 1, v->pal, sx, sy, 4, 0, (v->flags & VF_BIG) ? 22 : 16, 0);
+            RtFx_Draw(FX_ORB16, (p->age >> 2) & 1, v->pal, sx, sy, 5, 0, (v->flags & VF_BIG) ? 22 : 16, 0);
             return TRUE;
         case VS_FIREBALL:
             RtFx_Draw(FX_GLOW32, 0, FXP_E_HOT, sx, sy, 4, 0, (v->flags & VF_BIG) ? 22 : 14, RFD_BLEND);
             RtFx_Draw((v->flags & VF_BIG) ? FX_FIRE32 : FX_FIRE16, (p->age >> 1) % ((v->flags & VF_BIG) ? 4 : 6), v->pal, sx, sy, 4, p->angle - 64, 16, RFD_AFFINE);
             return TRUE;
         case VS_ELECSHOT:
+            if (p->age > 2)
+            {
+                s32 bx = sx - (p->vx * 5 >> 8), by = sy - (p->vy * 5 >> 8);
+                BoltLine(bx, by, sx, sy, (p->age & 2) ? FXP_E_ELEC : FXP_E_BOLT, (p->age >> 1) * 2654435761u + (u32)p->param2 * 77, 4, 0, 4);
+            }
             RtFx_Draw(FX_GLOW32, 0, FXP_E_ELEC, sx, sy, 4, 0, 12, RFD_BLEND);
             RtFx_Draw(FX_CRACKLE16, (p->age >> 1) % 3, (p->age & 2) ? FXP_E_WHITE : FXP_E_ELEC, sx, sy, 4, p->age * 20, 20, RFD_AFFINE);
             return TRUE;
         case VS_DARKORB:
-            RtFx_Draw(FX_GLOW32, 0, FXP_E_GHOST, sx, sy, 4, 0, 20, RFD_BLEND);
-            RtFx_Draw(FX_DORB32, (p->age >> 2) % 3, FXP_E_GHOST, sx, sy, 4, p->age * 4, 13, RFD_AFFINE);
+            if (p->move == MOVE_SHADOW_PUNCH)
+            {
+                RtFx_Draw(FX_GLOW32, 0, FXP_E_GHOST, sx, sy, 4, 0, 18, RFD_BLEND);
+                return RtFx_Draw(FX_FIST32, 0, FXP_E_GHOST, sx, sy, 5, p->angle, 18, RFD_AFFINE);
+            }
+            RtFx_Draw(FX_GLOW32, 0, FXP_E_GHOST, sx, sy, 4, 0, (v->flags & VF_HEAVY) ? 24 : 20, RFD_BLEND);
+            RtFx_Draw(FX_DORB32, (p->age >> 2) % 3, FXP_E_GHOST, sx, sy, 5, p->age * 4, (v->flags & VF_HEAVY) ? 18 : 14, RFD_AFFINE);
             return TRUE;
         case VS_GOO:
         case VS_MUDBALL:
-            RtFx_Draw(FX_GOO16, (p->age >> 2) % 3, v->pal, sx, sy, 4, 0, (v->flags & VF_BIG) ? 22 : 16, 0);
+            RtFx_Draw(FX_GOO16, (p->age >> 2) % 3, v->pal, sx, sy, 5, 0, (v->flags & VF_BIG) ? 24 : 19, RFD_AFFINE);
             return TRUE;
         case VS_LEAF:
             return RtFx_Draw(FX_LEAF16B, (p->age >> 1) & 3, v->pal, sx, sy, 4, 0, 16, 0);
@@ -1415,12 +2430,12 @@ bool8 RtVfx_DrawProj(struct RtProj *p, s32 sx, s32 sy)
             RtFx_Draw(FX_GLOW32, 0, FXP_E_GOLD, sx, sy, 4, 0, 6, RFD_BLEND);
             return RtFx_Draw(FX_STAR16B, 0, FXP_E_GOLD, sx, sy, 4, p->age * 10, 20, RFD_AFFINE);
         case VS_SHARD:
-            return RtFx_Draw(FX_SHARD16B, 0, v->pal, sx, sy, 4, p->angle, 18, RFD_AFFINE);
+            return RtFx_Draw(FX_SHARD16B, 0, v->pal, sx, sy, 5, p->angle, 23, RFD_AFFINE);
         case VS_ROCK:
-            return RtFx_Draw(FX_ROCK16B, (p->age >> 3) & 1, FXP_E_ROCK, sx, sy, 4, p->age * 8, (v->flags & VF_BIG) ? 24 : 16, RFD_AFFINE);
+            return RtFx_Draw(FX_ROCK16B, (p->age >> 3) & 1, FXP_E_ROCK, sx, sy, 5, p->age * 8, (v->flags & VF_BIG) ? 26 : 21, RFD_AFFINE);
         case VS_BLADE:
-            RtFx_Draw(FX_ARC32, 1, v->pal, sx, sy, 4, p->angle, 16, RFD_AFFINE);
-            return RtFx_Draw(FX_ARC32, 1, v->pal2, sx - (p->vx >> 7), sy - (p->vy >> 7), 4, p->angle, 18, RFD_AFFINE | RFD_BLEND);
+            RtFx_Draw(FX_ARC32, 1, v->pal, sx, sy, 5, p->angle, 21, RFD_AFFINE);
+            return RtFx_Draw(FX_ARC32, 1, v->pal2, sx - (p->vx >> 7), sy - (p->vy >> 7), 4, p->angle, 24, RFD_AFFINE | RFD_BLEND);
         case VS_WATERBALL:
             RtFx_Draw(FX_GLOW32, 0, FXP_E_WATER, sx, sy, 4, 0, 14, RFD_BLEND);
             return RtFx_Draw(FX_BUBBLE16, (p->age >> 2) & 1, FXP_WATER, sx, sy, 4, 0, 20, RFD_AFFINE);
@@ -1429,12 +2444,14 @@ bool8 RtVfx_DrawProj(struct RtProj *p, s32 sx, s32 sy)
         case VS_NEEDLE:
             return FALSE;
         case VS_EMBLEM:
+            if (p->shape == FX_BONE16)
+                return RtFx_Draw(FX_BONE16, 0, FXP_WHITE, sx, sy, 5, p->age * 24, 26, RFD_AFFINE);
             RtFx_Draw(FX_GLOW32, 0, v->pal, sx, sy, 4, 0, 8, RFD_BLEND);
             if (p->shape != FX_NONE)
                 RtFx_Draw(p->shape, (p->age >> 2) % gRtFxShapes[p->shape].frames, p->pal, sx, sy, 4, 0, gRtFxShapes[p->shape].w <= 8 ? 28 : 22, RFD_AFFINE);
             return TRUE;
         case VS_TWISTER:
-            RtFx_Draw(FX_TWISTER32, (p->age >> 1) % 3, v->pal, sx, sy - 6, 4, 0, 16, 0);
+            RtFx_Draw(FX_TWISTER32, (p->age >> 1) % 3, v->pal, sx, sy - 8, 5, 0, 21, RFD_AFFINE);
             return TRUE;
         }
         return FALSE;
@@ -1574,8 +2591,17 @@ bool8 RtVfx_Strike(struct RtProj *p)
         DoImpact(VI_ICE, v->pal, v->pal2, p->x, p->y - TO_FX(6), TRUE);
         return TRUE;
     case VS_METEOR:
-        DoImpact(VI_PSY, v->pal, v->pal2, p->x, p->y - TO_FX(6), TRUE);
-        RtFx_Flash(0, 6);
+        // a pillar of light falling from the sky onto the spot
+        for (k = 0; k < 6; k++)
+        {
+            pt = Sp(FX_BEAM32, k & 1 ? v->pal2 : v->pal, p->x, p->y - TO_FX(8 + k * 22), 16 - k);
+            if (pt) { pt->angle = 64; pt->flags |= PF_SCALE; pt->scale = 22 - k; pt->dscale = -1; pt->prio = 5; }
+        }
+        ImpactGlow(v->pal2, p->x, p->y - TO_FX(10), 12, 1, 18);
+        ImpactRing(v->pal, p->x, p->y, 8, 3, 16);
+        DoImpact(v->impact == VI_DEFAULT ? TypeImpact(gBattleMoves[p->move].type) : v->impact, v->pal, v->pal2, p->x, p->y - TO_FX(6), TRUE);
+        RtFx_Flash(0, 8);
+        RtFx_Shake(2, 12);
         return TRUE;
     case VS_PSYBLAST:
         RtFx_Wave(4, 40);
@@ -1660,6 +2686,29 @@ bool8 RtVfx_AreaTick(struct RtProj *p)
         {
             ImpactRing(v->pal, p->x, p->y - TO_FX(8), 6, 4, 16);
             ImpactGlow(v->pal2, p->x, p->y - TO_FX(8), 7, 1, 12);
+            if (p->move == MOVE_SHEER_COLD)
+            {
+                s32 k;
+                RtFx_Flash(0, 6);
+                for (k = 0; k < 8; k++)
+                {
+                    pt = Fly(FX_CRYSTAL16, FXP_E_ICE, p->x, p->y - TO_FX(8), k * 32, 360, 30, FALSE);
+                    if (pt) pt->angle = k * 32;
+                    Drag(pt, 13);
+                    FadeOut(pt);
+                }
+                pt = Sp(FX_ICEBLOCK32, FXP_ICE, p->x, p->y - TO_FX(12), 30);
+                Scale(pt, 22, 0);
+                Blend(pt);
+            }
+            if (p->move == MOVE_TEETER_DANCE)
+                OrbitAround(&gRt->actors[p->owner], FX_DIZZY8, FXP_GOLD, 4, 18, 9, 36, gRt->actors[p->owner].height + 4);
+        }
+        if (p->move == MOVE_SHEER_COLD && (p->age & 1))
+        {
+            a = Random();
+            pt = Fly(FX_SNOW8, FXP_E_WHITE, p->x + RtCos(a) * p->radius, p->y + RtSin(a) * p->radius / 2 - TO_FX(6), a, 160, 18, TRUE);
+            Spin(pt, 9);
         }
         if ((p->age & 1) == 0)
         {
@@ -1773,24 +2822,31 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move)
     sPrio = 1;
     if (v->style == VS_NONE)
         return FALSE;
-    p = Sp(FX_RING32, v->pal, a->x, a->y, 18);
-    Scale(p, 6, 2);
+    p = Sp(FX_RING32, v->pal, a->x, a->y, 14);
+    Scale(p, 6, 1);
     if (p) p->flags |= PF_GROUND | PF_BLEND;
     switch (move)
     {
     case MOVE_SWORDS_DANCE:
-        MOrbit(a, FX_ARC32, FXP_E_STEEL, 4, 22, 9, -1, 34);
+        MOrbit(a, FX_ARC32, FXP_E_STEEL, 2, 20, 10, 0, 40);
+        MOrbit(a, FX_ARC32, FXP_E_WHITE, 1, 12, -12, 0, 30);
         MGlint(a, FXP_E_WHITE);
+        ImpactGlow(FXP_E_STEEL, a->x, cy, 6, 1, 20);
         break;
     case MOVE_GROWTH:
     case MOVE_SYNTHESIS:
-        MRise(a, FX_LEAF16B, FXP_E_GRASS, FXP_E_HEAL, 8, -140, 22);
-        ImpactGlow(FXP_E_HEAL, a->x, cy, 6, 1, 16);
+    case MOVE_NATURE_POWER:
+        MRise(a, FX_LEAF16B, FXP_E_GRASS, FXP_E_HEAL, 10, -140, 30);
+        p = Sp(FX_GLOW32, FXP_E_HEAL, a->x, cy, 30);
+        Scale(p, 6, 1);
+        Blend(p);
+        if (move == MOVE_GROWTH)
+            MOrbit(a, FX_ARROWUP8, FXP_E_GRASS, 3, 16, 6, 0, 30);
         break;
     case MOVE_INGRAIN:
         for (k = 0; k < 6; k++)
         {
-            p = Sp(FX_LEAF16B, FXP_E_GRASS, a->x + TO_FX((k - 3) * 6), a->y + TO_FX(2), 40);
+            p = Sp(FX_LEAF16B, FXP_E_GRASS, a->x + TO_FX((k - 3) * 6), a->y + TO_FX(2), 70);
             if (p) { p->angle = 64 + (k - 3) * 10; p->frameRate = 0; p->frame = k & 3; p->flags |= PF_GROUND; }
         }
         MRise(a, FX_SPARKLE8, FXP_E_HEAL, FXP_E_GRASS, 6, -120, 18);
@@ -1799,17 +2855,33 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move)
     case MOVE_CALM_MIND:
     case MOVE_PSYCH_UP:
         MRings(a, v->pal, 3);
-        MOrbit(a, FX_MOTE8, v->pal2, 6, 18, 6, -1, 26);
+        MOrbit(a, FX_MOTE8, v->pal2, 6, 18, 6, -1, 34);
+        p = Sp(FX_GLOW32, v->pal, a->x, cy, 30);
+        Scale(p, 8, 0);
+        Blend(p);
         break;
     case MOVE_AMNESIA:
-        MOrbit(a, FX_DIZZY8, FXP_E_SKY, 3, 10, 8, 0, 30);
+        MOrbit(a, FX_DIZZY8, FXP_E_SKY, 3, 10, 8, 0, 40);
         MRings(a, FXP_E_PSY, 2);
         break;
     case MOVE_AGILITY:
     case MOVE_DOUBLE_TEAM:
+        RtVfx_Ghosts(a, move == MOVE_DOUBLE_TEAM ? 6 : 4, 36);
+        for (k = 0; k < 6; k++)
+        {
+            p = Sp(FX_SPEED16, FXP_E_WHITE, a->x + TO_FX((k & 1) ? 14 : -14), a->y - TO_FX(4 + k * 4), 16 + k * 3);
+            if (p) { p->vx = (k & 1) ? 300 : -300; p->angle = (k & 1) ? 0 : 128; }
+            Stretch(p);
+        }
+        break;
     case MOVE_MINIMIZE:
-        RtVfx_Ghosts(a, move == MOVE_DOUBLE_TEAM ? 6 : 4, 24);
-        MRise(a, FX_SPEED16, FXP_E_WHITE, FXP_E_SKY, 4, -60, 10);
+        for (k = 0; k < 3; k++)
+        {
+            p = Sp(FX_RING32, FXP_E_WHITE, a->x, cy, 18 + k * 6);
+            Scale(p, 24 + k * 6, -1);
+            Blend(p);
+        }
+        MOrbit(a, FX_ARROWDN8, FXP_E_WHITE, 4, 20, 0, -4, 24);
         break;
     case MOVE_TELEPORT:
         MRise(a, FX_SPARKLE8, FXP_E_PSY, FXP_E_PINK, 10, -200, 18);
@@ -1818,7 +2890,17 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move)
     case MOVE_FOCUS_ENERGY:
     case MOVE_BULK_UP:
     case MOVE_RAGE:
-        MFlameAura(a, FXP_E_FIGHT);
+    case MOVE_BIDE:
+        MFlameAura(a, move == MOVE_BIDE ? FXP_E_GOLD : FXP_E_FIGHT);
+        MFlameAura(a, move == MOVE_BIDE ? FXP_E_HOT : FXP_E_RED);
+        p = Sp(FX_GLOW32, move == MOVE_BIDE ? FXP_E_GOLD : FXP_E_FIGHT, a->x, cy, 30);
+        Scale(p, 8, 0);
+        Blend(p);
+        if (move == MOVE_RAGE || move == MOVE_BULK_UP)
+        {
+            p = Glue(a, FX_ANGER16, FXP_E_RED, 8, a->height + 2, 30);
+            Scale(p, 20, 0);
+        }
         RtFx_Shake(1, 8);
         break;
     case MOVE_DRAGON_DANCE:
@@ -1827,12 +2909,32 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move)
         break;
     case MOVE_HARDEN:
     case MOVE_IRON_DEFENSE:
-    case MOVE_WITHDRAW:
-    case MOVE_DEFENSE_CURL:
-        p = Sp(FX_HEX32, move == MOVE_IRON_DEFENSE || move == MOVE_HARDEN ? FXP_E_STEEL : FXP_E_SKY, a->x, cy, 20);
-        Scale(p, 14, 1);
+        p = Sp(FX_HEX32, FXP_E_STEEL, a->x, cy, 30);
+        Scale(p, move == MOVE_IRON_DEFENSE ? 22 : 18, 0);
         Blend(p);
-        MGlint(a, FXP_E_STEEL);
+        MGlint(a, FXP_E_WHITE);
+        if (move == MOVE_IRON_DEFENSE)
+            for (k = 0; k < 4; k++)
+            {
+                // a metallic shine sweeping across
+                p = Sp(FX_SPEED16, FXP_E_WHITE, a->x - TO_FX(16), a->y - TO_FX(a->height - k * 5), 14 + k * 2);
+                if (p) { p->vx = 520; p->angle = 0; }
+                Stretch(p);
+            }
+        break;
+    case MOVE_WITHDRAW:
+        p = Sp(FX_HEX32, FXP_E_WATER, a->x, cy, 30);
+        Scale(p, 18, 0);
+        Blend(p);
+        for (k = 0; k < 8; k++)
+        {
+            p = Fly(FX_FOAM8, (k & 1) ? FXP_E_FOAM : FXP_E_WATER, a->x, cy, k * 32, 300, 18, FALSE);
+            Accel(p, 0, 8);
+        }
+        break;
+    case MOVE_DEFENSE_CURL:
+        Coils(a, FXP_E_WHITE);
+        MGlint(a, FXP_E_WHITE);
         break;
     case MOVE_ACID_ARMOR:
         MRise(a, FX_GOO16, FXP_E_POISON, FXP_E_POISON, 6, 60, 20);
@@ -1863,13 +2965,11 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move)
         Scale(p, 10, 1);
         RtFx_Dim(4, 16);
         break;
-    case MOVE_COSMIC_POWER:
     case MOVE_WISH:
-    case MOVE_METRONOME:
     case MOVE_ASSIST:
         if (move == MOVE_WISH)
             MRain(a, FX_STAR16B, FXP_E_GOLD, 3, 16);
-        MOrbit(a, FX_STAR16B, move == MOVE_COSMIC_POWER ? FXP_E_PSY : FXP_E_GOLD, 5, 20, 8, -1, 30);
+        MOrbit(a, FX_STAR16B, FXP_E_GOLD, 5, 20, 8, -1, 30);
         break;
     case MOVE_MORNING_SUN:
         MRain(a, FX_SUNRAY16, FXP_E_SOLAR, 6, 16);
@@ -1881,25 +2981,107 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move)
         MRise(a, FX_SPARKLE8, FXP_E_SKY, FXP_E_WHITE, 8, -100, 20);
         break;
     case MOVE_CHARGE:
-        for (k = 0; k < 6; k++)
+        MOrbit(a, FX_CRACKLE16, FXP_E_ELEC, 3, 16, 9, 0, 44);
+        MOrbit(a, FX_CRACKLE16, FXP_E_BOLT, 2, 10, -11, 0, 36);
+        p = Sp(FX_GLOW32, FXP_E_ELEC, a->x, cy, 40);
+        Scale(p, 9, 0);
+        Blend(p);
+        for (k = 0; k < 4; k++)
         {
-            p = Sp(FX_CRACKLE16, (k & 1) ? FXP_E_BOLT : FXP_E_ELEC, a->x + TO_FX((Random() % 25) - 12), cy + TO_FX((Random() % 21) - 10), 8 + k * 3);
-            if (p) p->frameRate = 2;
+            p = Fly(FX_LBOLT16, FXP_E_ELEC, a->x, cy, k * 64 + 32, 260, 12, FALSE);
+            Stretch(p);
         }
-        ImpactGlow(FXP_E_ELEC, a->x, cy, 8, 1, 18);
         break;
     case MOVE_STOCKPILE:
+        MOrbit(a, FX_MOTE8, FXP_E_GOLD, 8, 26, 9, -3, 30);
+        p = Sp(FX_GLOW32, FXP_E_GOLD, a->x, cy, 30);
+        Scale(p, 4, 1);
+        Blend(p);
+        break;
     case MOVE_RECYCLE:
-        MOrbit(a, FX_MOTE8, v->pal, 8, 26, 9, -3, 26);
+        MOrbit(a, FX_ARC32, FXP_E_HEAL, 3, 18, 10, 0, 42);
+        MRise(a, FX_SPARKLE8, FXP_E_HEAL, FXP_E_WHITE, 4, -80, 24);
         break;
     case MOVE_BELLY_DRUM:
+        MRings(a, FXP_E_RED, 3);
+        for (k = 0; k < 3; k++)
+        {
+            p = Sp(FX_BOOM32, FXP_E_WHITE, a->x + TO_FX(k * 8 - 8), cy, 8 + k * 6);
+            Scale(p, 10 + k * 4, 1);
+        }
+        RtFx_Shake(2, 14);
+        break;
     case MOVE_HOWL:
-        MRings(a, move == MOVE_HOWL ? FXP_E_WHITE : FXP_E_FIGHT, 3);
-        RtFx_Shake(2, 10);
+        MRings(a, FXP_E_WHITE, 3);
+        for (k = 0; k < 8; k++)
+        {
+            p = Fly(FX_SPEED16, FXP_E_WHITE, a->x, a->y - TO_FX(a->height), 128 + k * 16, 420, 12, FALSE);
+            Stretch(p);
+        }
+        RtFx_Shake(1, 12);
         break;
     case MOVE_TAIL_GLOW:
-        ImpactGlow(FXP_E_GOLD, a->x - TO_FX(8), a->y - TO_FX(6), 8, 1, 24);
-        MRise(a, FX_SPARKLE8, FXP_E_GOLD, FXP_E_PINK, 8, -100, 20);
+        p = Sp(FX_GLOW32, FXP_E_GOLD, a->x - TO_FX(8), a->y - TO_FX(6), 40);
+        Scale(p, 12, 0);
+        Blend(p);
+        p = Sp(FX_FLARE32, FXP_E_GOLD, a->x - TO_FX(8), a->y - TO_FX(6), 30);
+        Spin(p, 6);
+        MRise(a, FX_SPARKLE8, FXP_E_GOLD, FXP_E_PINK, 8, -100, 26);
+        break;
+    case MOVE_FOLLOW_ME:
+        p = Sp(FX_EXCLAIM8, FXP_GOLD, a->x, a->y - TO_FX(a->height + 10), 36);
+        Scale(p, 26, 0);
+        MRain(a, FX_SUNRAY16, FXP_E_GOLD, 5, 20);
+        MRings(a, FXP_E_GOLD, 2);
+        break;
+    case MOVE_HELPING_HAND:
+        p = Sp(FX_PALM16, FXP_E_GOLD, a->x - TO_FX(16), a->y - TO_FX(a->height + 8), 14);
+        if (p) { p->vx = 260; p->angle = 0; }
+        Scale(p, 22, 0);
+        p = Sp(FX_PALM16, FXP_E_GOLD, a->x + TO_FX(16), a->y - TO_FX(a->height + 8), 14);
+        if (p) { p->vx = -260; p->flags |= PF_HFLIP; }
+        Scale(p, 22, 0);
+        MRise(a, FX_SPARKLE8, FXP_E_GOLD, FXP_E_WHITE, 6, -120, 22);
+        break;
+    case MOVE_SNATCH:
+        for (k = 0; k < 2; k++)
+        {
+            p = Sp(FX_PALM16, FXP_E_DARK, a->x, cy - TO_FX(k * 10), 18);
+            if (p) { p->vx = RtCos(a->aim) * 2; p->vy = RtSin(a->aim); if (RtCos(a->aim) < 0) p->flags |= PF_HFLIP; }
+            Scale(p, 22, 0);
+        }
+        MOrbit(a, FX_WISP16, FXP_E_GHOST, 3, 18, 8, 0, 30);
+        break;
+    case MOVE_IMPRISON:
+        MOrbit(a, FX_CROSS16, FXP_PSYCHIC, 4, 20, 6, 0, 40);
+        MRings(a, FXP_E_PSY, 2);
+        break;
+    case MOVE_MIRROR_MOVE:
+    case MOVE_METRONOME:
+    case MOVE_SLACK_OFF:
+        if (move == MOVE_SLACK_OFF)
+            MRise(a, FX_Z8, FXP_SLEEP, FXP_SLEEP, 3, -70, 34);
+        else
+        {
+            p = Sp(FX_VEIL16, FXP_E_SKY, a->x + TO_FX(14), cy, 30);
+            Blend(p);
+            if (p) p->frameRate = 8;
+            MGlint(a, FXP_E_WHITE);
+            if (move == MOVE_METRONOME)
+                MOrbit(a, FX_NOTE16, FXP_GOLD, 3, 18, 9, 0, 34);
+        }
+        break;
+    case MOVE_SOFT_BOILED:
+        p = Sp(FX_EGG16, FXP_E_WHITE, a->x, a->y - TO_FX(a->height + 10), 34);
+        Scale(p, 22, 0);
+        FadeOut(p);
+        break;
+    case MOVE_REFRESH:
+        for (k = 0; k < 8; k++)
+        {
+            p = Sp(FX_BUBBLE16, FXP_WATER, a->x + TO_FX((Random() % 25) - 12), a->y - TO_FX(Random() % (a->height + 1)), 26 + (k & 3) * 3);
+            if (p) { p->vy = -140 - (Random() & 63); p->frameRate = 6; }
+        }
         break;
     case MOVE_SPLASH:
         for (k = 0; k < 8; k++)
@@ -1909,12 +3091,21 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move)
         }
         break;
     case MOVE_MIST:
-        for (k = 0; k < 8; k++)
+        for (k = 0; k < 10; k++)
         {
-            p = Fly(FX_PUFF32, FXP_E_FOAM, a->x, cy, k * 32, 140, 34, TRUE);
+            p = Fly(FX_PUFF32, (k & 1) ? FXP_E_FOAM : FXP_E_WHITE, a->x, cy, k * 26, 380 + (k & 3) * 60, 56, TRUE);
             Blend(p);
             Drag(p, 14);
+            Scale(p, 20 + (k & 1) * 4, 0);
+            if (p) { p->frameRate = 12; }
         }
+        MRise(a, FX_SPARKLE8, FXP_E_ICE, FXP_E_WHITE, 6, -60, 30);
+        break;
+    case MOVE_COSMIC_POWER:
+        MOrbit(a, FX_STAR16B, FXP_E_PSY, 5, 20, 8, -1, 36);
+        p = Sp(FX_MOON16, FXP_E_SKY, a->x, a->y - TO_FX(a->height + 14), 34);
+        Scale(p, 16, 0);
+        ImpactGlow(FXP_E_PSY, a->x, cy, 8, 0, 24);
         break;
     case MOVE_CAMOUFLAGE:
     case MOVE_CONVERSION:
@@ -1922,35 +3113,72 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move)
         {
             static const u8 sCols[] = {FXP_E_FIRE, FXP_E_WATER, FXP_E_GRASS, FXP_E_ELEC, FXP_E_PSY, FXP_E_ICE};
             for (k = 0; k < 6; k++)
-                MOrbit(a, FX_MOTE8, sCols[k], 1, 20, 8, -1, 20 + k * 2);
+                MOrbit(a, FX_ORB16, sCols[k], 1, 20, move == MOVE_CONVERSION_2 ? -8 : 8, -1, 30 + k * 2);
         }
-        break;
-    case MOVE_HELPING_HAND:
-    case MOVE_FOLLOW_ME:
-        p = Sp(FX_EXCLAIM8, FXP_E_GOLD, a->x, a->y - TO_FX(a->height + 8), 30);
-        Scale(p, 24, 0);
-        MRise(a, FX_SPARKLE8, FXP_E_GOLD, FXP_E_WHITE, 6, -120, 18);
         break;
     }
     switch (v->style)
     {
     case VS_SHIELD:
-        p = Sp(FX_HEX32, v->pal, a->x, cy, 30);
+        if (move == MOVE_DETECT)
+        {
+            // a glint in the eye and a flash of foresight: no dome
+            p = Sp(FX_EYE16B, FXP_E_GOLD, a->x, a->y - TO_FX(a->height + 10), 30);
+            Scale(p, 24, 0);
+            if (p) { p->frameRate = 0; p->frame = 1; }
+            FadeOut(p);
+            MGlint(a, FXP_E_GOLD);
+            for (k = 0; k < 8; k++)
+            {
+                p = Fly(FX_SPEED16, FXP_E_GOLD, a->x, cy, k * 32, 380, 12, FALSE);
+                Stretch(p);
+            }
+            break;
+        }
+        if (move == MOVE_ENDURE)
+        {
+            MFlameAura(a, FXP_E_HOT);
+            MFlameAura(a, FXP_E_GOLD);
+            p = Sp(FX_GLOW32, FXP_E_HOT, a->x, cy, 34);
+            Scale(p, 10, 0);
+            Blend(p);
+            RtFx_Shake(1, 8);
+            break;
+        }
+        if (move == MOVE_MIRROR_COAT)
+        {
+            for (k = -1; k <= 1; k++)
+            {
+                p = Sp(FX_VEIL16, FXP_E_PINK, a->x + TO_FX(k * 12), cy - TO_FX(k == 0 ? 4 : 0), 40);
+                Blend(p);
+                if (p) { p->frameRate = 6; RtFx_X(p)->flags |= PX_FADE; }
+            }
+            MGlint(a, FXP_E_WHITE);
+            break;
+        }
+        p = Sp(FX_HEX32, v->pal, a->x, cy, 34);
         Scale(p, 8, 2);
         Blend(p);
         if (p) { p->dscale = 2; p->frameRate = 4; }
-        p = Sp(FX_HEX32, v->pal2, a->x, cy, 24);
+        p = Sp(FX_HEX32, v->pal2, a->x, cy, 30);
         Scale(p, 24, 0);
         Blend(p);
-        if (move == MOVE_DETECT)
-            MGlint(a, FXP_E_GOLD);
+        if (p) RtFx_X(p)->flags |= PX_FADE;
         break;
     case VS_WALL:
-        for (k = -1; k <= 1; k++)
         {
-            p = Sp(FX_PANE16, v->pal, a->x + RtCos(a->aim) * 14 + TO_FX(k * 14) * (RtSin(a->aim) > 0 ? 1 : 1) / 1, cy - TO_FX(2), 34);
+            // a curved screen of soft glass panes in front of the user, its sheen sweeping across
+            for (k = -1; k <= 1; k++)
+            {
+                // three glass panes standing around the user, the middle one in front
+                p = Sp(FX_VEIL16, v->pal, a->x + TO_FX(k * 17), cy + TO_FX(k == 0 ? 5 : -1), 46 - (k ? 4 : 0));
+                Blend(p);
+                if (p) { p->frameRate = 8; p->prio = k == 0 ? 1 : 4; RtFx_X(p)->flags |= PX_FADE; }
+            }
+            p = Sp(FX_GLOW32, v->pal, a->x, cy, 30);
+            Scale(p, 14, 0);
             Blend(p);
-            if (p) { p->vy = -30; RtFx_X(p)->flags |= PX_FADE; }
+            MRise(a, FX_SPARKLE8, v->pal, FXP_E_WHITE, 5, -80, 24);
         }
         break;
     case VS_HEAL:
@@ -1990,12 +3218,12 @@ bool8 RtVfx_RushTick(struct RtActor *a, u16 move)
         AddGhost(a, 0, a->x, a->y, 10);
     p = Sp(FX_SPEED16, FXP_E_WHITE, a->x - RtCos(a->act.angle) * a->radius, CenterY(a) + TO_FX((Random() % 13) - 6), 8);
     if (p) { p->angle = a->act.angle; p->flags |= PF_SCALE; p->scale = 16; RtFx_X(p)->flags |= PX_STRETCH; p->vx = RtCos(a->act.angle) / 2; p->vy = RtSin(a->act.angle) / 2; }
+    vi = v->impact == VI_DEFAULT ? TypeImpact(gBattleMoves[move].type) : v->impact;
     if ((a->act.timer & 3) == 0)
     {
-        p = Sp(FX_PUFF16, FXP_E_DUST, a->x, a->y, 16);
+        p = Sp(FX_PUFF16, vi == VI_WATER ? FXP_E_FOAM : FXP_E_DUST, a->x, a->y, 16);
         Blend(p);
     }
-    vi = v->impact == VI_DEFAULT ? TypeImpact(gBattleMoves[move].type) : v->impact;
     switch (vi)
     {
     case VI_FIRE:
@@ -2019,8 +3247,17 @@ bool8 RtVfx_RushTick(struct RtActor *a, u16 move)
     case VI_GHOST:
     case VI_STEEL:
     case VI_ICE:
+    case VI_BUG:
         p = Sp(FX_MOTE8, v->pal, a->x + TO_FX((Random() % 17) - 8), CenterY(a) + TO_FX((Random() % 13) - 6), 14);
         FadeOut(p);
+        break;
+    case VI_DARK:
+        if (a->act.timer & 1)
+        {
+            p = Sp(FX_WISP16, FXP_E_DARK, a->x + TO_FX((Random() % 13) - 6), CenterY(a) + TO_FX((Random() % 13) - 6), 16);
+            Accel(p, 0, -2);
+            FadeOut(p);
+        }
         break;
     }
     return TRUE;
@@ -2042,7 +3279,7 @@ bool8 RtVfx_WaveTick(struct RtProj *p)
         if ((p->age & 1) == 0)
         {
             k = (Random() % (p->len * 2 + 1)) - p->len;
-            pt = Fly(FX_FOAM8, FXP_E_FOAM, p->x + RtCos(perp) * k, p->y + RtSin(perp) * k - TO_FX(10), 192 + (s8)(Random() % 41 - 20), 300, 16, FALSE);
+            pt = Fly(FX_FOAM8, v->pal == FXP_E_MUD ? FXP_E_DUST : FXP_E_FOAM, p->x + RtCos(perp) * k, p->y + RtSin(perp) * k - TO_FX(18), 192 + (s8)(Random() % 41 - 20), 300, 16, FALSE);
             Accel(pt, 0, 9);
         }
         return TRUE;

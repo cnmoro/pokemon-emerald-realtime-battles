@@ -1989,7 +1989,8 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
     if (bm->power == 0)
     {
         bool8 ok = StatusEffectOnTarget(atk, t, move);
-        RtVfx_Impact(move, Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
+        RtVfx_SetHit(atk->id, t->id);
+    RtVfx_Impact(move, Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
         return ok || TRUE;
     }
 
@@ -2099,7 +2100,8 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
             t->substituteHp -= dmg;
         }
         RtFx_Word(t->x, t->y - TO_FX(t->height + 8), FX_W_BLOCK);
-        RtVfx_Impact(move, Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
+        RtVfx_SetHit(atk->id, t->id);
+    RtVfx_Impact(move, Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
         return TRUE;
     }
 
@@ -2123,6 +2125,7 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
     t->lastDamageCat = IS_TYPE_PHYSICAL(type) ? 0 : 1;
     if (t->side == RT_SIDE_PLAYER)
         gBattleResults.playerMonWasDamaged = TRUE;
+    RtVfx_SetHit(atk->id, t->id);
     RtVfx_Impact(move, Def(move)->impact, p->pal, t->x, t->y - TO_FX(t->height / 2));
     if (crit)
         RtFx_Word(t->x, t->y - TO_FX(t->height + 20), FX_W_CRIT);
@@ -3292,7 +3295,7 @@ void RtMove_UpdateCast(struct RtActor *a)
                     activeFrames = d->duration / 2;
                 else if (d->pattern == RTP_SELF || d->pattern == RTP_FIELD)
                     activeFrames = 10;
-                if (d->pattern == RTP_SELF && (a->act.timer & 3) == 0 && a->act.timer < d->duration)
+                if (d->pattern == RTP_SELF && gRtVfxDefs[a->act.move].style == VS_NONE && (a->act.timer & 3) == 0 && a->act.timer < d->duration)
                 {
                     struct RtPart *pt = RtFx_Spawn(d->shape, d->pal, a->x + TO_FX((Random() % 24) - 12), a->y - TO_FX(Random() % (a->height + 1)), 18);
                     if (pt)

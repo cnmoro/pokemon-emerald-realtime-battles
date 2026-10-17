@@ -17,11 +17,19 @@
 // ---------------------------------------------------------------------------
 // OAM buckets
 // ---------------------------------------------------------------------------
-#define BUCKETS 5
+#define BUCKETS 6
 #define BUCKET_MAX 96
-// commit order: HUD, effects in front, actors/props, effects behind (streams, beams, trails), ground marks
-static const u8 sBucketOrder[BUCKETS] = {0, 1, 2, 4, 3};
+// commit order: HUD, key effects (beam cores, move bodies), effects in front, actors/props, effects behind
+// (streams, trails), ground marks
+static const u8 sBucketOrder[BUCKETS] = {0, 5, 1, 2, 4, 3};
 #define FRONT_MAX 36
+// the GBA renders sprites in OAM order and silently stops a scanline once its sprite cycles run out, cutting
+// whatever comes later in half; cosmetic sprites that would overflow a band of lines are left out instead
+#define LINE_BUDGET 1150
+#define BAND_LINES 4
+#define BANDS (160 / BAND_LINES)
+static const u8 sObjW[3][4] = {{8, 16, 32, 64}, {16, 32, 32, 64}, {8, 8, 16, 32}};
+static const u8 sObjH[3][4] = {{8, 16, 32, 64}, {8, 8, 16, 32}, {16, 32, 32, 64}};
 
 struct OamEntry
 {
@@ -71,11 +79,53 @@ struct OamData *RtOam_Next(u8 bucket)
     return &sScratchOam;
 }
 
+// returns FALSE (and charges nothing) when the sprite would push a band of scanlines over budget
+static bool8 ChargeLines(u16 *band, const struct OamEntry *e, bool8 force)
+{
+    u8 mode = (e->a0 >> 8) & 3, shp = e->a0 >> 14, size = e->a1 >> 14;
+    s32 w, h, y0, y1, cost, b, b0, b1;
+    if (mode == 2 || shp > 2)
+        return TRUE;
+    w = sObjW[shp][size];
+    h = sObjH[shp][size];
+    if (mode == 3)
+    {
+        w *= 2;
+        h *= 2;
+    }
+    cost = (mode & 1) ? 10 + 2 * w : w;
+    y0 = e->a0 & 0xFF;
+    if (y0 >= 160 && y0 + h > 256)
+        y0 -= 256;
+    y1 = y0 + h;
+    if (y0 < 0) y0 = 0;
+    if (y1 > 160) y1 = 160;
+    if (y1 <= y0)
+        return TRUE;
+    b0 = y0 / BAND_LINES;
+    b1 = (y1 - 1) / BAND_LINES;
+    if (!force)
+        for (b = b0; b <= b1; b++)
+            if (band[b] + cost > LINE_BUDGET)
+                return FALSE;
+    for (b = b0; b <= b1; b++)
+        band[b] += cost;
+    return TRUE;
+}
+
 void RtOam_Commit(void)
 {
     s32 b, i, n = 0;
     s32 room, k;
+    u16 band[BANDS];
     FlushScratch();
+    for (i = 0; i < BANDS; i++)
+        band[i] = 0;
+    // reserve the cycles of the HUD and the actors first: effects may only use what is left
+    for (i = 0; i < sBucketCount[0]; i++)
+        ChargeLines(band, &sBucket[0][i], TRUE);
+    for (i = 0; i < sBucketCount[2]; i++)
+        ChargeLines(band, &sBucket[2][i], TRUE);
     // the GBA draws sprites in OAM order and drops whatever goes past its per-scanline budget, so the HUD and
     // the actors come before the bulk of the effects; front effects (impacts, numbers) are capped
     for (k = 0; k < BUCKETS; k++)
@@ -91,12 +141,16 @@ void RtOam_Commit(void)
             if (lim > room)
                 lim = room < 0 ? 0 : room;
         }
-        for (i = 0; i < lim && n < 128; i++, n++)
+        for (i = 0; i < lim && n < 128; i++)
         {
             u16 *o = (u16 *)&gMain.oamBuffer[n];
+            // the HUD and the actors always get their cycles
+            if (b != 0 && b != 2 && !ChargeLines(band, &sBucket[b][i], FALSE))
+                continue;
             o[0] = sBucket[b][i].a0;
             o[1] = sBucket[b][i].a1;
             o[2] = sBucket[b][i].a2;
+            n++;
         }
     }
     for (; n < 128; n++)
@@ -608,6 +662,13 @@ void RtFx_UpdateAll(void)
                 p->y = o->y - TO_FX(o->height / 2) + RtSin(x->orbitAng) * x->orbit / 2;
                 goto anim;
             }
+            if (x->flags & PX_FOLLOW)
+            {
+                // glued to the owner: orbitAng = x offset (s8 px), orbit = height above the feet (px)
+                p->x = o->x + TO_FX((s8)x->orbitAng);
+                p->y = o->y - TO_FX(x->orbit);
+                goto anim;
+            }
             if (x->flags & PX_HOMEIN)
             {
                 s32 tx = o->x, ty = o->y - TO_FX(o->height / 2);
@@ -893,12 +954,18 @@ void RtFx_DrawAll(void)
             sx = FROM_FX(p->x) - gRt->camX;
             sy = FROM_FX(p->y) - gRt->camY - p->z;
         }
-        if (p->frameRate)
-            frame = ((p->maxLife - p->life) / p->frameRate) % gRtFxShapes[p->shape].frames;
-        else
-            frame = p->frame;
         {
             struct RtPartX *x = &gRt->partsX[i];
+            if (p->frameRate)
+            {
+                u16 f = (p->maxLife - p->life) / p->frameRate;
+                u8 nf = gRtFxShapes[p->shape].frames;
+                frame = (x->flags & PX_HOLD) ? (f >= nf ? nf - 1 : f) : f % nf;
+            }
+            else
+            {
+                frame = p->frame;
+            }
             bool8 blend = (p->flags & PF_BLEND) != 0;
             u8 ang = p->angle;
             aff = (p->flags & (PF_ROTATE | PF_SCALE)) != 0 || x->spin;

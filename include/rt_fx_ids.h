@@ -126,7 +126,17 @@
 #define FX_DORB32 122
 #define FX_TWISTER32 123
 #define FX_PSYWAVE32 124
-#define FX_COUNT 125
+#define FX_COIL32 125
+#define FX_ANGER16 126
+#define FX_WEB32 127
+#define FX_CHOP32 128
+#define FX_VEIL16 129
+#define FX_EGG16 130
+#define FX_PALM16 131
+#define FX_BELL16 132
+#define FX_EYE16B 133
+#define FX_SURGE32 134
+#define FX_COUNT 135
 #define FXP_NORMAL 0
 #define FXP_FIGHTING 1
 #define FXP_FLYING 2
@@ -192,8 +202,9 @@
 #define FXP_E_FIGHT 62
 #define FXP_E_SKY 63
 #define FXP_E_MUD 64
-#define FXP_E_SAND 65
+#define FXP_E_RED 65
+#define FXP_E_SAND 66
 #define FXP_UI 0xFF
-#define FXP_COUNT 66
+#define FXP_COUNT 67
 #define RT_FX_ATLAS_TILES 246
 #endif

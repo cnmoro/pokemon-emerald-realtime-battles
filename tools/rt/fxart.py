@@ -603,6 +603,181 @@ def mk_psywave32():
     return fr
 add('PSYWAVE32', 32, 32, mk_psywave32())
 
+# ---------------------------------------------------------------- signature motifs (round 3)
+BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
+
+def mk_coil32():
+    # a coil wrapped around the target, seen from the front at a low angle (32x16): an elliptical band with
+    # scale stripes, the front half bright and thick, the back half thin and dim. 2 frames: loose, squeezed.
+    fr = []
+    for f in range(2):
+        c = Canvas(32, 16)
+        rx, ry, w = (13.5, 5.2, 2.6) if f == 0 else (12.0, 4.4, 3.0)
+        for i in range(240):
+            a = i / 240 * 2 * math.pi
+            x = 16 + math.cos(a) * rx; y = 8 + math.sin(a) * ry
+            front = math.sin(a) > 0
+            stripe = 0.85 if (int((a / (2 * math.pi)) * 22) % 2 == 0) else 0.62
+            ww = w if front else w * 0.45
+            for k in range(-3, 4):
+                t = k / 3.0
+                if abs(t) * 1.5 <= ww / 2:
+                    v = (stripe if front else 0.38) * (1 - 0.35 * abs(t)) + (0.12 if (front and t < 0) else 0)
+                    c.putmax(x, y + t * 1.5, lv(v))
+        dark_rim(c); fr.append(c)
+    return fr
+add('COIL32', 32, 16, mk_coil32())
+
+def mk_anger16():
+    # the comic "anger vein": four arcs bowing toward the centre (like a cross made of curves)
+    c = Canvas(16, 16)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            cx, cy = 8 + sx * 9.0, 8 + sy * 9.0
+            base = math.atan2(-sy, -sx)
+            for i in range(30):
+                a = base - 0.5 + 1.0 * i / 29
+                x = cx + math.cos(a) * 6.4; y = cy + math.sin(a) * 6.4
+                thick(c, x, y, x + 0.01, y, 2.6, 15, 10)
+    dark_rim(c); return [c]
+add('ANGER16', 16, 16, mk_anger16())
+
+def mk_web32():
+    c = Canvas(32, 32)
+    n = 8
+    for k in range(n):
+        a = k * 2 * math.pi / n + 0.2
+        thick(c, 16, 16, 16 + math.cos(a) * 15, 16 + math.sin(a) * 15, 1.0, 14, 10)
+    for R in (4.5, 8.5, 12.5):
+        for k in range(n):
+            a0 = k * 2 * math.pi / n + 0.2; a1 = (k + 1) * 2 * math.pi / n + 0.2
+            # sagging thread between two spokes
+            for i in range(12):
+                t0 = i / 12; t1 = (i + 1) / 12
+                def pt(t):
+                    a = a0 + (a1 - a0) * t; r = R * (1 - 0.12 * math.sin(t * math.pi))
+                    return 16 + math.cos(a) * r, 16 + math.sin(a) * r
+                (x0, y0), (x1, y1) = pt(t0), pt(t1)
+                thick(c, x0, y0, x1, y1, 1.0, 13, 9)
+    return [c]
+add('WEB32', 32, 32, mk_web32())
+
+def mk_chop32():
+    # a straight karate-chop streak along +x: a hard white edge with a speed smear behind (3 frames)
+    fr = []
+    for f in range(3):
+        c = Canvas(32, 32)
+        L = [16, 28, 28][f]; w = [3.2, 3.6, 1.8][f]
+        x0 = 2 + (28 - L)
+        thick(c, x0, 16, 30, 16, w, 15, 9)
+        for k, dy in enumerate((-4, 4, -7, 7)):
+            xs = x0 + 4 + k * 2
+            thick(c, xs, 16 + dy, xs + L * (0.55 - 0.08 * k), 16 + dy, 1.0, 8 - k, 4)
+        fr.append(c)
+    return fr
+add('CHOP32', 32, 32, mk_chop32())
+
+def mk_veil16():
+    # soft glass pane (16x32): no hard frame, edges dithered away, a diagonal sheen; 2 frames (sheen moves)
+    fr = []
+    for f in range(2):
+        c = Canvas(16, 32)
+        for y in range(32):
+            for x in range(16):
+                ex = min(x + 0.5, 15.5 - x) / 5.0; ey = min(y + 0.5, 31.5 - y) / 7.0
+                e = clamp(min(ex, ey), 0, 1)
+                if e * 16 <= BAYER[y & 3][x & 3] * 0.9: continue
+                t = 0.3 + 0.12 * (y / 32)
+                s = (x - 8) + (y - 16) * 0.55 - (f * 6 - 3)
+                if abs(s) < 1.6: t = 0.95 - abs(s) * 0.2
+                elif abs(s - 4) < 0.8: t = 0.7
+                c.put(x, y, lv(t))
+        fr.append(c)
+    return fr
+add('VEIL16', 16, 32, mk_veil16())
+
+def mk_egg16():
+    c = Canvas(16, 16)
+    for y in range(16):
+        for x in range(16):
+            dx = (x + 0.5 - 8) / 5.6; dy = (y + 0.5 - 8.8) / 6.8
+            dy2 = dy * (1.18 if dy < 0 else 1.0)
+            d = math.hypot(dx, dy2)
+            if d < 1:
+                t = 0.55 + 0.4 * (1 - d) + (0.15 if (dx < -0.2 and dy < -0.25) else 0)
+                c.put(x, y, lv(t))
+    for (sx, sy) in ((10, 6), (6, 10), (10, 11)):
+        c.put(sx, sy, 7); c.put(sx + 1, sy, 7); c.put(sx, sy + 1, 8)
+    dark_rim(c); return [c]
+add('EGG16', 16, 16, mk_egg16())
+
+def mk_palm16():
+    # open hand, fingers pointing +x
+    c = Canvas(16, 16)
+    polyfill(c, [(1, 4.5), (8, 4), (9.5, 6), (9.5, 11), (8, 12.5), (1, 12)], lambda px, py: lv(0.8 - 0.3 * (py - 4) / 8))
+    for k, (y, L) in enumerate(((5.2, 14.2), (7.4, 15.2), (9.6, 14.8), (11.6, 13.2))):
+        thick(c, 8.5, y, L, y, 1.9, 12 - k, 9 - k)
+    thick(c, 4, 4.5, 8, 1.5, 1.8, 12, 9)  # thumb
+    dark_rim(c); return [c]
+add('PALM16', 16, 16, mk_palm16())
+
+def mk_bell16():
+    fr = []
+    for f in range(2):
+        c = Canvas(16, 16); sw = (-1.2, 1.2)[f]
+        pts = [(8 + sw * 0.3, 1.5), (11, 3.5), (12, 9), (14.5, 12.5), (1.5, 12.5), (4, 9), (5, 3.5)]
+        polyfill(c, pts, lambda px, py: lv(0.95 - 0.5 * abs(px - 6.5) / 7))
+        soft_disc(c, 8 + sw, 14, 1.8, lo=0.5, hi=0.8)
+        dark_rim(c); fr.append(c)
+    return fr
+add('BELL16', 16, 16, mk_bell16())
+
+def mk_eye16b():
+    # almond eye: bright sclera, dark iris and pupil, a catch-light; 2 frames (look, narrowed glare)
+    fr = []
+    for f in range(2):
+        c = Canvas(16, 16); hh = [5.2, 3.6][f]
+        for y in range(16):
+            for x in range(16):
+                u = (x + 0.5 - 8) / 7.2; v = (y + 0.5 - 8) / hh
+                if abs(u) < 1 and abs(v) < (1 - u * u) ** 0.8:
+                    d = math.hypot(x + 0.5 - 8, (y + 0.5 - 8) * 1.0)
+                    if d < 1.6: t = 0.0
+                    elif d < 3.8: t = 0.22 + 0.1 * (y < 8)
+                    else: t = 0.92 - 0.12 * abs(v)
+                    c.put(x, y, lv(t) if t > 0 else 1)
+        c.put(9, 6, 15); c.put(10, 6, 14)
+        dark_rim(c)
+        if f == 1:
+            thick(c, 1, 3.5, 14, 5.5, 1.4, 2, 2)   # frowning brow line
+        fr.append(c)
+    return fr
+add('EYE16B', 16, 16, mk_eye16b())
+
+def mk_wave48():
+    # a breaking wave crest seen from the side, wide (32x32): curl at the top, foam lip, body below (3 frames)
+    fr = []
+    for f in range(3):
+        c = Canvas(32, 32)
+        ph = f * 0.7
+        for x in range(32):
+            top = 10 + 4 * math.sin(x / 32 * math.pi * 2 + ph) - (3 if 10 < x < 24 else 0)
+            for y in range(int(top), 32):
+                d = y - top
+                t = 0.5 + 0.35 * math.exp(-d / 5) - 0.2 * (y / 32)
+                if (x * 7 + y * 3 + f * 5) % 11 == 0 and d > 3: t += 0.2
+                c.putmax(x, y, lv(t))
+            for k in range(2):
+                c.putmax(x, top - k, lv(0.98 - k * 0.15))
+        # curl
+        for i in range(30):
+            a = math.pi * (0.2 + 1.3 * i / 29)
+            x = 20 + math.cos(a + ph) * 6; y = 9 - math.sin(a) * 6
+            c.putmax(x, y, lv(0.95)); c.putmax(x + 1, y, lv(0.8))
+        fr.append(c)
+    return fr
+add('SURGE32', 32, 32, mk_wave48())
+
 # ---------------------------------------------------------------- energy palettes (no dark outline needed)
 def EP(name, keys): P[name] = mkpal(keys)
 EP('E_FIRE',   [(0, (110, 10, 0)), (0.25, (210, 40, 10)), (0.55, (255, 120, 20)), (0.8, (255, 210, 70)), (1, (255, 255, 230))])
@@ -632,4 +807,5 @@ EP('E_BUG',    [(0, (40, 70, 10)), (0.4, (150, 200, 40)), (0.75, (220, 245, 130)
 EP('E_FIGHT',  [(0, (90, 20, 10)), (0.4, (220, 90, 50)), (0.75, (255, 190, 130)), (1, (255, 250, 230))])
 EP('E_SKY',    [(0, (60, 80, 140)), (0.4, (150, 180, 240)), (0.75, (215, 230, 255)), (1, (255, 255, 255))])
 EP('E_MUD',    [(0, (40, 25, 10)), (0.4, (110, 75, 40)), (0.75, (170, 130, 80)), (1, (220, 190, 140))])
+EP('E_RED',    [(0, (80, 0, 0)), (0.4, (210, 20, 20)), (0.75, (255, 110, 90)), (1, (255, 230, 220))])
 EP('E_SAND',   [(0, (120, 90, 40)), (0.5, (210, 180, 110)), (1, (250, 240, 200))])

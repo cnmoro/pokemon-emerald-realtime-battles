@@ -67,6 +67,7 @@ bool8 RtVfx_ProjTrail(struct RtProj *p);
 bool8 RtVfx_DrawProj(struct RtProj *p, s32 sx, s32 sy);
 bool8 RtVfx_BeamTick(struct RtProj *p);
 void RtVfx_Impact(u16 move, u8 style, u8 pal, s32 x, s32 y);
+void RtVfx_SetHit(u8 atk, u8 tgt);
 bool8 RtVfx_Strike(struct RtProj *p);
 bool8 RtVfx_StrikeWarn(struct RtProj *p);
 bool8 RtVfx_AreaTick(struct RtProj *p);
