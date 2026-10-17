@@ -18,8 +18,11 @@ bool32 IsActiveOverworldLinkBusy(void);
 enum
 {
     MENUITEM_TEXTSPEED = 0,
-    MENUITEM_BATTLESCENE,
-    MENUITEM_BATTLESTYLE,
+    MENUITEM_BATTLESCENE,   // real-time mod: DIFFICULTY (battle scene has no effect in real-time battles)
+    MENUITEM_BATTLESTYLE,   // real-time mod: AUTO AIM (battle style has no effect either)
+    MENUITEM_EXPSHARE,
+    MENUITEM_EXPBONUS,
+    MENUITEM_BATTLESPEED,
     MENUITEM_SOUND,
     MENUITEM_BUTTONMODE,
     MENUITEM_FRAMETYPE,
@@ -73,19 +76,19 @@ static const struct WindowTemplate sOptionMenuWinTemplates[] =
         .bg = 1,
         .tilemapLeft = 2,
         .tilemapTop = 3,
-        .width = 26,
-        .height = 2,
+        .width = 1,
+        .height = 1,
         .paletteNum = 1,
-        .baseBlock = 2
+        .baseBlock = 0x1EF
     },
     {
         .bg = 0,
         .tilemapLeft = 2,
-        .tilemapTop = 7,
+        .tilemapTop = 3,
         .width = 26,
-        .height = 12,
+        .height = 16,
         .paletteNum = 1,
-        .baseBlock = 0x36
+        .baseBlock = 0x1
     },
     {
         .bg = 2,
@@ -94,7 +97,7 @@ static const struct WindowTemplate sOptionMenuWinTemplates[] =
         .width = 30,
         .height = 2,
         .paletteNum = 15,
-        .baseBlock = 0x16e
+        .baseBlock = 0x1A1
     },
     DUMMY_WIN_TEMPLATE
 };
@@ -131,13 +134,61 @@ static const struct BgTemplate sOptionMenuBgTemplates[] =
 };
 
 static const u16 sOptionMenuPalette[] = INCBIN_U16("graphics/misc/option_menu.gbapal");
-static const u16 sOptionMenuItemCounts[MENUITEM_COUNT] = {3, 2, 2, 2, 3, 10, 0};
+static const u16 sOptionMenuItemCounts[MENUITEM_COUNT] = {3, 3, 2, 6, 8, 5, 2, 3, 10, 0};
+
+// real-time mod rows are 12 px apart (10 rows); text is drawn on a transparent background so a
+// row's glyph cell never paints over its neighbours' shadows
+#define OPTION_ROW_H 12
+#define OPTION_WIN_Y (3 * 8)
+static const u8 sOptionNameColor[] = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY};
+
+static const u8 sText_RtDifficulty[] = _("DIFFICULTY");
+static const u8 sText_RtAutoAim[] = _("AUTO AIM");
+static const u8 sText_RtExpShare[] = _("EXP SHARE");
+static const u8 sText_RtExpBonus[] = _("EXP BONUS");
+static const u8 sText_RtBattleSpeed[] = _("BATTLE SPEED");
+static const u8 sText_Easy[] = _("EASY");
+static const u8 sText_Medium[] = _("MEDIUM");
+static const u8 sText_Hard[] = _("HARD");
+static const u8 sText_Off[] = _("OFF");
+static const u8 sText_On[] = _("ON");
+static const u8 sText_First2[] = _("FIRST 2");
+static const u8 sText_First3[] = _("FIRST 3");
+static const u8 sText_First4[] = _("FIRST 4");
+static const u8 sText_First5[] = _("FIRST 5");
+static const u8 sText_All6[] = _("ALL 6");
+static const u8 sText_B25[] = _("+25%");
+static const u8 sText_B50[] = _("+50%");
+static const u8 sText_B100[] = _("+100%");
+static const u8 sText_B150[] = _("+150%");
+static const u8 sText_B200[] = _("+200%");
+static const u8 sText_B300[] = _("+300%");
+static const u8 sText_B400[] = _("+400%");
+static const u8 sText_S60[] = _("60% SLOWEST");
+static const u8 sText_S70[] = _("70%");
+static const u8 sText_S80[] = _("80%");
+static const u8 sText_S90[] = _("90%");
+static const u8 sText_S100[] = _("100% ORIGINAL");
+static const u8 *const sDifficultyOptions[] = {sText_Easy, sText_Medium, sText_Hard};
+static const u8 *const sAutoAimOptions[] = {sText_Off, sText_On};
+static const u8 *const sExpShareOptions[] = {sText_Off, sText_First2, sText_First3, sText_First4, sText_First5, sText_All6};
+static const u8 *const sExpBonusOptions[] = {sText_Off, sText_B25, sText_B50, sText_B100, sText_B150, sText_B200, sText_B300, sText_B400};
+static const u8 *const sBattleSpeedOptions[] = {sText_S60, sText_S70, sText_S80, sText_S90, sText_S100};
+// saved difficulty 0 medium / 1 easy / 2 hard <-> menu 0 easy / 1 medium / 2 hard
+static const u8 sDifficultySaveToMenu[] = {1, 0, 2};
+static const u8 sDifficultyMenuToSave[] = {1, 0, 2};
+// saved battle speed code 0 = 80 % (default), 1 = 60, 2 = 70, 3 = 90, 4 = 100 <-> menu 60..100
+static const u8 sSpeedSaveToMenu[] = {2, 0, 1, 3, 4};
+static const u8 sSpeedMenuToSave[] = {1, 2, 0, 3, 4};
 
 static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
 {
     [MENUITEM_TEXTSPEED]   = gText_TextSpeed,
-    [MENUITEM_BATTLESCENE] = gText_BattleScene,
-    [MENUITEM_BATTLESTYLE] = gText_BattleStyle,
+    [MENUITEM_BATTLESCENE] = sText_RtDifficulty,
+    [MENUITEM_BATTLESTYLE] = sText_RtAutoAim,
+    [MENUITEM_EXPSHARE]    = sText_RtExpShare,
+    [MENUITEM_EXPBONUS]    = sText_RtExpBonus,
+    [MENUITEM_BATTLESPEED] = sText_RtBattleSpeed,
     [MENUITEM_SOUND]       = gText_Sound,
     [MENUITEM_BUTTONMODE]  = gText_ButtonMode,
     [MENUITEM_FRAMETYPE]   = gText_Frame,
@@ -207,8 +258,11 @@ void CB2_OptionsMenuFromStartMenu(void)
     sOptionMenuPtr->state = 0;
     sOptionMenuPtr->cursorPos = 0;
     sOptionMenuPtr->option[MENUITEM_TEXTSPEED] = gSaveBlock2Ptr->optionsTextSpeed;
-    sOptionMenuPtr->option[MENUITEM_BATTLESCENE] = gSaveBlock2Ptr->optionsBattleSceneOff;
-    sOptionMenuPtr->option[MENUITEM_BATTLESTYLE] = gSaveBlock2Ptr->optionsBattleStyle;
+    sOptionMenuPtr->option[MENUITEM_BATTLESCENE] = sDifficultySaveToMenu[gSaveBlock2Ptr->optionsRtDifficulty < 3 ? gSaveBlock2Ptr->optionsRtDifficulty : 0];
+    sOptionMenuPtr->option[MENUITEM_BATTLESTYLE] = gSaveBlock2Ptr->optionsRtAutoAim;
+    sOptionMenuPtr->option[MENUITEM_EXPSHARE] = gSaveBlock2Ptr->optionsRtExpShare;
+    sOptionMenuPtr->option[MENUITEM_EXPBONUS] = gSaveBlock2Ptr->optionsRtExpBonus;
+    sOptionMenuPtr->option[MENUITEM_BATTLESPEED] = sSpeedSaveToMenu[gSaveBlock2Ptr->optionsRtBattleSpeed < 5 ? gSaveBlock2Ptr->optionsRtBattleSpeed : 0];
     sOptionMenuPtr->option[MENUITEM_SOUND] = gSaveBlock2Ptr->optionsSound;
     sOptionMenuPtr->option[MENUITEM_BUTTONMODE] = gSaveBlock2Ptr->optionsButtonMode;
     sOptionMenuPtr->option[MENUITEM_FRAMETYPE] = gSaveBlock2Ptr->optionsWindowFrameType;
@@ -318,6 +372,7 @@ static void OptionMenu_PickSwitchCancel(void)
     s32 x;
     x = 0xE4 - GetStringWidth(FONT_SMALL, gText_PickSwitchCancel, 0);
     FillWindowPixelBuffer(2, PIXEL_FILL(15)); 
+    AddTextPrinterParameterized3(2, FONT_SMALL, 8, 0, sOptionMenuPickSwitchCancelTextColor, 0, gText_Option);
     AddTextPrinterParameterized3(2, FONT_SMALL, x, 0, sOptionMenuPickSwitchCancelTextColor, 0, gText_PickSwitchCancel);
     PutWindowTilemap(2);
     CopyWindowToVram(2, COPYWIN_FULL);
@@ -337,7 +392,7 @@ static bool8 LoadOptionMenuPalette(void)
     switch (sOptionMenuPtr->loadPaletteState)
     {
     case 0:
-        LoadBgTiles(1, GetUserWindowGraphics(sOptionMenuPtr->option[MENUITEM_FRAMETYPE])->tiles, 0x120, 0x1AA);
+        LoadBgTiles(1, GetUserWindowGraphics(sOptionMenuPtr->option[MENUITEM_FRAMETYPE])->tiles, 0x120, 0x1DD);
         break;
     case 1:
         LoadPalette(GetUserWindowGraphics(sOptionMenuPtr->option[MENUITEM_FRAMETYPE])->palette, BG_PLTT_ID(2), PLTT_SIZE_4BPP);
@@ -347,7 +402,7 @@ static bool8 LoadOptionMenuPalette(void)
         LoadPalette(GetTextWindowPalette(2), BG_PLTT_ID(15), PLTT_SIZE_4BPP);
         break;
     case 3:
-        LoadStdWindowGfxOnBg(1, 0x1B3, BG_PLTT_ID(3));
+        LoadStdWindowGfxOnBg(1, 0x1E6, BG_PLTT_ID(3));
         break;
     default:
         return TRUE;
@@ -381,7 +436,7 @@ static void Task_OptionMenu(u8 taskId)
             sOptionMenuPtr->loadState++;
             break;
         case 2:
-            LoadBgTiles(1, GetUserWindowGraphics(sOptionMenuPtr->option[MENUITEM_FRAMETYPE])->tiles, 0x120, 0x1AA);
+            LoadBgTiles(1, GetUserWindowGraphics(sOptionMenuPtr->option[MENUITEM_FRAMETYPE])->tiles, 0x120, 0x1DD);
             LoadPalette(GetUserWindowGraphics(sOptionMenuPtr->option[MENUITEM_FRAMETYPE])->palette, BG_PLTT_ID(2), PLTT_SIZE_4BPP);
             BufferOptionMenuString(sOptionMenuPtr->cursorPos);
             break;
@@ -471,9 +526,9 @@ static void BufferOptionMenuString(u8 selection)
     u8 x, y;
     
     memcpy(dst, sOptionMenuTextColor, 3);
-    x = 0x82;
-    y = ((GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT) - 1) * selection) + 2;
-    FillWindowPixelRect(1, 1, x, y, 0x46, GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT));
+    x = 0x76;
+    y = OPTION_ROW_H * selection + 1;
+    FillWindowPixelRect(1, 1, x, y + 2, 0xD0 - x, OPTION_ROW_H);
 
     switch (selection)
     {
@@ -481,10 +536,19 @@ static void BufferOptionMenuString(u8 selection)
         AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sTextSpeedOptions[sOptionMenuPtr->option[selection]]);
         break;
     case MENUITEM_BATTLESCENE:
-        AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sBattleSceneOptions[sOptionMenuPtr->option[selection]]);
+        AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sDifficultyOptions[sOptionMenuPtr->option[selection]]);
         break;
     case MENUITEM_BATTLESTYLE:
-        AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sBattleStyleOptions[sOptionMenuPtr->option[selection]]);
+        AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sAutoAimOptions[sOptionMenuPtr->option[selection]]);
+        break;
+    case MENUITEM_EXPSHARE:
+        AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sExpShareOptions[sOptionMenuPtr->option[selection]]);
+        break;
+    case MENUITEM_EXPBONUS:
+        AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sExpBonusOptions[sOptionMenuPtr->option[selection]]);
+        break;
+    case MENUITEM_BATTLESPEED:
+        AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sBattleSpeedOptions[sOptionMenuPtr->option[selection]]);
         break;
     case MENUITEM_SOUND:
         AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sSoundOptions[sOptionMenuPtr->option[selection]]);
@@ -511,8 +575,11 @@ static void CloseAndSaveOptionMenu(u8 taskId)
     SetMainCallback2(gMain.savedCallback);
     FreeAllWindowBuffers();
     gSaveBlock2Ptr->optionsTextSpeed = sOptionMenuPtr->option[MENUITEM_TEXTSPEED];
-    gSaveBlock2Ptr->optionsBattleSceneOff = sOptionMenuPtr->option[MENUITEM_BATTLESCENE];
-    gSaveBlock2Ptr->optionsBattleStyle = sOptionMenuPtr->option[MENUITEM_BATTLESTYLE];
+    gSaveBlock2Ptr->optionsRtDifficulty = sDifficultyMenuToSave[sOptionMenuPtr->option[MENUITEM_BATTLESCENE]];
+    gSaveBlock2Ptr->optionsRtAutoAim = sOptionMenuPtr->option[MENUITEM_BATTLESTYLE];
+    gSaveBlock2Ptr->optionsRtExpShare = sOptionMenuPtr->option[MENUITEM_EXPSHARE];
+    gSaveBlock2Ptr->optionsRtExpBonus = sOptionMenuPtr->option[MENUITEM_EXPBONUS];
+    gSaveBlock2Ptr->optionsRtBattleSpeed = sSpeedMenuToSave[sOptionMenuPtr->option[MENUITEM_BATTLESPEED]];
     gSaveBlock2Ptr->optionsSound = sOptionMenuPtr->option[MENUITEM_SOUND];
     gSaveBlock2Ptr->optionsButtonMode = sOptionMenuPtr->option[MENUITEM_BUTTONMODE];
     gSaveBlock2Ptr->optionsWindowFrameType = sOptionMenuPtr->option[MENUITEM_FRAMETYPE];
@@ -523,10 +590,7 @@ static void CloseAndSaveOptionMenu(u8 taskId)
 
 static void PrintOptionMenuHeader(void)
 {
-    FillWindowPixelBuffer(0, PIXEL_FILL(1));
-    AddTextPrinterParameterized(WIN_TEXT_OPTION, FONT_NORMAL, gText_Option, 8, 1, TEXT_SKIP_DRAW, NULL);
-    PutWindowTilemap(0);
-    CopyWindowToVram(0, COPYWIN_FULL);
+    // the title is printed in the top bar (OptionMenu_PickSwitchCancel)
 }
 
 static void DrawOptionMenuBg(void)
@@ -534,22 +598,15 @@ static void DrawOptionMenuBg(void)
     u8 h;
     h = 2;
     
-    FillBgTilemapBufferRect(1, 0x1B3, 1, 2, 1, 1, 3);
-    FillBgTilemapBufferRect(1, 0x1B4, 2, 2, 0x1B, 1, 3);
-    FillBgTilemapBufferRect(1, 0x1B5, 0x1C, 2, 1, 1, 3);
-    FillBgTilemapBufferRect(1, 0x1B6, 1, 3, 1, h, 3);
-    FillBgTilemapBufferRect(1, 0x1B8, 0x1C, 3, 1, h, 3);
-    FillBgTilemapBufferRect(1, 0x1B9, 1, 5, 1, 1, 3);
-    FillBgTilemapBufferRect(1, 0x1BA, 2, 5, 0x1B, 1, 3);
-    FillBgTilemapBufferRect(1, 0x1BB, 0x1C, 5, 1, 1, 3);
-    FillBgTilemapBufferRect(1, 0x1AA, 1, 6, 1, 1, h);
-    FillBgTilemapBufferRect(1, 0x1AB, 2, 6, 0x1A, 1, h);
-    FillBgTilemapBufferRect(1, 0x1AC, 0x1C, 6, 1, 1, h);
-    FillBgTilemapBufferRect(1, 0x1AD, 1, 7, 1, 0x10, h);
-    FillBgTilemapBufferRect(1, 0x1AF, 0x1C, 7, 1, 0x10, h);
-    FillBgTilemapBufferRect(1, 0x1B0, 1, 0x13, 1, 1, h);
-    FillBgTilemapBufferRect(1, 0x1B1, 2, 0x13, 0x1A, 1, h);
-    FillBgTilemapBufferRect(1, 0x1B2, 0x1C, 0x13, 1, 1, h);
+    // real-time mod: the OPTION title moved to the top bar, the list box takes the whole screen
+    FillBgTilemapBufferRect(1, 0x1DD, 1, 2, 1, 1, h);
+    FillBgTilemapBufferRect(1, 0x1DE, 2, 2, 0x1A, 1, h);
+    FillBgTilemapBufferRect(1, 0x1DF, 0x1C, 2, 1, 1, h);
+    FillBgTilemapBufferRect(1, 0x1E0, 1, 3, 1, 0x10, h);
+    FillBgTilemapBufferRect(1, 0x1E2, 0x1C, 3, 1, 0x10, h);
+    FillBgTilemapBufferRect(1, 0x1E3, 1, 0x13, 1, 1, h);
+    FillBgTilemapBufferRect(1, 0x1E4, 2, 0x13, 0x1A, 1, h);
+    FillBgTilemapBufferRect(1, 0x1E5, 0x1C, 0x13, 1, 1, h);
     CopyBgTilemapBufferToVram(1);
 }
 
@@ -560,7 +617,7 @@ static void LoadOptionMenuItemNames(void)
     FillWindowPixelBuffer(1, PIXEL_FILL(1));
     for (i = 0; i < MENUITEM_COUNT; i++)
     {
-        AddTextPrinterParameterized(WIN_OPTIONS, FONT_NORMAL, sOptionMenuItemsNames[i], 8, (u8)((i * (GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT))) + 2) - i, TEXT_SKIP_DRAW, NULL);    
+        AddTextPrinterParameterized3(WIN_OPTIONS, FONT_NORMAL, 8, OPTION_ROW_H * i + 1, sOptionNameColor, TEXT_SKIP_DRAW, sOptionMenuItemsNames[i]);
     }
 }
 
@@ -568,8 +625,8 @@ static void UpdateSettingSelectionDisplay(u16 selection)
 {
     u16 maxLetterHeight, y;
     
-    maxLetterHeight = GetFontAttribute(FONT_NORMAL, FONTATTR_MAX_LETTER_HEIGHT);
-    y = selection * (maxLetterHeight - 1) + 0x3A;
+    maxLetterHeight = OPTION_ROW_H;
+    y = selection * OPTION_ROW_H + OPTION_WIN_Y + 3;
     SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(y, y + maxLetterHeight));
     SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(0x10, 0xE0));
 }
