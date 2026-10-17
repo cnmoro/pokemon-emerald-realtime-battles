@@ -1,0 +1,11 @@
+gRtDebugSpecies 0x0203ae66
+gRtDebugLevel 0x0203ae68
+gRtDebugTrainer 0x0203ae6a
+gRtDebugAutoplay 0x0203ae6c
+gRtDebugCommand 0x0203ae6e
+gRtDebugWarpIdx 0x0203ae6d
+gRtDebugTestMove 0x0203ae70
+gRt 0x0203b228
+gRtProf 0x0203b238
+gMain 0x03004634
+gPlayerPartyCount 0x0203a5fd

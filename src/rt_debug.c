@@ -117,6 +117,15 @@ bool8 RtDebug_FieldInput(void)
         AddBagItem(gRtDebugTestMove, 1);
         return FALSE;
     }
+    if (cmd == 27)
+    {
+        // static legendary battle (gRtDebugSpecies, Lv gRtDebugLevel) the way the overworld scripts start it
+        u16 species = gRtDebugSpecies ? gRtDebugSpecies : SPECIES_ARTICUNO;
+        ZeroEnemyPartyMons();
+        CreateMon(&gEnemyParty[0], species, gRtDebugLevel ? gRtDebugLevel : 50, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+        StartLegendaryBattle();
+        return TRUE;
+    }
     if (cmd == 26)
     {
         // warp inside the current map to (gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF)
