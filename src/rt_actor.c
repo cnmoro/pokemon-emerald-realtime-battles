@@ -246,6 +246,15 @@ void RtActor_InitFromMon(struct RtActor *a, struct Pokemon *mon, u8 side, u8 par
     if (a->dex == 0 || a->dex > NATIONAL_DEX_COUNT)
         a->dex = 1;
     a->gfxDex = a->dex;
+#if RT_LC
+    {
+        // Liquid Crystal renumbers its Pokedex: the sprites follow FireRed's species -> national table
+        // (species 252-276 hold Turtwig..Bastiodon there, national 387-411)
+        extern const u16 sSpeciesToNationalPokedexNum[];
+        u16 g = (species >= 1 && species < NUM_SPECIES) ? sSpeciesToNationalPokedexNum[species - 1] : 1;
+        a->gfxDex = (g == 0 || g > RT_GFX_DEX_COUNT) ? 1 : g;
+    }
+#endif
     a->shiny = IsMonShiny(mon);
     a->vramSlot = slot;
     a->palSlot = slot;
@@ -271,8 +280,8 @@ void RtActor_InitFromMon(struct RtActor *a, struct Pokemon *mon, u8 side, u8 par
         a->cd[i] = 0;
     }
     a->mstatus = StatusFromMon(GetMonData(mon, MON_DATA_STATUS), &a->mstatusTimer, &a->toxicN);
-    a->radius = gRtSpeciesGfx[a->dex].radius;
-    a->height = gRtSpeciesGfx[a->dex].height;
+    a->radius = gRtSpeciesGfx[a->gfxDex].radius;
+    a->height = gRtSpeciesGfx[a->gfxDex].height;
     a->state = AST_GONE;
     a->hidden = TRUE;
     a->curFrame = 0xFFFF;

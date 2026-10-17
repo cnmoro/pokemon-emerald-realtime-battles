@@ -82,9 +82,11 @@ void RtDebug_NewGame(void)
     AddBagItem(ITEM_ULTRA_BALL, 10);
     AddBagItem(ITEM_ETHER, 3);
     SetMoney(&gSaveBlock1Ptr->money, 50000);
+#if !RT_LC
     gRtDebugWarpIdx = 0;
     SetWarpDestination(sDebugWarps[0].group, sDebugWarps[0].num, WARP_ID_NONE, sDebugWarps[0].x, sDebugWarps[0].y);
     WarpIntoMap();
+#endif
 }
 
 static void StartWild(void)
@@ -117,6 +119,14 @@ bool8 RtDebug_FieldInput(void)
         AddBagItem(gRtDebugTestMove, 1);
         return FALSE;
     }
+#if RT_LC
+    if (cmd == 29)
+    {
+        // Liquid Crystal: the debug party and bag on an existing save
+        RtDebug_NewGame();
+        return FALSE;
+    }
+#endif
     if (cmd == 28)
     {
         // warp to map gRtDebugSpecies (MAP_* constant: num | group << 8) at (gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF)

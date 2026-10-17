@@ -1,0 +1,2 @@
+# Liquid Crystal moved these tables
+gTrainers 0x08ABFD84

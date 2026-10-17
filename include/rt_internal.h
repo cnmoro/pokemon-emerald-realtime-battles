@@ -76,6 +76,11 @@ struct RtSpeciesGfx
 
 extern const u32 gRtSpriteGfx[];
 extern const struct RtFrame gRtFrames[];
+#if RT_LC
+#define RT_GFX_DEX_COUNT 411 // Liquid Crystal: + Turtwig..Bastiodon
+#else
+#define RT_GFX_DEX_COUNT NATIONAL_DEX_COUNT
+#endif
 extern const struct RtSpeciesGfx gRtSpeciesGfx[];
 extern const u16 gRtSpeciesPal[][2][16];
 
