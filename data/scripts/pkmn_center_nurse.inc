@@ -1,13 +1,12 @@
+@ Real-time mod: the nurse heals the party at once (no machine animation, no dialog)
 EventScript_PkmnCenterNurse::
 	goto_if_questlog EventScript_ReleaseEnd
-	message Text_WelcomeWantToHealPkmn
-	waitmessage
-	multichoice 19, 8, MULTICHOICE_YES_NO, FALSE | (TRUE << 1)
-	switch VAR_RESULT
-	case 0, EventScript_PkmnCenterNurse_HealPkmn
-	case 1 EventScript_PkmnCenterNurse_Goodbye
-	case SCR_MENU_CANCEL, EventScript_PkmnCenterNurse_Goodbye
-	end
+	incrementgamestat GAME_STAT_USED_POKECENTER
+	special HealPlayerParty
+	special SetUsedPkmnCenterQuestLogEvent
+	playse SE_USE_ITEM
+	waitse
+	return
 
 EventScript_PkmnCenterNurse_HealPkmn::
 	incrementgamestat GAME_STAT_USED_POKECENTER
