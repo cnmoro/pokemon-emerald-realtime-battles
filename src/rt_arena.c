@@ -1300,6 +1300,8 @@ void RtArena_Build(void)
             u16 b0 = layout->border != NULL ? (layout->border[0] & MAPGRID_METATILE_ID_MASK) : 0;
             bool8 ring = !water && layout->border != NULL && !IsBlankMetatile(b0)
                       && !MetatileBehavior_IsSurfableWaterOrUnderwater(BehaviorOf(b0));
+            // with a ring of trees / rock around it the field edge is obvious: the sides need no dimming
+            gRt->sideDim = !ring || indoorField;
             s32 rx0 = bx0 - 2, rx1 = bx0 + bw + 2, ry0 = by0 - 2, ry1 = by0 + bh + 2;
             if (rx0 < 0) rx0 = 0;
             if (ry0 < 0) ry0 = 0;

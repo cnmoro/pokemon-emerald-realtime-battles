@@ -708,6 +708,7 @@ struct RtBattle
     u8 waveAmp;          // psychic heat-haze distortion amplitude (px)
     u8 waveTimer;        // frames left
     u8 vfxPalCycle;      // misc frame counter for palette flicker
+    u8 sideDim;          // dither-dim the scenery left/right of the field (no ring of border blocks there)
 };
 
 extern struct RtBattle *gRt;

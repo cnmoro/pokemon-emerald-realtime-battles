@@ -2953,14 +2953,11 @@ bool8 RtVfx_SelfCast(struct RtActor *a, u16 move)
         break;
     case MOVE_HARDEN:
     case MOVE_IRON_DEFENSE:
-        if (move == MOVE_IRON_DEFENSE)
-        {
-            p = Sp(FX_HEX32, FXP_E_STEEL, a->x, cy, 30);
-            Scale(p, 22, 0);
-            Blend(p);
-        }
-        else
-            MOrbit(a, FX_SPARKLE8, FXP_E_STEEL, 6, 16, 9, -1, 26);
+        p = Glue(a, FX_HEX32, move == MOVE_IRON_DEFENSE ? FXP_STEEL : FXP_E_STEEL, 0, a->height / 2, 36);
+        Scale(p, move == MOVE_IRON_DEFENSE ? 22 : 18, 0);
+        if (p) RtFx_X(p)->flags |= PX_FADE;
+        if (move == MOVE_HARDEN)
+            MOrbit(a, FX_SPARKLE8, FXP_E_WHITE, 6, 16, 9, -1, 30);
         MGlint(a, FXP_E_WHITE);
             for (k = 0; k < 4; k++)
             {

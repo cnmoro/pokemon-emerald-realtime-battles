@@ -1054,7 +1054,7 @@ void RtFx_DrawEdges(void)
 {
     // during a screen flash or a dramatic dim the whole screen is affected alike: the dithered side columns
     // would otherwise stand out as un-dimmed (or un-flashed) panels
-    if (gRt->flashTimer || gRt->dimLevel >= 2)
+    if (gRt->flashTimer || gRt->dimLevel >= 2 || !gRt->sideDim)
         return;
     {
     const struct RtFxShape *s = &gRtFxShapes[FX_EDGEDIM];
