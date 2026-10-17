@@ -2972,7 +2972,7 @@ static void ExecuteMove(struct RtActor *a)
             SelfCastFx(a, d);
         RtMove_ApplySelfEffect(a, move);
         if (d->pattern == RTP_FIELD)
-            RtFx_Flash(0, 6);
+            RtFx_Flash(0, 3); // a short soft flash: the weather / field visuals carry the move
         break;
     case RTP_LEAP:
     case RTP_BURROW:
