@@ -2112,10 +2112,14 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
     // endure / focus band
     if (dmg >= t->hp)
     {
-        if ((t->protect && t->protectKind == 1) || (t->holdEffect == HOLD_EFFECT_FOCUS_BAND && (Random() % 100) < t->holdParam))
+        bool8 endure = t->protect && t->protectKind == 1;
+        if (endure || (t->holdEffect == HOLD_EFFECT_FOCUS_BAND && (Random() % 100) < t->holdParam))
         {
+            static const u8 sText_FocusBand[] = _("{STR_VAR_1} hung on using its FOCUS BAND!");
             dmg = t->hp - 1;
             RtFx_Word(t->x, t->y - TO_FX(t->height + 8), FX_W_BLOCK);
+            if (!endure)
+                ToastName(t, sText_FocusBand, 70);
         }
     }
 

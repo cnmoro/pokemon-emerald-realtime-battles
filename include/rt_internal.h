@@ -401,6 +401,7 @@ struct RtActor
     u16 shownHp;
     u8 aiNoLine;      // AI: no clear shot line to its target
     u8 aiPathOn, aiPathAng, aiPathAge;
+    u8 leftoversShown;   // the LEFTOVERS message was shown for this send-out
 };
 
 // ---------------------------------------------------------------------------

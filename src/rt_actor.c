@@ -734,8 +734,37 @@ void RtMove_CheckBerries(struct RtActor *a)
     case HOLD_EFFECT_CONFUSE_SOUR:
         if (a->hp <= a->maxHp / 2)
         {
+            u8 flavor = a->holdEffect - HOLD_EFFECT_CONFUSE_SPICY;
+            bool8 dislikes = GetFlavorRelationByPersonality(GetMonData(a->mon, MON_DATA_PERSONALITY), flavor) < 0;
             RtActor_Heal(a, a->maxHp / a->holdParam);
             BerryUsed(a);
+            if (dislikes && a->ability != ABILITY_OWN_TEMPO && !a->confuse)
+            {
+                a->confuse = 150 + Random() % 150;
+                RtFx_Burst(FX_DIZZY8, FXP_GOLD, a->x, a->y - TO_FX(a->height), 4, 1, 30);
+            }
+        }
+        break;
+    case HOLD_EFFECT_RESTORE_PP:
+        // no PP in real time: when every move is recharging, Leppa readies them all at once
+        {
+            s32 i, n = 0, waiting = 0, longest = 0;
+            for (i = 0; i < MAX_MON_MOVES; i++)
+            {
+                if (a->moves[i] == MOVE_NONE)
+                    continue;
+                n++;
+                if (a->cd[i])
+                    waiting++;
+                if (a->cd[i] > longest)
+                    longest = a->cd[i];
+            }
+            if (n && waiting == n && longest >= 60)
+            {
+                for (i = 0; i < MAX_MON_MOVES; i++)
+                    a->cd[i] = 0;
+                BerryUsed(a);
+            }
         }
         break;
     case HOLD_EFFECT_ATTACK_UP:
@@ -892,6 +921,9 @@ void RtActor_TickStatus(struct RtActor *a)
     }
     if (!RtActor_IsAlive(a))
         return;
+    // held berries / herbs react right away, not only when the holder next takes damage
+    if (a->heldItem != ITEM_NONE && (gRt->frame & 3) == (a->id & 3))
+        RtMove_CheckBerries(a);
 
     // shed skin
     if (a->ability == ABILITY_SHED_SKIN && a->mstatus && ++a->shedSkinTimer >= 240)
@@ -906,12 +938,22 @@ void RtActor_TickStatus(struct RtActor *a)
         a->speedBoostTimer = 0;
         RtActor_ChangeStage(a, STG_SPE, 1, a->id, TRUE);
     }
-    // leftovers / ingrain / rain dish
-    if (++a->regenTimer >= 240)
+    // leftovers / ingrain / rain dish: 1/16 of max HP per 'turn' (150 frames, as Leech Seed)
+    if (++a->regenTimer >= 150)
     {
         a->regenTimer = 0;
         if (a->holdEffect == HOLD_EFFECT_LEFTOVERS && a->hp < a->maxHp)
+        {
             RtActor_Heal(a, a->maxHp / 16 ? a->maxHp / 16 : 1);
+            RtFx_Spawn(FX_LEAF16, FXP_GRASS, a->x, a->y - TO_FX(a->height + 2), 26);
+            if (!a->leftoversShown)
+            {
+                static const u8 sText_Leftovers[] = _("{STR_VAR_1} restored HP with LEFTOVERS!");
+                a->leftoversShown = TRUE;
+                NameToVar1(a);
+                RtUi_ToastFmt(sText_Leftovers, 60);
+            }
+        }
         if (a->ingrain && a->hp < a->maxHp)
             RtActor_Heal(a, a->maxHp / 16 ? a->maxHp / 16 : 1);
         if (a->ability == ABILITY_RAIN_DISH && gRt->weather == WEATHER_RAIN_RT && a->hp < a->maxHp)

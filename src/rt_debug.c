@@ -116,6 +116,14 @@ bool8 RtDebug_FieldInput(void)
         AddBagItem(gRtDebugTestMove, 1);
         return FALSE;
     }
+    if (cmd == 24)
+    {
+        // the lead holds item gRtDebugTestMove (cleared afterwards so no move test starts)
+        u16 item = gRtDebugTestMove;
+        SetMonData(&gPlayerParty[0], MON_DATA_HELD_ITEM, &item);
+        gRtDebugTestMove = 0;
+        return FALSE;
+    }
     if (cmd == 18)
     {
         // lead becomes a Lv5 Magikarp (nothing to relearn)
