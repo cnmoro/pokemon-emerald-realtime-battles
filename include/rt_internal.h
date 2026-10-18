@@ -241,6 +241,7 @@ struct RtActiveMove
     u16 calledFrom;
     u8 lunge;       // melee: frames of the closing dash left before the strike
     u8 lungeTarget;
+    u8 aimBase;     // direction the move was cast in (beams / streams can only be turned a little from it)
 };
 
 struct RtActor
