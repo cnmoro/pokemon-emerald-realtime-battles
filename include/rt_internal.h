@@ -323,6 +323,7 @@ struct RtActor
     u16 protect;
     u8 protectKind;    // 0 protect/detect, 1 endure
     u8 protectChain;
+    u32 protectLastFrame; // gRt->frame of the last Protect / Detect (the chain resets after 3 s)
     u16 magicCoat;
     u16 snatch;
     u16 lockOn;
