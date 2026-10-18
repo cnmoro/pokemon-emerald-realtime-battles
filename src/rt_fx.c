@@ -1016,8 +1016,9 @@ void RtFx_DrawAll(void)
                 }
                 else
                 {
-                    px -= p->vx * (100 - gRt->lerpT) / 100;
-                    py -= p->vy * (100 - gRt->lerpT) / 100;
+                    s32 back = 256 - gRt->lerpQ8;
+                    px -= (p->vx * back) >> 8;
+                    py -= (p->vy * back) >> 8;
                 }
             }
             sx = FROM_FX(px) - gRt->camX;
