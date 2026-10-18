@@ -1007,8 +1007,26 @@ void RtFx_DrawAll(void)
         }
         else
         {
-            sx = FROM_FX(p->x) - gRt->camX;
-            sy = FROM_FX(p->y) - gRt->camY - p->z;
+            s32 px = p->x, py = p->y;
+            // smooth motion below 100% BATTLE SPEED: drawn part of the way back along the last step
+            if (gRt->lerpT < 100)
+            {
+                struct RtPartX *xx = &gRt->partsX[i];
+                if (xx->flags & (PX_ORBIT | PX_FOLLOW))
+                {
+                    s32 dx, dy;
+                    RtLerp_ActorDelta(xx->owner, &dx, &dy);
+                    px += dx;
+                    py += dy;
+                }
+                else
+                {
+                    px -= p->vx * (100 - gRt->lerpT) / 100;
+                    py -= p->vy * (100 - gRt->lerpT) / 100;
+                }
+            }
+            sx = FROM_FX(px) - gRt->camX;
+            sy = FROM_FX(py) - gRt->camY - p->z;
         }
         {
             struct RtPartX *x = &gRt->partsX[i];

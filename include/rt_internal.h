@@ -719,6 +719,11 @@ struct RtBattle
     u8 simAcc;           // battle pace: the fight simulation advances RtBattleSpeedPct() of every 100 frames
     bool8 simStep;       // this frame advances the fight (FALSE: only camera / HUD / drawing)
     u16 latchNew, latchNewRaw; // buttons pressed on frames that did not advance the fight
+    // smooth motion below 100% BATTLE SPEED: actors and shots are drawn between their position before
+    // and after the last fight step (lerpT % of the way), so frames without a step still move
+    s32 lerpActX[RT_MAX_ACTORS], lerpActY[RT_MAX_ACTORS];
+    s32 lerpProjX[RT_MAX_PROJ], lerpProjY[RT_MAX_PROJ];
+    u8 lerpT;            // 100 = draw the current positions
 };
 
 // battle pace (OPTION menu, BATTLE SPEED): percentage of frames that advance the fight
@@ -828,6 +833,7 @@ void RtFx_Wave(u8 amp, u8 frames);
 struct RtPartX *RtFx_X(struct RtPart *p);
 void RtActor_DrawGhost(struct RtActor *a, s32 dx, s32 dy);
 void RtFx_DrawAll(void);
+void RtLerp_ActorDelta(u8 actor, s32 *dx, s32 *dy); // drawn minus real position while drawing
 u8 RtFx_GetPalSlot(u8 fxPal);
 void RtFx_ReleaseUnused(void);
 void RtFx_Shake(u8 mag, u8 frames);
