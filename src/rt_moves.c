@@ -610,6 +610,22 @@ static s32 FoeSpeed(struct RtActor *a, s32 sp)
     return sp < 16 ? 16 : sp;
 }
 
+// Beams (Ice Beam, Psybeam, Aurora Beam, Thunderbolt...) used to reach their full length almost at once.
+// Their tip now travels like a fast shot (slower for foes, by difficulty) and the beam holds a little
+// after that, so a beam can be seen coming and sidestepped.
+#define BEAM_TIP_SPEED 72 // px/frame * 16 (4.5 px per frame at 100%)
+static s32 BeamTipSpeed(struct RtActor *a)
+{
+    return FoeSpeed(a, BEAM_TIP_SPEED);
+}
+static u16 BeamFrames(struct RtActor *a, const struct RtMoveDef *d)
+{
+    s32 sp = BeamTipSpeed(a);
+    s32 extend = (d->range * 2 * 16 + sp - 1) / sp;
+    s32 hold = (d->duration ? d->duration : 24) / 2;
+    return extend + (hold < 8 ? 8 : hold);
+}
+
 // a foe's live shot still on its way (not yet hit anything)
 bool8 RtMove_HasShotInFlight(u8 owner)
 {
@@ -1203,8 +1219,8 @@ static void UpdateBeam(struct RtProj *p)
     p->y = o->y + RtSin(p->angle) * (o->radius / 2) / 2 - TO_FX(o->height / 2);
     p->age++;
     max = d->range * 2;
-    if (p->len < max)
-        p->len += 22;
+    // the tip advances p->vx (px/frame * 16) every frame
+    p->len = 8 + p->age * p->vx / 16;
     if (p->len > max)
         p->len = max;
     // stop at obstacles
@@ -3007,7 +3023,8 @@ static void ExecuteMove(struct RtActor *a)
         {
             p->angle = a->act.angle;
             p->radius = d->radius;
-            p->life = d->duration ? d->duration : 24;
+            p->vx = BeamTipSpeed(a);
+            p->life = BeamFrames(a, d);
             p->len = 8;
             p->param |= 1;
         }
@@ -3488,8 +3505,9 @@ void RtMove_UpdateCast(struct RtActor *a)
             }
             break;
         case RTP_BEAM:
-            SteerChannel(a, 1);
-            if (a->act.timer >= d->duration)
+            // the player can sweep its beam; a foe's beam keeps the direction it was fired in
+            SteerChannel(a, a->side == RT_SIDE_PLAYER ? 1 : 0);
+            if (a->act.timer >= BeamFrames(a, d))
             {
                 a->act.phase = 2;
                 a->act.timer = 0;

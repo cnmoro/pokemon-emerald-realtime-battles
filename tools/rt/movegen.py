@@ -201,7 +201,7 @@ D.update({
 'DIZZY_PUNCH':MELEE('FIST16',pal='GOLD',r=12,imp='STAR',sfx='SE_M_DIZZY_PUNCH'),
 'SPORE':ZONE('POWDER8',pal='GRASS',rng=36,r=20,dur=12,spd=36,sfx='SE_M_POISON_POWDER'),
 'FLASH':BURST('GLOW16',pal='WHITE',rng=60,dur=12,aux=12,wind=8,sfx='SE_M_REFLECT'),
-'PSYWAVE':WAVE('PSYRING16',pal='PSYCHIC',spd=40,rng=80,half=18,imp='PSY',sfx='SE_M_PSYBEAM'),
+'PSYWAVE':WAVE('PSYRING16',pal='PSYCHIC',spd=40,rng=80,half=12,imp='PSY',sfx='SE_M_PSYBEAM'),
 'SPLASH':SELF('DROP8',pal='WATER',dur=30,wind=20,sfx='SE_M_SURF'),
 'ACID_ARMOR':SELF('MUD16',pal='POISON',sfx='SE_M_ACID_ARMOR'),
 'CRABHAMMER':MELEE('IMPACT32',pal='WATER',r=15,wind=10,lunge=8,imp='SPLASH',sfx='SE_M_CRABHAMMER'),
