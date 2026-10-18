@@ -398,6 +398,9 @@ s32 RtMove_CalcDamage(struct RtActor *atk, struct RtActor *def, u16 move, u16 po
         eff = 0;
     if (def->ability == ABILITY_WONDER_GUARD && eff <= 10 && power)
         eff = 0;
+    // Future Sight / Doom Desire deal typeless damage (they hit DARK / every type for normal damage)
+    if (gBattleMoves[move].effect == EFFECT_FUTURE_SIGHT)
+        eff = 10;
     if (outEff)
         *outEff = eff;
     if (eff == 0)
@@ -533,7 +536,7 @@ s32 RtMove_CalcDamage(struct RtActor *atk, struct RtActor *def, u16 move, u16 po
     }
     if (crit)
         dmg *= 2;
-    if (RtActor_HasType(atk, type))
+    if (RtActor_HasType(atk, type) && gBattleMoves[move].effect != EFFECT_FUTURE_SIGHT)
         dmg = dmg * 150 / 100;
     dmg = dmg * eff / 10;
     dmg = dmg * (85 + Random() % 16) / 100;
@@ -2732,6 +2735,14 @@ static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot)
         }
     }
 
+    // Spit Up with nothing stockpiled fails
+    if (gBattleMoves[move].effect == EFFECT_SPIT_UP && a->stockpile == 0)
+    {
+        RtUi_Toast(sText_Failed, 40);
+        FinishCast(a, 10);
+        return;
+    }
+
     // semi-invulnerable starts immediately
     if (d->pattern == RTP_LEAP)
     {
@@ -3217,8 +3228,8 @@ static void ExecuteMove(struct RtActor *a)
         break;
     }
 
-    // user effects that happen on execution
-    if (eff == EFFECT_EXPLOSION)
+    // user effects that happen on execution (Memento: the user faints like with Explosion)
+    if (eff == EFFECT_EXPLOSION || eff == EFFECT_MEMENTO)
     {
         a->hp = 0;
         a->hpBarDirty = TRUE;
@@ -3344,7 +3355,12 @@ void RtMove_UpdateCast(struct RtActor *a)
                 ToastName(a, sText_BideUnleash, 50);
                 RtFx_Flash(0, 6);
                 RtFx_Impact(RTI_STAR, FXP_GOLD, a->x, a->y - TO_FX(a->height / 2));
-                if (t && t->side != a->side && RtActor_IsAlive(t) && a->bideDmg)
+                if (t && t->side != a->side && RtActor_IsAlive(t) && a->bideDmg && t->protect && t->protectKind == 0)
+                {
+                    RtFx_Word(t->x, t->y - TO_FX(t->height + 8), FX_W_BLOCK);
+                    PlaySE(SE_M_DETECT);
+                }
+                else if (t && t->side != a->side && RtActor_IsAlive(t) && a->bideDmg)
                 {
                     RtFx_Impact(RTI_HIT, FXP_GOLD, t->x, t->y - TO_FX(t->height / 2));
                     RtActor_Damage(t, a->bideDmg * 2, a->id, FALSE);
@@ -3700,7 +3716,7 @@ void RtMove_ApplySelfEffect(struct RtActor *a, u16 move)
         RtActor_ChangeStage(a, STG_SPD, 1, a->id, FALSE);
         break;
     case EFFECT_BELLY_DRUM:
-        if (a->hp > a->maxHp / 2)
+        if (a->hp > a->maxHp / 2 && a->stages[STG_ATK] < 6)
         {
             RtActor_Damage(a, a->maxHp / 2, a->id, FALSE);
             a->stages[STG_ATK] = 6;
@@ -3761,7 +3777,12 @@ void RtMove_ApplySelfEffect(struct RtActor *a, u16 move)
         break;
     case EFFECT_PROTECT:
         {
-            u8 chance = 100 >> (a->protectChain > 3 ? 3 : a->protectChain);
+            u8 chance;
+            // the chain only counts Protects used back to back (within 3 s of the last one)
+            if ((u32)(gRt->frame - a->protectLastFrame) > 180)
+                a->protectChain = 0;
+            a->protectLastFrame = gRt->frame;
+            chance = 100 >> (a->protectChain > 3 ? 3 : a->protectChain);
             if (gRt->frame - a->sentOutFrame < 0 || (Random() % 100) < chance)
             {
                 a->protect = 50;

@@ -528,7 +528,25 @@ void RtAi_Update(struct RtActor *a)
                 range = range * 2 / 3;
             a->inMoveX = a->inMoveY = 0;
             if (a->side == RT_SIDE_ENEMY)
+            {
+                // the dummy can be given a move of its own (to test Protect, Counter, Substitute...)
+                extern u16 gRtDebugDummyMove;
+                if (gRtDebugDummyMove)
+                {
+                    if (a->moves[0] != gRtDebugDummyMove)
+                    {
+                        a->moves[0] = gRtDebugDummyMove;
+                        a->cdMax[0] = 75;
+                        a->cd[0] = 30;
+                    }
+                    if (a->state == AST_NORMAL && a->gcd == 0 && RtActor_MoveSlotUsable(a, 0))
+                    {
+                        a->inSlot = 0;
+                        a->inAim = ang;
+                    }
+                }
                 return;
+            }
             // moves for a status: the tester falls asleep / freezes first
             if (a->mstatus == MST_NONE && (a->moves[0] == MOVE_SNORE || a->moves[0] == MOVE_SLEEP_TALK))
                 RtActor_ApplyStatus(a, MST_SLP, a->id);
