@@ -643,6 +643,97 @@ static void Rt_RenderFrame(void)
     RtOam_Commit();
 }
 
+// --- smooth motion at BATTLE SPEED below 100% ----------------------------------------------------------
+static EWRAM_DATA s32 sLerpSaveActX[RT_MAX_ACTORS] = {0};
+static EWRAM_DATA s32 sLerpSaveActY[RT_MAX_ACTORS] = {0};
+static EWRAM_DATA s32 sLerpSaveProjX[RT_MAX_PROJ] = {0};
+static EWRAM_DATA s32 sLerpSaveProjY[RT_MAX_PROJ] = {0};
+static EWRAM_DATA bool8 sLerpOn = FALSE;
+
+static void Rt_LerpSnapshot(void)
+{
+    s32 i;
+    for (i = 0; i < RT_MAX_ACTORS; i++)
+    {
+        gRt->lerpActX[i] = gRt->actors[i].x;
+        gRt->lerpActY[i] = gRt->actors[i].y;
+    }
+    for (i = 0; i < RT_MAX_PROJ; i++)
+    {
+        gRt->lerpProjX[i] = gRt->proj[i].x;
+        gRt->lerpProjY[i] = gRt->proj[i].y;
+    }
+}
+
+static inline s32 LerpCoord(s32 from, s32 to, u32 t)
+{
+    s32 d = to - from;
+    // a jump (sent out, teleported, a new shot in a reused slot) is drawn where it is
+    if (d > TO_FX(24) || d < -TO_FX(24))
+        return to;
+    return from + d * (s32)t / 100;
+}
+
+// swaps the drawn positions in (and back out): only the drawing sees them
+static void Rt_LerpBegin(void)
+{
+    s32 i;
+    u32 t = gRt->lerpT;
+    if (t >= 100 || sLerpOn)
+        return;
+    sLerpOn = TRUE;
+    for (i = 0; i < RT_MAX_ACTORS; i++)
+    {
+        struct RtActor *a = &gRt->actors[i];
+        sLerpSaveActX[i] = a->x;
+        sLerpSaveActY[i] = a->y;
+        if (a->active)
+        {
+            a->x = LerpCoord(gRt->lerpActX[i], a->x, t);
+            a->y = LerpCoord(gRt->lerpActY[i], a->y, t);
+        }
+    }
+    for (i = 0; i < RT_MAX_PROJ; i++)
+    {
+        struct RtProj *p = &gRt->proj[i];
+        sLerpSaveProjX[i] = p->x;
+        sLerpSaveProjY[i] = p->y;
+        if (p->kind != PK_NONE && p->age > 1)
+        {
+            p->x = LerpCoord(gRt->lerpProjX[i], p->x, t);
+            p->y = LerpCoord(gRt->lerpProjY[i], p->y, t);
+        }
+    }
+}
+
+void RtLerp_ActorDelta(u8 actor, s32 *dx, s32 *dy)
+{
+    *dx = *dy = 0;
+    if (sLerpOn && actor < RT_MAX_ACTORS)
+    {
+        *dx = gRt->actors[actor].x - sLerpSaveActX[actor];
+        *dy = gRt->actors[actor].y - sLerpSaveActY[actor];
+    }
+}
+
+static void Rt_LerpEnd(void)
+{
+    s32 i;
+    if (!sLerpOn)
+        return;
+    sLerpOn = FALSE;
+    for (i = 0; i < RT_MAX_ACTORS; i++)
+    {
+        gRt->actors[i].x = sLerpSaveActX[i];
+        gRt->actors[i].y = sLerpSaveActY[i];
+    }
+    for (i = 0; i < RT_MAX_PROJ; i++)
+    {
+        gRt->proj[i].x = sLerpSaveProjX[i];
+        gRt->proj[i].y = sLerpSaveProjY[i];
+    }
+}
+
 static void CB2_RtMain(void)
 {
     s32 i;
@@ -668,6 +759,7 @@ static void CB2_RtMain(void)
             gMain.newKeys |= gRt->latchNew;
             gMain.newKeysRaw |= gRt->latchNewRaw;
             gRt->latchNew = gRt->latchNewRaw = 0;
+            Rt_LerpSnapshot();
             if (gRt->pauseFrames)
                 gRt->pauseFrames--;
             else
@@ -713,11 +805,18 @@ static void CB2_RtMain(void)
         if (step && gRt->state != RTS_MENU && gRt->state != RTS_PROMPT)
             RtFx_UpdateAll();
     }
+    // below 100% BATTLE SPEED the fight steps on some frames only: draw (and frame the camera) between
+    // the last two steps so the motion stays even
+    gRt->lerpT = (gRt->state == RTS_FIGHT && RtBattleSpeedPct() < 100) ? gRt->simAcc : 100;
+    Rt_LerpBegin();
     Rt_UpdateCamera();
+    Rt_LerpEnd();
     PROF(3);
     RtUi_Update();
     PROF(4);
+    Rt_LerpBegin();
     Rt_RenderFrame();
+    Rt_LerpEnd();
     PROF(5);
 
     if (gRt->shakeTimer > 0)
