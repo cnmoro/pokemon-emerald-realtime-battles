@@ -732,6 +732,7 @@ struct RtBattle
     s32 lerpActX[RT_MAX_ACTORS], lerpActY[RT_MAX_ACTORS];
     s32 lerpProjX[RT_MAX_PROJ], lerpProjY[RT_MAX_PROJ];
     u8 lerpT;            // 100 = draw the current positions
+    u16 lerpQ8;          // lerpT as 0..256
     // FireRed: the OAM buckets and the dynamic effect-tile bookkeeping live here (heap), EWRAM is full
     struct OamEntry fxBucket[RT_FX_BUCKETS][RT_FX_BUCKET_MAX];
     u16 fxDynStart[FX_COUNT];
