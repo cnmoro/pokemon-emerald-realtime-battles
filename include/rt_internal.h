@@ -870,6 +870,8 @@ void RtAi_TrainerItems(void);
 // rt_ui.c
 void RtUi_Init(void);
 void RtUi_Update(void);
+void Rt_StopLoopSE(void);
+void Rt_UpdateLoopSE(void);
 void RtUi_DrawObjs(void);
 void RtUi_Toast(const u8 *str, u16 frames);
 void RtUi_ToastFmt(const u8 *tmpl, u16 frames);

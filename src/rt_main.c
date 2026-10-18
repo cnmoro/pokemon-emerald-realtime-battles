@@ -807,6 +807,7 @@ static void CB2_RtMain(void)
     gRt->lerpT = (gRt->state == RTS_FIGHT && RtBattleSpeedPct() < 100) ? gRt->simAcc : 100;
     gRt->lerpQ8 = gRt->lerpT * 256 / 100;
     RtUi_Update();
+    Rt_UpdateLoopSE();
     PROF(4);
     Rt_LerpBegin();
     Rt_UpdateCamera();
@@ -1868,6 +1869,7 @@ static void Rt_StartOutro(u8 outcome)
         }
     }
     m4aSongNumStop(SE_LOW_HEALTH);
+    Rt_StopLoopSE();
 }
 
 static void Rt_SyncAllToParty(void)
@@ -2187,6 +2189,7 @@ static void Rt_FinalReturn(void)
             SetRoamerInactive();
     }
     m4aSongNumStop(SE_LOW_HEALTH);
+    Rt_StopLoopSE();
     SetMainCallback2(gMain.savedCallback);
 }
 
