@@ -28,7 +28,8 @@ EWRAM_DATA u8 gRtDebugAutoplay = 0;
 EWRAM_DATA u8 gRtDebugWarpIdx = 0;
 EWRAM_DATA u8 gRtDebugCommand = 0;
 EWRAM_DATA u8 gRtDebugAiSkill = 0;
-EWRAM_DATA u16 gRtDebugTestMove = 0; // harness can poke: 1 wild, 2 trainer, 3 next warp
+EWRAM_DATA u16 gRtDebugTestMove = 0;
+EWRAM_DATA u16 gRtDebugDummyMove = 0; // test mode: the foe dummy uses this move // harness can poke: 1 wild, 2 trainer, 3 next warp
 
 void RtDebug_StartTrainerBattle(u16 trainerId); // battle_setup.c
 
