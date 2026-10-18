@@ -5740,25 +5740,15 @@ u32 CanMonLearnTMHM(struct Pokemon *mon, u8 tm)
 }
 
 // moves the MOVES menu (and the move relearner) can teach: level-up moves up to the current level
-// and the egg moves of the family's base form, minus what the POKeMON already knows
-static u16 GetFamilyBaseSpecies(u16 species)
+// and the egg moves of the POKeMON and of every earlier form of its line, minus what it already knows
+static u16 GetPreEvolution(u16 species)
 {
-    s32 guard, i, j;
-    for (guard = 0; guard < 3; guard++)
-    {
-        bool8 found = FALSE;
-        for (i = 1; i < NUM_SPECIES && !found; i++)
-            for (j = 0; j < EVOS_PER_MON; j++)
-                if (gEvolutionTable[i][j].method && gEvolutionTable[i][j].targetSpecies == species)
-                {
-                    species = i;
-                    found = TRUE;
-                    break;
-                }
-        if (!found)
-            break;
-    }
-    return species;
+    s32 i, j;
+    for (i = 1; i < NUM_SPECIES; i++)
+        for (j = 0; j < EVOS_PER_MON; j++)
+            if (gEvolutionTable[i][j].method && gEvolutionTable[i][j].targetSpecies == species)
+                return i;
+    return SPECIES_NONE;
 }
 
 static void AddRelearnableMove(u16 *moves, u8 *numMoves, const u16 *learned, u16 move)
@@ -5794,12 +5784,23 @@ u8 GetMoveRelearnerMoves(struct Pokemon *mon, u16 *moves)
         if ((gLevelUpLearnsets[species][i] & LEVEL_UP_MOVE_LV) <= (level << 9))
             AddRelearnableMove(moves, &numMoves, learnedMoves, gLevelUpLearnsets[species][i] & LEVEL_UP_MOVE_ID);
     }
-    numEgg = GetEggMovesOfSpecies(GetFamilyBaseSpecies(species), eggMoves);
-    for (i = 0; i < numEgg; i++)
-        AddRelearnableMove(moves, &numMoves, learnedMoves, eggMoves[i]);
-    // Volt Tackle is not in the egg move table: Pichu hatched from a parent holding a Light Ball gets it
-    if (GetFamilyBaseSpecies(species) == SPECIES_PICHU)
-        AddRelearnableMove(moves, &numMoves, learnedMoves, MOVE_VOLT_TACKLE);
+    {
+        // the line from its first form down to this one (Pichu, Pikachu, Raichu; Azurill, Marill, Azumarill)
+        u16 line[4];
+        s32 n = 0, k;
+        line[n++] = species;
+        while (n < 4 && (line[n] = GetPreEvolution(line[n - 1])) != SPECIES_NONE)
+            n++;
+        for (k = n - 1; k >= 0; k--)
+        {
+            // Volt Tackle is not in the egg move table: Pichu hatched from a parent holding a Light Ball gets it
+            if (line[k] == SPECIES_PICHU)
+                AddRelearnableMove(moves, &numMoves, learnedMoves, MOVE_VOLT_TACKLE);
+            numEgg = GetEggMovesOfSpecies(line[k], eggMoves);
+            for (i = 0; i < numEgg; i++)
+                AddRelearnableMove(moves, &numMoves, learnedMoves, eggMoves[i]);
+        }
+    }
     return numMoves;
 }
 
