@@ -31,7 +31,7 @@
 #define RT_SOLID_WALK 1
 #define RT_SOLID_SHOT 2
 #define HUD_TOP 16
-#define HUD_BOTTOM 32
+#define HUD_BOTTOM 16
 
 #define MAX_OBSTACLES 24
 

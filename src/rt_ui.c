@@ -49,19 +49,29 @@ enum
     WIN_COUNT
 };
 
-// bottom HUD layout (window is 32px tall at the bottom of the screen)
-#define HUD_BOTTOM_Y      128
-#define HUD_ROW1_Y        1
-#define HUD_ROW2_Y        14
-#define HUD_ROW2_TEXT_Y   13
-#define HUD_CD_BAR_Y      (HUD_BOTTOM_Y + 22)
+// HUD layout: the top bar (16px) shows the player's POKéMON on the left and the foe on the right,
+// the bottom bar (16px) the four moves with their cooldown bars
+#define HUD_BOTTOM_Y      (DISPLAY_HEIGHT - HUD_BOTTOM)
+#define HUD_ROW2_Y        0
+#define HUD_ROW2_TEXT_Y   0
+#define HUD_CD_BAR_Y      (HUD_BOTTOM_Y + 8)
+#define HUD_SPLIT_X       120 // left half: player, right half: foe(s)
+#define HUD_BAR_Y         4   // y of the HP bar sprites (bar pixels on screen rows 7..11)
+// singles: name | HP bar | numbers on each side
+#define HUD_P_BAR_X       48
+#define HUD_P_HP_X        84
+#define HUD_E_BAR_X       190
+#define HUD_BAR_W         32
+// doubles: the two foes get 60px each (name + short bar)
+#define HUD_E2_W          60
+#define HUD_E2_BAR_W      24
 
 static const struct WindowTemplate sRtWindows[] =
 {
     [WIN_TOP]    = { .bg = 0, .tilemapLeft = 0,  .tilemapTop = 0,  .width = 30, .height = 2,  .paletteNum = 15, .baseBlock = 1 },
-    [WIN_BOTTOM] = { .bg = 0, .tilemapLeft = 0,  .tilemapTop = 16, .width = 30, .height = 4,  .paletteNum = 15, .baseBlock = 61 },
+    [WIN_BOTTOM] = { .bg = 0, .tilemapLeft = 0,  .tilemapTop = 18, .width = 30, .height = 2,  .paletteNum = 15, .baseBlock = 61 },
     [WIN_TOAST]  = { .bg = 0, .tilemapLeft = 1,  .tilemapTop = 2,  .width = 28, .height = 2,  .paletteNum = 15, .baseBlock = 181 },
-    [WIN_MSG]    = { .bg = 0, .tilemapLeft = 0,  .tilemapTop = 12, .width = 30, .height = 4,  .paletteNum = 14, .baseBlock = 237 },
+    [WIN_MSG]    = { .bg = 0, .tilemapLeft = 0,  .tilemapTop = 14, .width = 30, .height = 4,  .paletteNum = 14, .baseBlock = 237 },
     [WIN_MENU]   = { .bg = 0, .tilemapLeft = 15, .tilemapTop = 4,  .width = 14, .height = 9,  .paletteNum = 14, .baseBlock = 357 },
     // end-of-battle EXP panel: shares the tiles of WIN_MSG and WIN_MENU (never shown together)
     [WIN_EXP]    = { .bg = 0, .tilemapLeft = 5,  .tilemapTop = 3,  .width = 20, .height = 10,  .paletteNum = 14, .baseBlock = 237 },
@@ -290,41 +300,62 @@ static void PrintMonHeader(u8 win, struct RtActor *a, u8 x, u8 y)
 enum
 {
     HE_E0_NAME,
-    HE_E0_LV,
     HE_E1_NAME,
-    HE_E1_LV,
     HE_TOP_EXTRA,
     HE_P_NAME,
-    HE_P_LV,
     HE_P_HP,
-    HE_P_STATUS,
-    HE_ALLY,
     HE_COUNT
 };
 
 struct HudElem
 {
-    u8 win, x, w;
+    u8 x, w;
 };
 
+// all in the top window; doubles have their own table for the foes
 static const struct HudElem sHudElems[HE_COUNT] =
 {
-    [HE_E0_NAME]   = {WIN_TOP, 0, 100},
-    [HE_E0_LV]     = {WIN_TOP, 100, 22},
-    [HE_E1_NAME]   = {WIN_TOP, 122, 98},
-    [HE_E1_LV]     = {WIN_TOP, 220, 20},
-    [HE_TOP_EXTRA] = {WIN_TOP, 140, 100},
-    [HE_P_NAME]    = {WIN_BOTTOM, 0, 50},
-    [HE_P_LV]      = {WIN_BOTTOM, 50, 84},
-    [HE_P_HP]      = {WIN_BOTTOM, 134, 38},
-    [HE_P_STATUS]  = {WIN_BOTTOM, 172, 24},
-    [HE_ALLY]      = {WIN_BOTTOM, 196, 44},
+    [HE_P_NAME]    = {0, HUD_P_BAR_X},
+    [HE_P_HP]      = {HUD_P_HP_X, HUD_SPLIT_X - 1 - HUD_P_HP_X},
+    [HE_E0_NAME]   = {HUD_SPLIT_X + 1, HUD_E_BAR_X - HUD_SPLIT_X - 1}, // name and level (or status)
+    [HE_TOP_EXTRA] = {HUD_E_BAR_X, 240 - HUD_E_BAR_X}, // party dots under the foe's bar
 };
+static const struct HudElem sHudElemsDouble[HE_COUNT] =
+{
+    [HE_P_NAME]    = {0, HUD_P_BAR_X},
+    [HE_P_HP]      = {HUD_P_HP_X, HUD_SPLIT_X - 1 - HUD_P_HP_X},
+    [HE_E0_NAME]   = {HUD_SPLIT_X + 1, HUD_E2_W - HUD_E2_BAR_W - 3},
+    [HE_E1_NAME]   = {HUD_SPLIT_X + HUD_E2_W + 1, HUD_E2_W - HUD_E2_BAR_W - 3},
+};
+#define HUD_ELEMS (gRt->isDouble ? sHudElemsDouble : sHudElems)
 
 static EWRAM_DATA u32 sHudKey[HE_COUNT] = {0};
 static EWRAM_DATA u16 sDrawnHp = 0xFFFF;
 static EWRAM_DATA u8 sMovesPending = 0;
 static EWRAM_DATA u8 sEnemyPartyCountCache = 0;
+static EWRAM_DATA u8 sEnemyPartyTotalCache = 0;
+
+static void RefreshEnemyPartyCount(void)
+{
+    s32 i;
+    sEnemyPartyCountCache = Rt_CountUsableParty(RT_SIDE_ENEMY);
+    sEnemyPartyTotalCache = 0;
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        u16 sp = GetMonData(&gEnemyParty[i], MON_DATA_SPECIES_OR_EGG);
+        if (sp != SPECIES_NONE && sp != SPECIES_EGG)
+            sEnemyPartyTotalCache++;
+    }
+}
+
+// a name cut to fit maxW pixels
+static const u8 *FitName(u8 *buf, u8 maxW)
+{
+    u8 len = StringLength(buf);
+    while (len > 2 && GetStringWidth(FONT_SMALL, buf, 0) > maxW)
+        buf[--len] = EOS;
+    return buf;
+}
 
 #define HUD_KEY_EMPTY 0xFFFFFFFE
 
@@ -346,49 +377,41 @@ static u32 HudElemKey(u8 id)
     case HE_E0_NAME:
     case HE_E1_NAME:
         e = HudEnemy(id == HE_E0_NAME ? 0 : 1);
-        return e ? ((u32)e->mon ^ (e->species << 20)) : HUD_KEY_EMPTY;
-    case HE_E0_LV:
-    case HE_E1_LV:
-        e = HudEnemy(id == HE_E0_LV ? 0 : 1);
-        return e ? (e->level | (e->mstatus << 8) | ((e->hp != 0) << 16)) : HUD_KEY_EMPTY;
+        if (!e)
+            return HUD_KEY_EMPTY;
+        // singles: level or status after the name; doubles: the name takes the status colour
+        return (u32)e->mon ^ (e->species << 20) ^ (e->level << 24) ^ (e->mstatus << 12) ^ ((e->hp != 0) << 11);
     case HE_TOP_EXTRA:
         if (gRt->isSafari)
             return 0x10000 | gRt->safariBalls;
         if (gRt->isTrainer && !gRt->isDouble)
-            return 0x20000 | sEnemyPartyCountCache;
+            return 0x20000 | sEnemyPartyCountCache | (sEnemyPartyTotalCache << 4);
         return HUD_KEY_EMPTY;
     case HE_P_NAME:
         if (gRt->isSafari)
-            return 0x5AFE;
-        return p->active ? (u32)p->mon : HUD_KEY_EMPTY;
-    case HE_P_LV:
-        if (gRt->isSafari)
             return HUD_KEY_EMPTY;
-        return p->active ? p->level : HUD_KEY_EMPTY;
+        return p->active ? (u32)p->mon : HUD_KEY_EMPTY;
     case HE_P_HP:
         if (gRt->isSafari || !p->active)
             return HUD_KEY_EMPTY;
+        // the status takes the place of the numbers
+        if (p->mstatus && p->hp)
+            return 0x80000000 | p->mstatus;
         return p->hp | (p->maxHp << 16);
-    case HE_P_STATUS:
-        if (gRt->isSafari || !p->active)
-            return HUD_KEY_EMPTY;
-        return p->mstatus;
-    case HE_ALLY:
-        if (gRt->isSafari || !gRt->isDouble || !p->active)
-            return HUD_KEY_EMPTY;
-        e = &gRt->actors[gRt->playerLead == 0 ? 1 : 0];
-        return (e->active && e->state != AST_GONE) ? (u32)e->mon : HUD_KEY_EMPTY;
     }
     return HUD_KEY_EMPTY;
 }
 
 static void HudElemDraw(u8 id)
 {
-    const struct HudElem *el = &sHudElems[id];
+    const struct HudElem *el = &HUD_ELEMS[id];
     struct RtActor *p = Rt_PlayerActor(), *e;
-    u8 y = el->win == WIN_TOP ? 2 : HUD_ROW1_Y;
+    u8 y = 2;
     const u8 *col, *st;
-    FillWindowPixelRect(el->win, PIXEL_FILL(1), el->x, 0, el->w, el->win == WIN_TOP ? 16 : HUD_ROW2_Y);
+    if (gRt->isSafari && id == HE_TOP_EXTRA)
+        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(1), 0, 0, HUD_SPLIT_X - 1, 16);
+    else if (el->w)
+        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(1), el->x, 0, el->w, 16);
     switch (id)
     {
     case HE_E0_NAME:
@@ -398,92 +421,86 @@ static void HudElemDraw(u8 id)
             break;
         GetMonData(e->mon, MON_DATA_NICKNAME, gStringVar1);
         StringGet_Nickname(gStringVar1);
-        AddTextPrinterParameterized3(el->win, FONT_SMALL, el->x + 2, y, sColHud, TEXT_SKIP_DRAW, gStringVar1);
-        break;
-    case HE_E0_LV:
-    case HE_E1_LV:
-        e = HudEnemy(id == HE_E0_LV ? 0 : 1);
-        if (!e)
-            break;
-        st = StatusText(e->mstatus, &col);
-        if (st && e->hp)
+        col = sColHud;
+        if (gRt->isDouble)
         {
-            AddTextPrinterParameterized3(el->win, FONT_SMALL, el->x, y, col, TEXT_SKIP_DRAW, st);
+            if (e->hp == 0)
+                col = sColHudRed;
+            else
+                StatusText(e->mstatus, &col);
+            FitName(gStringVar1, el->w - 2);
         }
         else
         {
-            u8 *s = StringCopy(gStringVar4, sText_Lv);
-            ConvertIntToDecimalStringN(s, e->level, STR_CONV_MODE_LEFT_ALIGN, 3);
-            AddTextPrinterParameterized3(el->win, FONT_SMALL, el->x, y, sColHudGray, TEXT_SKIP_DRAW, gStringVar4);
+            // level (or status) right-aligned before the bar, the name cut to what is left
+            const u8 *tagCol = sColHudGray;
+            u8 tagW;
+            st = e->hp ? StatusText(e->mstatus, &tagCol) : NULL;
+            if (st)
+            {
+                StringCopy(gStringVar4, st);
+            }
+            else
+            {
+                u8 *s = StringCopy(gStringVar4, sText_Lv);
+                ConvertIntToDecimalStringN(s, e->level, STR_CONV_MODE_LEFT_ALIGN, 3);
+                tagCol = sColHudGray;
+            }
+            tagW = GetStringWidth(FONT_SMALL, gStringVar4, 0);
+            AddTextPrinterParameterized3(WIN_TOP, FONT_SMALL, el->x + el->w - 2 - tagW, y, tagCol, TEXT_SKIP_DRAW, gStringVar4);
+            FitName(gStringVar1, el->w - tagW - 5);
         }
+        AddTextPrinterParameterized3(WIN_TOP, FONT_SMALL, el->x + 1, y, col, TEXT_SKIP_DRAW, gStringVar1);
         break;
     case HE_TOP_EXTRA:
         if (gRt->isSafari)
         {
             ConvertIntToDecimalStringN(gStringVar1, gRt->safariBalls, STR_CONV_MODE_LEFT_ALIGN, 2);
             StringExpandPlaceholders(gStringVar4, sText_SafariBalls);
-            AddTextPrinterParameterized3(el->win, FONT_SMALL, 150, y, sColHudYellow, TEXT_SKIP_DRAW, gStringVar4);
+            AddTextPrinterParameterized3(WIN_TOP, FONT_SMALL, 2, y, sColHudYellow, TEXT_SKIP_DRAW, gStringVar4);
         }
         else if (gRt->isTrainer && !gRt->isDouble)
         {
-            u8 n = Rt_CountUsableParty(RT_SIDE_ENEMY), k;
-            u8 *s = gStringVar4;
-            for (k = 0; k < n && k < 6; k++)
-            {
-                *s++ = CHAR_o;
-                *s++ = CHAR_SPACE;
-            }
-            *s = EOS;
-            AddTextPrinterParameterized3(el->win, FONT_SMALL, 180, y, sColHudRed, TEXT_SKIP_DRAW, gStringVar4);
+            // one dot per POKéMON of the foe's party under its HP bar: red = still able, dark = fainted
+            s32 k;
+            for (k = 0; k < sEnemyPartyTotalCache && k < PARTY_SIZE; k++)
+                FillWindowPixelRect(WIN_TOP, PIXEL_FILL(k < sEnemyPartyCountCache ? 5 : 3), el->x + 1 + k * 6, 13, 4, 2);
         }
         break;
     case HE_P_NAME:
-        if (gRt->isSafari)
-        {
-            FillWindowPixelRect(el->win, PIXEL_FILL(1), 0, 0, 240, HUD_ROW2_Y);
-            AddTextPrinterParameterized3(el->win, FONT_SMALL, 2, y, sColHudYellow, TEXT_SKIP_DRAW, sText_SafariHelp);
-            break;
-        }
         if (!p->active)
             break;
         GetMonData(p->mon, MON_DATA_NICKNAME, gStringVar1);
         StringGet_Nickname(gStringVar1);
-        AddTextPrinterParameterized3(el->win, FONT_SMALL, 2, y, sColHud, TEXT_SKIP_DRAW, gStringVar1);
-        break;
-    case HE_P_LV:
-        if (gRt->isSafari || !p->active)
-            break;
-        {
-            u8 *s = StringCopy(gStringVar4, sText_Lv);
-            ConvertIntToDecimalStringN(s, p->level, STR_CONV_MODE_LEFT_ALIGN, 3);
-            AddTextPrinterParameterized3(el->win, FONT_SMALL, 50, y, sColHudGray, TEXT_SKIP_DRAW, gStringVar4);
-        }
+        AddTextPrinterParameterized3(WIN_TOP, FONT_SMALL, 2, y, sColHud, TEXT_SKIP_DRAW, FitName(gStringVar1, el->w - 3));
         break;
     case HE_P_HP:
         if (gRt->isSafari || !p->active)
             break;
+        st = p->hp ? StatusText(p->mstatus, &col) : NULL;
+        if (st)
+        {
+            AddTextPrinterParameterized3(WIN_TOP, FONT_SMALL, el->x, y, col, TEXT_SKIP_DRAW, st);
+            break;
+        }
         ConvertIntToDecimalStringN(gStringVar1, p->hp, STR_CONV_MODE_LEFT_ALIGN, 3);
         ConvertIntToDecimalStringN(gStringVar2, p->maxHp, STR_CONV_MODE_LEFT_ALIGN, 3);
         StringExpandPlaceholders(gStringVar4, sText_HpFmt);
-        AddTextPrinterParameterized3(el->win, FONT_SMALL, 134, y, sColHud, TEXT_SKIP_DRAW, gStringVar4);
+        // numbers of 3 digits do not fit: only the current HP then
+        if (GetStringWidth(FONT_SMALL, gStringVar4, 0) > el->w)
+            StringCopy(gStringVar4, gStringVar1);
+        AddTextPrinterParameterized3(WIN_TOP, FONT_SMALL, el->x, y, p->hp ? sColHud : sColHudRed, TEXT_SKIP_DRAW, gStringVar4);
         sDrawnHp = p->hp;
         break;
-    case HE_P_STATUS:
-        if (gRt->isSafari || !p->active)
-            break;
-        st = StatusText(p->mstatus, &col);
-        if (st)
-            AddTextPrinterParameterized3(el->win, FONT_SMALL, 172, y, col, TEXT_SKIP_DRAW, st);
-        break;
-    case HE_ALLY:
-        if (HudElemKey(HE_ALLY) == HUD_KEY_EMPTY)
-            break;
-        e = &gRt->actors[gRt->playerLead == 0 ? 1 : 0];
-        GetMonData(e->mon, MON_DATA_NICKNAME, gStringVar1);
-        StringGet_Nickname(gStringVar1);
-        AddTextPrinterParameterized3(el->win, FONT_SMALL, 196, y, sColHudGray, TEXT_SKIP_DRAW, gStringVar1);
-        break;
     }
+}
+
+static void DrawHudDivider(void)
+{
+    if (!gRt->isSafari)
+        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(3), HUD_SPLIT_X - 1, 2, 1, 12);
+    if (gRt->isDouble)
+        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(3), HUD_SPLIT_X + HUD_E2_W - 1, 2, 1, 12);
 }
 
 // Forces a full redraw of everything (used when windows were cleared).
@@ -491,9 +508,9 @@ void RtUi_RefreshHud(void)
 {
     s32 i;
     gRt->hudDirty = FALSE;
-    sEnemyPartyCountCache = Rt_CountUsableParty(RT_SIDE_ENEMY);
+    RefreshEnemyPartyCount();
     FillWindowPixelBuffer(WIN_TOP, PIXEL_FILL(1));
-    FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(1), 0, 0, 240, HUD_ROW2_Y);
+    DrawHudDivider();
     for (i = 0; i < HE_COUNT; i++)
     {
         sHudKey[i] = HudElemKey(i);
@@ -501,7 +518,6 @@ void RtUi_RefreshHud(void)
             HudElemDraw(i);
     }
     CopyWindowToVram(WIN_TOP, COPYWIN_GFX);
-    CopyWindowToVram(WIN_BOTTOM, COPYWIN_GFX);
 }
 
 // Incremental HUD update: redraws at most one changed element per call.
@@ -511,7 +527,7 @@ static void RtUi_HudStep(void)
     struct RtActor *p = Rt_PlayerActor();
     // counting the party reads encrypted mon data, which is slow: refresh it rarely
     if (gRt->isTrainer && !gRt->isDouble && (gRt->hudDirty || (gRt->frame & 62) == 0))
-        sEnemyPartyCountCache = Rt_CountUsableParty(RT_SIDE_ENEMY);
+        RefreshEnemyPartyCount();
     gRt->hudDirty = FALSE;
     for (i = 0; i < HE_COUNT; i++)
     {
@@ -523,7 +539,7 @@ static void RtUi_HudStep(void)
             continue;
         sHudKey[i] = k;
         HudElemDraw(i);
-        CopyWindowToVram(sHudElems[i].win, COPYWIN_GFX);
+        CopyWindowToVram(WIN_TOP, COPYWIN_GFX);
         return;
     }
 }
@@ -547,7 +563,7 @@ static void DrawMoveCell(struct RtActor *p, u8 i, u8 st)
 {
     static const u8 *const sBtn[] = {sButtonA, sButtonB, sButtonL, sButtonR};
     const u8 *col = st == 1 ? sColHud : (st == 3 ? sColHudRed : (st == 4 ? sColHudYellow : sColHudGray));
-    FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(1), i * 60, HUD_ROW2_Y, 60, 32 - HUD_ROW2_Y);
+    FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(1), i * 60, HUD_ROW2_Y, 60, 16 - HUD_ROW2_Y);
     sMoveHudState[i] = st;
     if (st == 0)
         return;
@@ -581,7 +597,8 @@ void RtUi_RefreshMoves(void)
     sMovesPending = 0;
     if (gRt->isSafari)
     {
-        FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(1), 0, HUD_ROW2_Y, 240, 32 - HUD_ROW2_Y);
+        FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(1), 0, HUD_ROW2_Y, 240, 16 - HUD_ROW2_Y);
+        AddTextPrinterParameterized3(WIN_BOTTOM, FONT_SMALL, 2, HUD_ROW2_TEXT_Y, sColHudYellow, TEXT_SKIP_DRAW, sText_SafariHelp);
         CopyWindowToVram(WIN_BOTTOM, COPYWIN_GFX);
         return;
     }
@@ -784,13 +801,26 @@ void RtUi_DrawObjs(void)
         if (!e->active || e->state == AST_GONE || (!gRt->isDouble && i == 3))
             continue;
         UpdateShownHp(e);
-        if (e->hpBarDirty)
+        if (gRt->isDouble)
         {
-            DrawHpBar(tile, e->shownHp, e->maxHp, 46);
-            e->hpBarDirty = FALSE;
+            s32 bx = HUD_SPLIT_X + (i - 2) * HUD_E2_W + HUD_E2_W - HUD_E2_BAR_W - 3;
+            if (e->hpBarDirty)
+            {
+                DrawHpBar(tile, e->shownHp, e->maxHp, HUD_E2_BAR_W);
+                e->hpBarDirty = FALSE;
+            }
+            PutObj(tile, 1, 1, bx, HUD_BAR_Y, 4, 0);
         }
-        PutObj(tile, 1, 1, (i == 2 ? 2 : 122) + 48, 4, 4, 0);
-        PutObj(tile + 4, 1, 1, (i == 2 ? 2 : 122) + 80, 4, 4, 0);
+        else
+        {
+            if (e->hpBarDirty)
+            {
+                DrawHpBar(tile, e->shownHp, e->maxHp, HUD_BAR_W);
+                e->hpBarDirty = FALSE;
+            }
+            PutObj(tile, 1, 1, HUD_E_BAR_X, HUD_BAR_Y, 4, 0);
+            PutObj(tile + 4, 1, 1, HUD_E_BAR_X + 32, HUD_BAR_Y, 4, 0);
+        }
     }
     if (gRt->isSafari)
     {
@@ -813,12 +843,12 @@ void RtUi_DrawObjs(void)
         UpdateShownHp(p);
         if (p->hpBarDirty)
         {
-            DrawHpBar(UI_TILE_PLAYER_BAR, p->shownHp, p->maxHp, 46);
+            DrawHpBar(UI_TILE_PLAYER_BAR, p->shownHp, p->maxHp, HUD_BAR_W);
             p->hpBarDirty = FALSE;
             (void)sDrawnHp;
         }
-        PutObj(UI_TILE_PLAYER_BAR, 1, 1, 84, HUD_BOTTOM_Y + HUD_ROW1_Y + 2, 4, 0);
-        PutObj(UI_TILE_PLAYER_BAR + 4, 1, 1, 116, HUD_BOTTOM_Y + HUD_ROW1_Y + 2, 4, 0);
+        PutObj(UI_TILE_PLAYER_BAR, 1, 1, HUD_P_BAR_X, HUD_BAR_Y, 4, 0);
+        PutObj(UI_TILE_PLAYER_BAR + 4, 1, 1, HUD_P_BAR_X + 32, HUD_BAR_Y, 4, 0);
         // low hp warning sound
     }
     // ally floating bar
