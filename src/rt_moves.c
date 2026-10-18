@@ -24,11 +24,42 @@
 #include "constants/moves.h"
 #include "constants/pokemon.h"
 #include "constants/songs.h"
+#include "m4a.h"
 #include "constants/species.h"
 #include "constants/weather.h"
 
 #include "data/rt/move_defs.h"
 
+// a few move sounds loop until stopped (the battle animations end them with stopsound): stop them after a
+// moment, and when the battle ends
+#define RT_LOOP_SE_FRAMES 60
+static EWRAM_DATA u16 sLoopSe = 0;
+static EWRAM_DATA u8 sLoopSeTimer = 0;
+
+void Rt_StopLoopSE(void)
+{
+    if (sLoopSe)
+        m4aSongNumStop(sLoopSe);
+    sLoopSe = 0;
+    sLoopSeTimer = 0;
+}
+
+void Rt_UpdateLoopSE(void)
+{
+    if (sLoopSe && --sLoopSeTimer == 0)
+        Rt_StopLoopSE();
+}
+
+static void Rt_PlayMoveSE(u16 se)
+{
+    Rt_StopLoopSE();
+    PlaySE(se);
+    if (se == SE_M_GUST || se == SE_M_BLIZZARD)
+    {
+        sLoopSe = se;
+        sLoopSeTimer = RT_LOOP_SE_FRAMES;
+    }
+}
 
 static void ExecuteMove(struct RtActor *a);
 void RtMove_CheckBerries(struct RtActor *a);
@@ -826,7 +857,7 @@ static void UpdateBullet(struct RtProj *p)
             // launch from the owner's current position
             p->x = o->x + RtCos(p->angle) * (o->radius + 4);
             p->y = o->y + RtSin(p->angle) * (o->radius + 4) / 2;
-            PlaySE(d->sfx);
+            Rt_PlayMoveSE(d->sfx);
         }
         return;
     }
@@ -1089,7 +1120,7 @@ static void UpdateMelee(struct RtProj *p)
     {
         p->delay--;
         if (p->delay == 0)
-            PlaySE(Def(p->move)->sfx);
+            Rt_PlayMoveSE(Def(p->move)->sfx);
         return;
     }
     // follow owner (the same reach in every direction)
@@ -1393,7 +1424,7 @@ static void StrikeAt(struct RtProj *p)
     const struct RtMoveDef *d = Def(p->move);
     if (RtVfx_Strike(p))
     {
-        PlaySE(d->sfx);
+        Rt_PlayMoveSE(d->sfx);
         RtProps_HitAt(p->x, p->y - TO_FX(6), p->radius, 3);
         goto hits;
     }
@@ -1417,7 +1448,7 @@ static void StrikeAt(struct RtProj *p)
     }
     RtVfx_Impact(p->move, d->impact, p->pal, p->x, p->y);
     RtFx_Shake(2, 8);
-    PlaySE(d->sfx);
+    Rt_PlayMoveSE(d->sfx);
     RtProps_HitAt(p->x, p->y - TO_FX(6), p->radius, 3);
 hits:
     for (i = 0; i < RT_MAX_ACTORS; i++)
@@ -2735,12 +2766,12 @@ static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot)
     if (d->pattern == RTP_LEAP)
     {
         a->invuln = 1;
-        PlaySE(d->sfx);
+        Rt_PlayMoveSE(d->sfx);
     }
     else if (d->pattern == RTP_BURROW)
     {
         a->invuln = (move == MOVE_DIVE) ? 3 : 2;
-        PlaySE(d->sfx);
+        Rt_PlayMoveSE(d->sfx);
         RtFx_Burst(move == MOVE_DIVE ? FX_DROP8 : FX_ROCK16, move == MOVE_DIVE ? FXP_WATER : FXP_GROUND, a->x, a->y, 6, 2, 18);
     }
     // sun skips solar beam charge
@@ -2958,7 +2989,7 @@ static void ExecuteMove(struct RtActor *a)
         return;
     }
     if (d->pattern != RTP_MELEE && d->pattern != RTP_BULLET)
-        PlaySE(d->sfx);
+        Rt_PlayMoveSE(d->sfx);
     if (d->anim != RTA_WALK)
         RtActor_SetAnim(a, d->anim, FALSE);
     RtVfx_Execute(a, move);
@@ -3002,7 +3033,7 @@ static void ExecuteMove(struct RtActor *a)
                 s8 off = (s8)((i * 2 - (n - 1)) * d->spread / 2);
                 SpawnBullet(a, d, a->act.angle + off, 0);
             }
-            PlaySE(d->sfx);
+            Rt_PlayMoveSE(d->sfx);
         }
         else
         {
@@ -3012,7 +3043,7 @@ static void ExecuteMove(struct RtActor *a)
                 s8 off = jitter ? (s8)((Random() % (jitter * 2 + 1)) - jitter) : 0;
                 SpawnBullet(a, d, a->act.angle + off, i == 0 ? 0 : i * d->spread);
             }
-            PlaySE(d->sfx);
+            Rt_PlayMoveSE(d->sfx);
         }
         break;
     case RTP_STREAM:
@@ -3517,7 +3548,7 @@ void RtMove_UpdateCast(struct RtActor *a)
                         p->flags &= ~RTMF_ARC;
                     }
                     if ((a->act.timer % (rate * 4)) == 0)
-                        PlaySE(d->sfx);
+                        Rt_PlayMoveSE(d->sfx);
                 }
                 if (a->act.timer >= d->duration)
                 {
