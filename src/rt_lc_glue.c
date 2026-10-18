@@ -153,3 +153,94 @@ bool8 RtLc_ProcessPlayerFieldInput(struct FieldInput *input)
         return TRUE;
     return TRAMP(TRAMP_FIELD_INPUT, bool8 (*)(struct FieldInput *))(input);
 }
+
+// --- party menu MOVES: relearn level-up moves through the game's own move relearner ---------------------
+// The cursor option table is copied into the blob with one more entry (index RTLC_OPTION_MOVES, after the
+// field moves); tools/lc/patch.py fills the first entries from the ROM and points the party menu at it.
+#include "event_data.h"
+#include "party_menu.h"
+#include "sound.h"
+#include "constants/songs.h"
+
+struct RtLcCursorOption { const u8 *text; TaskFunc func; };
+struct RtLcPartyMenuInternal
+{
+    TaskFunc task;
+    MainCallback exitCallback;
+    u32 bits;
+    u8 windowId[3];
+    u8 actions[8];
+    u8 numActions;
+};
+#define RTLC_OPTION_SWITCH 1
+#define RTLC_OPTION_ITEM   3
+#define RTLC_OPTION_CANCEL 2
+#define RTLC_OPTION_MOVES  30
+extern struct RtLcPartyMenuInternal *sPartyMenuInternal;
+void Task_ClosePartyMenu(u8 taskId);
+void CB2_MoveRelearner_Init(void);
+void CB2_ReturnToPartyMenuFromSummaryScreen(void);
+u8 GetNumberOfRelearnableMoves(struct Pokemon *mon);
+
+static const u8 sText_RtLcMoves[] = _("MOVES");
+static void RtLc_CursorCB_Moves(u8 taskId);
+const struct RtLcCursorOption RtLc_CursorOptions[RTLC_OPTION_MOVES + 1] = {
+    [RTLC_OPTION_MOVES] = {sText_RtLcMoves, RtLc_CursorCB_Moves},
+};
+
+static EWRAM_DATA bool8 sRtLcRelearnFromParty = FALSE;
+
+static void CB2_RtLcOpenRelearner(void)
+{
+    gSpecialVar_0x8004 = gPartyMenu.slotId;
+    sRtLcRelearnFromParty = TRUE;
+    SetMainCallback2(CB2_MoveRelearner_Init);
+}
+
+static void RtLc_CursorCB_Moves(u8 taskId)
+{
+    PlaySE(SE_SELECT);
+    sPartyMenuInternal->exitCallback = CB2_RtLcOpenRelearner;
+    Task_ClosePartyMenu(taskId);
+}
+
+// the relearner's exit (it used to go straight back to the field): back to the party menu when opened from it
+void RtLc_RelearnerExit(void)
+{
+    if (sRtLcRelearnFromParty)
+    {
+        sRtLcRelearnFromParty = FALSE;
+        SetMainCallback2(CB2_ReturnToPartyMenuFromSummaryScreen);
+    }
+    else
+    {
+        SetMainCallback2(CB2_ReturnToField);
+    }
+}
+
+enum { TRAMP_PARTY_ACTIONS = 1 };
+// after the game's list (SUMMARY, field moves, SWITCH, ITEM / MAIL, CANCEL): MOVES goes right before SWITCH
+void RtLc_SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
+{
+    struct RtLcPartyMenuInternal *m;
+    s32 i, at;
+    TRAMP(TRAMP_PARTY_ACTIONS, void (*)(struct Pokemon *, u8))(mons, slotId);
+    m = sPartyMenuInternal;
+    if (m->numActions >= 7 || GetNumberOfRelearnableMoves(&mons[slotId]) == 0)
+        return;
+    for (at = 1; at < m->numActions; at++)
+        if (m->actions[at] == RTLC_OPTION_SWITCH || m->actions[at] == RTLC_OPTION_ITEM || m->actions[at] == RTLC_OPTION_CANCEL
+         || m->actions[at] < 18 /* not a field move */)
+            break;
+    for (i = m->numActions; i > at; i--)
+        m->actions[i] = m->actions[i - 1];
+    m->actions[at] = RTLC_OPTION_MOVES;
+    m->numActions++;
+}
+
+// the field move description box (shown while the cursor is on a field move) has no text for MOVES
+enum { TRAMP_FIELD_MOVE_DESC = 2 };
+void RtLc_ToggleFieldMoveDescriptionWindow(u8 action)
+{
+    TRAMP(TRAMP_FIELD_MOVE_DESC, void (*)(u8))(action == RTLC_OPTION_MOVES ? 0 : action);
+}

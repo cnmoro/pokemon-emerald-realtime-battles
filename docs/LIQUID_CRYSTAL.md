@@ -11,11 +11,12 @@ O **Pokémon Liquid Crystal** (beta 3.3) é um hack binário do FireRed 1.0 (BPR
 - **Pokémon de Sinnoh:** os 25 que o Liquid Crystal coloca nos espaços vazios (Turtwig … Bastiodon) têm sprites animados próprios do SpriteCollab, com paleta shiny derivada das paletas do próprio jogo.
 - Menu **OPTION** com DIFFICULTY, AUTO AIM, EXP SHARE, EXP BONUS e BATTLE SPEED (a linha BUTTON MODE some: o Liquid Crystal sempre usa L/R como botões de página, e no tempo real L/R são golpes).
 - Tela de resumo com o **cooldown** de cada golpe em segundos no lugar do PP.
+- **MOVES no menu da equipe:** abre o Move Relearner do próprio jogo para o Pokémon escolhido (golpes de nível até o nível atual) e volta para a equipe ao sair.
 - **Centro Pokémon instantâneo:** falar com a enfermeira cura na hora, sem conversa e sem a animação das Pokébolas.
 - Captura mais fácil, POKé BALL infinita, painel de EXP, Leftovers e itens em tempo real, Snore/Sleep Talk, equilíbrio corpo a corpo × distância, velocidade da batalha — tudo como no FireRed.
 - O sistema de dia/noite do Liquid Crystal é pausado durante a batalha (senão os sprites e o HUD ficariam escurecidos) e volta ao sair.
 
-Não fazem parte desta versão (o Liquid Crystal tem os seus próprios): a redistribuição da Pokédex, os lendários do mod, as evoluções sem troca e as lojas de itens de evolução do FireRed, MOVES no menu e HMs pela bolsa.
+Não fazem parte desta versão (o Liquid Crystal tem os seus próprios): a redistribuição da Pokédex, os lendários do mod, as evoluções sem troca e as lojas de itens de evolução do FireRed e HMs pela bolsa.
 
 ## Como gerar a ROM
 
@@ -38,6 +39,6 @@ A ROM resultante tem ~20,6 MB (o motor e os sprites ocupam ~4,7 MB depois dos 16
 | `src/rt_lc_glue.c` | `CB2_InitBattle` com o desvio para o motor, `InitHeap` (reserva os 4 KB), hooks de debug com trampolim |
 | `src/rt_lc_summary.c` | As duas funções da tela de resumo que mostram o cooldown |
 
-Desvios aplicados pelo `patch.py` (início de cada função substituído por `ldr r3,=destino; bx r3`): `CB2_InitBattle`, `InitHeap`, `CB2_OptionsMenuFromStartMenu`, `BufferMonMoveI`, `PokeSum_PrintMoveName`; e o script `EventScript_PkmnCenterNurse` é reescrito (cura direta). Com `--debug`, o modo de testes é ligado e `ProcessPlayerFieldInput` passa pelos comandos de debug (lista de mapas em `src/data/rt/debug_warps_lc.h`, gerada por `tools/lc/gen_debug_warps_lc.py` direto da ROM).
+Desvios aplicados pelo `patch.py` (início de cada função substituído por `ldr r3,=destino; bx r3`): `CB2_InitBattle`, `InitHeap`, `CB2_OptionsMenuFromStartMenu`, `BufferMonMoveI`, `PokeSum_PrintMoveName`; a tabela de opções do menu da equipe ganha MOVES (cópia no blob com uma entrada a mais), com `SetPartyMonFieldSelectionActions` e `ToggleFieldMoveDescriptionWindow` passando pelo blob, e o Move Relearner volta para a equipe quando aberto dali; e o script `EventScript_PkmnCenterNurse` é reescrito (cura direta). Com `--debug`, o modo de testes é ligado e `ProcessPlayerFieldInput` passa pelos comandos de debug (lista de mapas em `src/data/rt/debug_warps_lc.h`, gerada por `tools/lc/gen_debug_warps_lc.py` direto da ROM).
 
 As opções novas ficam nos bytes `0x90–0x92` do SaveBlock2 (sem uso no FireRed e no Liquid Crystal), porque o Liquid Crystal reescreve o byte `0x13` inteiro.

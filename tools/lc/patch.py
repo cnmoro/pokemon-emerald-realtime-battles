@@ -97,6 +97,27 @@ def main():
               + bytes([0x03]))                                             # return
     rom[nurse:nurse + len(script)] = script
 
+    # party menu MOVES (move relearner): the cursor option table gets one more entry in the blob
+    opts = v['sCursorOptions'] & 0x1FFFFFF
+    newopts = syms['RtLc_CursorOptions']
+    no = newopts & 0x1FFFFFF
+    rom[no:no + 30 * 8] = rom[opts:opts + 30 * 8]
+    refs = [i for i in range(0, 0x1000000, 4) if struct.unpack_from('<I', rom, i)[0] == v['sCursorOptions']]
+    if len(refs) != 4:
+        raise SystemExit('expected 4 references to sCursorOptions, found %d' % len(refs))
+    for i in refs:
+        struct.pack_into('<I', rom, i, newopts)
+    hook_with_trampoline(rom, v['SetPartyMonFieldSelectionActions'], syms['RtLc_SetPartyMonFieldSelectionActions'], 8,
+                         tramps + 32 * 1, bytes.fromhex('f0b55746 4e464546'))
+    hook_with_trampoline(rom, v['ToggleFieldMoveDescriptionWindow'], syms['RtLc_ToggleFieldMoveDescriptionWindow'], 8,
+                         tramps + 32 * 2, bytes.fromhex('30b585b0 0006000e'))
+    # ... and the relearner goes back to the party menu when it was opened from there
+    f = v['MoveRelearnerStateMachine'] & 0x1FFFFFF
+    lits = [i for i in range(f, f + 0x600, 4) if struct.unpack_from('<I', rom, i)[0] == (v['CB2_ReturnToField'] | 1)]
+    if len(lits) != 1:
+        raise SystemExit('expected 1 CB2_ReturnToField literal in MoveRelearnerStateMachine, found %d' % len(lits))
+    struct.pack_into('<I', rom, lits[0], syms['RtLc_RelearnerExit'] | 1)
+
     if debug:
         rom[syms['gRtDebugEnabled'] & 0x1FFFFFF] = 1
         # debug commands polled from the overworld input handler (push {r4-r7,lr}; mov r7,r8; push {r7}; sub sp,#8)
