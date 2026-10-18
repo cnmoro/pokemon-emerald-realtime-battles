@@ -125,6 +125,8 @@ def main():
     if debug:
         rom[syms['gRtDebugEnabled'] & 0x1FFFFFF] = 1
         # debug commands polled from the overworld input handler (push {r4-r7,lr}; mov r7,r8; push {r7}; sub sp,#8)
+        # frame-rate measurements: count the main loop iterations
+        hook(rom, v['PlayTimeCounter_Update'], syms['RtLc_PlayTimeCounter_Update'])
         hook_with_trampoline(rom, v['ProcessPlayerFieldInput'], syms['RtLc_ProcessPlayerFieldInput'], 8,
                              tramps + 32 * 0, bytes.fromhex('f0b54746 80b482b0'))
     # round the size up to 64 KB

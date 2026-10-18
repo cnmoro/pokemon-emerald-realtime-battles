@@ -147,6 +147,7 @@ enum { TRAMP_FIELD_INPUT };
 struct FieldInput;
 bool8 RtDebug_FieldInput(void);
 extern const u8 gRtDebugEnabled;
+EWRAM_DATA u32 gRtLoopCount = 0; // debug ROM: main loop iterations (PlayTimeCounter_Update runs once per loop)
 bool8 RtLc_ProcessPlayerFieldInput(struct FieldInput *input)
 {
     if (gRtDebugEnabled && RtDebug_FieldInput())
@@ -331,4 +332,33 @@ u8 RtLc_GetNumberOfRelearnableMoves(struct Pokemon *mon)
 {
     u16 moves[RTLC_RELEARN_MAX + 8];
     return RtLc_GetMoveRelearnerMoves(mon, moves);
+}
+
+// debug ROM only (tools/lc/patch.py --debug): the game's PlayTimeCounter_Update, also counting main loops
+extern u8 sPlayTimeCounterState;
+void PlayTimeCounter_SetToMax(void);
+void RtLc_PlayTimeCounter_Update(void)
+{
+    gRtLoopCount++;
+    if (sPlayTimeCounterState == 1)
+    {
+        gSaveBlock2Ptr->playTimeVBlanks++;
+        if (gSaveBlock2Ptr->playTimeVBlanks > 59)
+        {
+            gSaveBlock2Ptr->playTimeVBlanks = 0;
+            gSaveBlock2Ptr->playTimeSeconds++;
+            if (gSaveBlock2Ptr->playTimeSeconds > 59)
+            {
+                gSaveBlock2Ptr->playTimeSeconds = 0;
+                gSaveBlock2Ptr->playTimeMinutes++;
+                if (gSaveBlock2Ptr->playTimeMinutes > 59)
+                {
+                    gSaveBlock2Ptr->playTimeMinutes = 0;
+                    gSaveBlock2Ptr->playTimeHours++;
+                    if (gSaveBlock2Ptr->playTimeHours > 999)
+                        PlayTimeCounter_SetToMax();
+                }
+            }
+        }
+    }
 }
