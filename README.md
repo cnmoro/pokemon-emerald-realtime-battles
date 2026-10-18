@@ -40,7 +40,7 @@ Tudo o que a versão Emerald tem e que faz sentido em Kanto foi portado:
 - **Itens segurados em tempo real:** um "turno" = 2,5 s. Leftovers recupera 1/16 do HP por turno; berries e ervas reagem na hora; Leppa recarrega os golpes; Focus Band avisa quando segura.
 - **Golpes que funcionam num estado:** dormindo, **Snore** e **Sleep Talk** funcionam; congelado, **Flame Wheel** e **Sacred Fire** descongelam.
 - **IA** com nível por classe de treinador: escolhe alvo e golpe, mantém distância, desvia, contorna obstáculos e usa itens (Potions, X Items…).
-- **Sprites animados** (andar, parado, ataque, disparo, dano, dormir, carregar) em 8 direções, com paletas shiny; HUD, menu de pausa (LUTAR / BOLSA / POKéMON / FUGIR), bolsa, troca de Pokémon e mensagens em tempo real.
+- **Sprites animados** (andar, parado, ataque, disparo, dano, dormir, carregar) em 8 direções, com paletas shiny; HUD compacto (os dois Pokémon na barra de cima, só os golpes embaixo), menu de pausa (LUTAR / BOLSA / POKéMON / FUGIR), bolsa, troca de Pokémon e mensagens em tempo real.
 - **Captura mais fácil:** chance da fórmula original +10%, mínimo de 2% por lançamento, e **+1%** a cada bola que acerta e o Pokémon escapa na mesma batalha. A bola faz uma leve curva em direção ao alvo. **POKé BALL infinita:** sempre sobra pelo menos uma POKé BALL comum, que não é gasta.
 - **Tempo para capturar:** selvagens só fogem com Teleport/Roar/Whirlwind depois de 8 s, e os lendários errantes fogem depois de ~8–10 s.
 - **Painel de EXP no fim da batalha**, com as barras enchendo e as subidas de nível; segurar **A** acelera o desfecho.
