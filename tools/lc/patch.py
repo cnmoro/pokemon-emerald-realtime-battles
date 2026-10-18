@@ -111,6 +111,10 @@ def main():
                          tramps + 32 * 1, bytes.fromhex('f0b55746 4e464546'))
     hook_with_trampoline(rom, v['ToggleFieldMoveDescriptionWindow'], syms['RtLc_ToggleFieldMoveDescriptionWindow'], 8,
                          tramps + 32 * 2, bytes.fromhex('30b585b0 0006000e'))
+    # level-up moves + the family's egg moves
+    hook_with_trampoline(rom, v['GetMoveRelearnerMoves'], syms['RtLc_GetMoveRelearnerMoves'], 8,
+                         tramps + 32 * 3, bytes.fromhex('f0b55746 4e464546'))
+    hook(rom, v['GetNumberOfRelearnableMoves'], syms['RtLc_GetNumberOfRelearnableMoves'])
     # ... and the relearner goes back to the party menu when it was opened from there
     f = v['MoveRelearnerStateMachine'] & 0x1FFFFFF
     lits = [i for i in range(f, f + 0x600, 4) if struct.unpack_from('<I', rom, i)[0] == (v['CB2_ReturnToField'] | 1)]

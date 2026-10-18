@@ -244,3 +244,81 @@ void RtLc_ToggleFieldMoveDescriptionWindow(u8 action)
 {
     TRAMP(TRAMP_FIELD_MOVE_DESC, void (*)(u8))(action == RTLC_OPTION_MOVES ? 0 : action);
 }
+
+// --- MOVES / move relearner: the egg moves of the family's base form come after the level-up moves --------
+#include "constants/moves.h"
+#define RTLC_RELEARN_MAX 24 // the relearner's list holds 25 rows, one of them CANCEL
+extern const u16 gEggMoves[];
+#define RTLC_EGG_MOVES_SPECIES_OFFSET 20000
+// FireRed 1.0's evolution table: 5 entries of 8 bytes per species, 412 species
+struct RtLcEvolution { u16 method, param, targetSpecies, unused; };
+extern const struct RtLcEvolution gEvolutionTable[][5];
+#define RTLC_NUM_SPECIES 412
+#define RTLC_EGG_MOVES_COUNT (0x8E6 / 2)
+enum { TRAMP_RELEARNER_MOVES = 3 };
+
+static u16 RtLc_FamilyBaseSpecies(u16 species)
+{
+    s32 guard, i, j;
+    for (guard = 0; guard < 3; guard++)
+    {
+        bool8 found = FALSE;
+        for (i = 1; i < RTLC_NUM_SPECIES && !found; i++)
+            for (j = 0; j < 5; j++)
+                if (gEvolutionTable[i][j].method && gEvolutionTable[i][j].targetSpecies == species)
+                {
+                    species = i;
+                    found = TRUE;
+                    break;
+                }
+        if (!found)
+            break;
+    }
+    return species;
+}
+
+static void RtLc_AddMove(u16 *moves, u8 *n, const u16 *known, u16 move)
+{
+    s32 j;
+    if (move == MOVE_NONE || move >= MOVES_COUNT || *n >= RTLC_RELEARN_MAX)
+        return;
+    for (j = 0; j < MAX_MON_MOVES; j++)
+        if (known[j] == move)
+            return;
+    for (j = 0; j < *n; j++)
+        if (moves[j] == move)
+            return;
+    moves[(*n)++] = move;
+}
+
+u8 RtLc_GetMoveRelearnerMoves(struct Pokemon *mon, u16 *moves)
+{
+    u16 known[MAX_MON_MOVES];
+    u16 species = GetMonData(mon, MON_DATA_SPECIES_OR_EGG, NULL);
+    u8 n;
+    s32 i;
+    if (species == SPECIES_EGG || species == SPECIES_NONE)
+        return 0;
+    n = TRAMP(TRAMP_RELEARNER_MOVES, u8 (*)(struct Pokemon *, u16 *))(mon, moves);
+    if (n > RTLC_RELEARN_MAX)
+        n = RTLC_RELEARN_MAX;
+    for (i = 0; i < MAX_MON_MOVES; i++)
+        known[i] = GetMonData(mon, MON_DATA_MOVE1 + i, NULL);
+    species = RtLc_FamilyBaseSpecies(species);
+    for (i = 0; i < RTLC_EGG_MOVES_COUNT; i++)
+    {
+        if (gEggMoves[i] == species + RTLC_EGG_MOVES_SPECIES_OFFSET)
+        {
+            for (i++; i < RTLC_EGG_MOVES_COUNT && gEggMoves[i] < RTLC_EGG_MOVES_SPECIES_OFFSET; i++)
+                RtLc_AddMove(moves, &n, known, gEggMoves[i]);
+            break;
+        }
+    }
+    return n;
+}
+
+u8 RtLc_GetNumberOfRelearnableMoves(struct Pokemon *mon)
+{
+    u16 moves[RTLC_RELEARN_MAX + 8];
+    return RtLc_GetMoveRelearnerMoves(mon, moves);
+}

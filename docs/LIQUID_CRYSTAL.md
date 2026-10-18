@@ -11,7 +11,7 @@ O **Pokémon Liquid Crystal** (beta 3.3) é um hack binário do FireRed 1.0 (BPR
 - **Pokémon de Sinnoh:** os 25 que o Liquid Crystal coloca nos espaços vazios (Turtwig … Bastiodon) têm sprites animados próprios do SpriteCollab, com paleta shiny derivada das paletas do próprio jogo.
 - Menu **OPTION** com DIFFICULTY, AUTO AIM, EXP SHARE, EXP BONUS e BATTLE SPEED (a linha BUTTON MODE some: o Liquid Crystal sempre usa L/R como botões de página, e no tempo real L/R são golpes).
 - Tela de resumo com o **cooldown** de cada golpe em segundos no lugar do PP.
-- **MOVES no menu da equipe:** abre o Move Relearner do próprio jogo para o Pokémon escolhido (golpes de nível até o nível atual) e volta para a equipe ao sair.
+- **MOVES no menu da equipe:** abre o Move Relearner do próprio jogo para o Pokémon escolhido (golpes de nível até o nível atual e os egg moves da forma básica da família; até 24 golpes) e volta para a equipe ao sair.
 - **Centro Pokémon instantâneo:** falar com a enfermeira cura na hora, sem conversa e sem a animação das Pokébolas.
 - Captura mais fácil, POKé BALL infinita, painel de EXP, Leftovers e itens em tempo real, Snore/Sleep Talk, equilíbrio corpo a corpo × distância, velocidade da batalha — tudo como no FireRed.
 - O sistema de dia/noite do Liquid Crystal é pausado durante a batalha (senão os sprites e o HUD ficariam escurecidos) e volta ao sair.
