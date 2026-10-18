@@ -65,6 +65,7 @@ Todas as batalhas viram ação: selvagens, treinadores, líderes, batalhas dupla
 - **IA** com nível de habilidade por classe de treinador: escolhe alvos e golpes, mantém distância ideal, desvia de projéteis, contorna obstáculos (pathfinding em grade) e usa itens (Potions, X Items…).
 - **Sprites animados** de todos os 386 Pokémon (andar, parado, ataque, disparo, dano, dormir, carregar), em 8 direções, com paletas shiny.
 - **HUD e menus em tempo real**: barras de HP, barras de cooldown, menu de pausa (LUTAR / BOLSA / POKéMON / FUGIR), bolsa, troca de Pokémon, mensagens.
+- **HUD compacto (32 px)**: na barra de cima, o seu Pokémon à esquerda (nome, HP e números ou status) e o rival à direita (nome, nível ou status, HP; em batalha de treinador, marquinhas sob a barra mostram o time dele: vermelho = ainda luta, escuro = desmaiado); na de baixo, só os golpes com as recargas.
 
 ## Prints
 
