@@ -601,11 +601,12 @@ static s32 FoeSpeed(struct RtActor *a, s32 sp)
 // Beams (Ice Beam, Psybeam, Aurora Beam, Thunderbolt...) used to reach their full length almost at once.
 // Their tip now travels like a fast shot (slower for foes, by difficulty) and the beam holds a little
 // after that, so a beam can be seen coming and sidestepped.
-#define BEAM_TIP_SPEED 72 // px/frame * 16 (4.5 px per frame at 100%)
+#define BEAM_TIP_SPEED 40 // px/frame * 16 (2.5 px per frame at 100%)
 static s32 BeamTipSpeed(struct RtActor *a)
 {
     return FoeSpeed(a, BEAM_TIP_SPEED);
 }
+#define WAVE_SPEED_PCT 70
 static u16 BeamFrames(struct RtActor *a, const struct RtMoveDef *d)
 {
     s32 sp = BeamTipSpeed(a);
@@ -3090,7 +3091,8 @@ static void ExecuteMove(struct RtActor *a)
         p = NewProj(a, PK_WAVE, move);
         if (p)
         {
-            s32 sp = FoeSpeed(a, d->speed ? d->speed : 40);
+            // waves (Psywave, Supersonic, Hyper Voice...) travel at 70% of their table speed
+            s32 sp = FoeSpeed(a, (d->speed ? d->speed : 40) * WAVE_SPEED_PCT / 100);
             p->angle = a->act.angle;
             p->x = a->x + RtCos(p->angle) * (a->radius + 6);
             p->y = a->y + RtSin(p->angle) * (a->radius + 6) / 2;
