@@ -245,7 +245,7 @@ void RtLc_ToggleFieldMoveDescriptionWindow(u8 action)
     TRAMP(TRAMP_FIELD_MOVE_DESC, void (*)(u8))(action == RTLC_OPTION_MOVES ? 0 : action);
 }
 
-// --- MOVES / move relearner: the egg moves of the family's base form come after the level-up moves --------
+// --- MOVES / move relearner: after the level-up moves, the egg moves of the POKeMON and its earlier forms ---
 #include "constants/moves.h"
 #define RTLC_RELEARN_MAX 24 // the relearner's list holds 25 rows, one of them CANCEL
 extern const u16 gEggMoves[];
@@ -256,26 +256,6 @@ extern const struct RtLcEvolution gEvolutionTable[][5];
 #define RTLC_NUM_SPECIES 412
 #define RTLC_EGG_MOVES_COUNT (0x8E6 / 2)
 enum { TRAMP_RELEARNER_MOVES = 3 };
-
-static u16 RtLc_FamilyBaseSpecies(u16 species)
-{
-    s32 guard, i, j;
-    for (guard = 0; guard < 3; guard++)
-    {
-        bool8 found = FALSE;
-        for (i = 1; i < RTLC_NUM_SPECIES && !found; i++)
-            for (j = 0; j < 5; j++)
-                if (gEvolutionTable[i][j].method && gEvolutionTable[i][j].targetSpecies == species)
-                {
-                    species = i;
-                    found = TRUE;
-                    break;
-                }
-        if (!found)
-            break;
-    }
-    return species;
-}
 
 static void RtLc_AddMove(u16 *moves, u8 *n, const u16 *known, u16 move)
 {
@@ -291,6 +271,31 @@ static void RtLc_AddMove(u16 *moves, u8 *n, const u16 *known, u16 move)
     moves[(*n)++] = move;
 }
 
+static u16 RtLc_PreEvolution(u16 species)
+{
+    s32 i, j;
+    for (i = 1; i < RTLC_NUM_SPECIES; i++)
+        for (j = 0; j < 5; j++)
+            if (gEvolutionTable[i][j].method && gEvolutionTable[i][j].targetSpecies == species)
+                return i;
+    return SPECIES_NONE;
+}
+
+static void RtLc_AddEggMoves(u16 *moves, u8 *n, const u16 *known, u16 species)
+{
+    s32 i;
+    for (i = 0; i < RTLC_EGG_MOVES_COUNT; i++)
+    {
+        if (gEggMoves[i] == species + RTLC_EGG_MOVES_SPECIES_OFFSET)
+        {
+            for (i++; i < RTLC_EGG_MOVES_COUNT && gEggMoves[i] < RTLC_EGG_MOVES_SPECIES_OFFSET; i++)
+                RtLc_AddMove(moves, n, known, gEggMoves[i]);
+            return;
+        }
+    }
+}
+
+
 u8 RtLc_GetMoveRelearnerMoves(struct Pokemon *mon, u16 *moves)
 {
     u16 known[MAX_MON_MOVES];
@@ -304,17 +309,19 @@ u8 RtLc_GetMoveRelearnerMoves(struct Pokemon *mon, u16 *moves)
         n = RTLC_RELEARN_MAX;
     for (i = 0; i < MAX_MON_MOVES; i++)
         known[i] = GetMonData(mon, MON_DATA_MOVE1 + i, NULL);
-    species = RtLc_FamilyBaseSpecies(species);
-    // Volt Tackle is not in the egg move table: Pichu hatched from a parent holding a Light Ball gets it
-    if (species == SPECIES_PICHU)
-        RtLc_AddMove(moves, &n, known, MOVE_VOLT_TACKLE);
-    for (i = 0; i < RTLC_EGG_MOVES_COUNT; i++)
     {
-        if (gEggMoves[i] == species + RTLC_EGG_MOVES_SPECIES_OFFSET)
+        // egg moves of the POKeMON and of every earlier form of its line, first form first
+        u16 line[4];
+        s32 len = 0, k;
+        line[len++] = species;
+        while (len < 4 && (line[len] = RtLc_PreEvolution(line[len - 1])) != SPECIES_NONE)
+            len++;
+        for (k = len - 1; k >= 0; k--)
         {
-            for (i++; i < RTLC_EGG_MOVES_COUNT && gEggMoves[i] < RTLC_EGG_MOVES_SPECIES_OFFSET; i++)
-                RtLc_AddMove(moves, &n, known, gEggMoves[i]);
-            break;
+            // Volt Tackle is not in the egg move table: Pichu hatched from a parent holding a Light Ball gets it
+            if (line[k] == SPECIES_PICHU)
+                RtLc_AddMove(moves, &n, known, MOVE_VOLT_TACKLE);
+            RtLc_AddEggMoves(moves, &n, known, line[k]);
         }
     }
     return n;
