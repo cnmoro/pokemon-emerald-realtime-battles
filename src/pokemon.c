@@ -5797,6 +5797,9 @@ u8 GetMoveRelearnerMoves(struct Pokemon *mon, u16 *moves)
     numEgg = GetEggMovesOfSpecies(GetFamilyBaseSpecies(species), eggMoves);
     for (i = 0; i < numEgg; i++)
         AddRelearnableMove(moves, &numMoves, learnedMoves, eggMoves[i]);
+    // Volt Tackle is not in the egg move table: Pichu hatched from a parent holding a Light Ball gets it
+    if (GetFamilyBaseSpecies(species) == SPECIES_PICHU)
+        AddRelearnableMove(moves, &numMoves, learnedMoves, MOVE_VOLT_TACKLE);
     return numMoves;
 }
 
