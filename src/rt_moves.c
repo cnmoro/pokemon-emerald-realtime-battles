@@ -2658,6 +2658,7 @@ static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot)
     }
     a->act.sx = a->x;
     a->act.sy = a->y;
+    a->act.aimBase = a->act.angle;
     // melee with the target a little out of reach: dash up to it first
     if (d->pattern == RTP_MELEE && tid < RT_MAX_ACTORS && !a->trap && !a->ingrain)
     {
@@ -3226,7 +3227,15 @@ static void ExecuteMove(struct RtActor *a)
 }
 
 // steering helper during channelled moves (player input / AI target tracking)
+// Turns a channelled move (beam, stream) toward the stick / the target by up to `rate` per frame,
+// but never more than maxDev (256 = full turn) away from the direction it was cast in.
+static void SteerChannelLimited(struct RtActor *a, u8 rate, u8 maxDev);
 static void SteerChannel(struct RtActor *a, u8 rate)
+{
+    SteerChannelLimited(a, rate, 128);
+}
+
+static void SteerChannelLimited(struct RtActor *a, u8 rate, u8 maxDev)
 {
     u8 want = a->act.angle;
     if (a->id == gRt->playerLead && a->side == RT_SIDE_PLAYER && !gRt->isSafari)
@@ -3242,8 +3251,14 @@ static void SteerChannel(struct RtActor *a, u8 rate)
     }
     {
         s8 diff = (s8)(want - a->act.angle);
+        s8 dev;
         if (diff > rate) diff = rate;
         if (diff < -rate) diff = -rate;
+        dev = (s8)(a->act.angle + diff - a->act.aimBase);
+        if (maxDev < 128 && dev > (s8)maxDev)
+            diff -= dev - maxDev;
+        else if (maxDev < 128 && dev < -(s8)maxDev)
+            diff += -maxDev - dev;
         a->act.angle += diff;
         RtActor_SetFacingFromAngle(a, a->act.angle);
     }
@@ -3474,8 +3489,9 @@ void RtMove_UpdateCast(struct RtActor *a)
         case RTP_STREAM:
             {
                 u8 rate = d->aux ? d->aux : 3;
+                // streams can be turned a little (about 20 degrees each way), not swept onto the target
                 if (d->flags & RTMF_ROOT)
-                    SteerChannel(a, 2);
+                    SteerChannelLimited(a, 1, 14);
                 RtVfx_StreamTick(a, a->act.move, a->act.timer);
                 if ((a->act.timer % rate) == 0)
                 {
@@ -3507,8 +3523,9 @@ void RtMove_UpdateCast(struct RtActor *a)
             }
             break;
         case RTP_BEAM:
-            // the player can sweep its beam; a foe's beam keeps the direction it was fired in
-            SteerChannel(a, a->side == RT_SIDE_PLAYER ? 1 : 0);
+            // the player can nudge its beam (slowly, about 17 degrees each way); a foe's beam keeps the
+            // direction it was fired in
+            SteerChannelLimited(a, (a->side == RT_SIDE_PLAYER && (a->act.timer & 1)) ? 1 : 0, 12);
             if (a->act.timer >= BeamFrames(a, d))
             {
                 a->act.phase = 2;
