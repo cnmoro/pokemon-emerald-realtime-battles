@@ -115,6 +115,11 @@ def main():
     hook_with_trampoline(rom, v['GetMoveRelearnerMoves'], syms['RtLc_GetMoveRelearnerMoves'], 8,
                          tramps + 32 * 3, bytes.fromhex('f0b55746 4e464546'))
     hook(rom, v['GetNumberOfRelearnableMoves'], syms['RtLc_GetNumberOfRelearnableMoves'])
+    # HMs (and TMs) of field moves work from the bag
+    hook(rom, v['ScrCmd_checkpartymove'], syms['RtLc_ScrCmd_checkpartymove'])
+    hook(rom, v['PartyHasMonWithSurf'], syms['RtLc_PartyHasMonWithSurf'])
+    hook(rom, v['SetDefaultFlashLevel'], syms['RtLc_SetDefaultFlashLevel'])
+    hook(rom, v['IsMoveHm'], syms['RtLc_IsMoveHm'])
     # ... and the relearner goes back to the party menu when it was opened from there
     f = v['MoveRelearnerStateMachine'] & 0x1FFFFFF
     lits = [i for i in range(f, f + 0x600, 4) if struct.unpack_from('<I', rom, i)[0] == (v['CB2_ReturnToField'] | 1)]

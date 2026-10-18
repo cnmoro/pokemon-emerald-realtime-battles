@@ -12,11 +12,12 @@ O **Pokémon Liquid Crystal** (beta 3.3) é um hack binário do FireRed 1.0 (BPR
 - Menu **OPTION** com DIFFICULTY, AUTO AIM, EXP SHARE, EXP BONUS e BATTLE SPEED (a linha BUTTON MODE some: o Liquid Crystal sempre usa L/R como botões de página, e no tempo real L/R são golpes).
 - Tela de resumo com o **cooldown** de cada golpe em segundos no lugar do PP.
 - **MOVES no menu da equipe:** abre o Move Relearner do próprio jogo para o Pokémon escolhido (golpes de nível até o nível atual e os egg moves da forma básica da família; até 24 golpes) e volta para a equipe ao sair.
+- **HMs pela bolsa:** basta ter a HM na bolsa (e a insígnia que o jogo pede para o golpe). Cut, Surf, Strength, Rock Smash, Waterfall, Dive etc. funcionam sem nenhum Pokémon saber o golpe (o primeiro Pokémon apto da equipe faz a animação); FLASH e STRENGTH aparecem no menu de qualquer Pokémon; as cavernas escuras já se iluminam ao entrar se a HM05 estiver na bolsa (com a primeira insígnia); e golpes de HM podem ser esquecidos como qualquer outro. O Fly segue o sistema do próprio Liquid Crystal.
 - **Centro Pokémon instantâneo:** falar com a enfermeira cura na hora, sem conversa e sem a animação das Pokébolas.
 - Captura mais fácil, POKé BALL infinita, painel de EXP, Leftovers e itens em tempo real, Snore/Sleep Talk, equilíbrio corpo a corpo × distância, velocidade da batalha — tudo como no FireRed.
 - O sistema de dia/noite do Liquid Crystal é pausado durante a batalha (senão os sprites e o HUD ficariam escurecidos) e volta ao sair.
 
-Não fazem parte desta versão (o Liquid Crystal tem os seus próprios): a redistribuição da Pokédex, os lendários do mod, as evoluções sem troca e as lojas de itens de evolução do FireRed e HMs pela bolsa.
+Não fazem parte desta versão (o Liquid Crystal tem os seus próprios): a redistribuição da Pokédex, os lendários do mod e as evoluções sem troca e as lojas de itens de evolução do FireRed.
 
 ## Como gerar a ROM
 

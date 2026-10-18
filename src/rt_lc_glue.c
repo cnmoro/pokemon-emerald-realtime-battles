@@ -160,10 +160,12 @@ bool8 RtLc_ProcessPlayerFieldInput(struct FieldInput *input)
 // field moves); tools/lc/patch.py fills the first entries from the ROM and points the party menu at it.
 #include "event_data.h"
 #include "party_menu.h"
+#include "constants/moves.h"
 #include "sound.h"
 #include "constants/songs.h"
 
 struct RtLcCursorOption { const u8 *text; TaskFunc func; };
+static bool8 RtLc_PlayerHasMachineFor(u16 move);
 struct RtLcPartyMenuInternal
 {
     TaskFunc task;
@@ -227,6 +229,23 @@ void RtLc_SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
     s32 i, at;
     TRAMP(TRAMP_PARTY_ACTIONS, void (*)(struct Pokemon *, u8))(mons, slotId);
     m = sPartyMenuInternal;
+    // FLASH and STRENGTH from the bag on every POKeMON (the field moves are used from this menu)
+    {
+        static const u16 sMenuMoves[] = {MOVE_FLASH, MOVE_STRENGTH};
+        static const u8 sMenuOptions[] = {18 + 0, 18 + 3}; // CURSOR_OPTION_FIELD_MOVES + FIELD_MOVE_FLASH / STRENGTH
+        s32 k;
+        for (k = 0; k < 2; k++)
+        {
+            if (m->numActions >= 6 || !RtLc_PlayerHasMachineFor(sMenuMoves[k]) || MonKnowsMove(&mons[slotId], sMenuMoves[k]))
+                continue;
+            for (at = 1; at < m->numActions && m->actions[at] >= 18; at++)
+                ;
+            for (i = m->numActions; i > at; i--)
+                m->actions[i] = m->actions[i - 1];
+            m->actions[at] = sMenuOptions[k];
+            m->numActions++;
+        }
+    }
     if (m->numActions >= 7 || GetNumberOfRelearnableMoves(&mons[slotId]) == 0)
         return;
     for (at = 1; at < m->numActions; at++)
@@ -361,4 +380,109 @@ void RtLc_PlayTimeCounter_Update(void)
             }
         }
     }
+}
+
+// --- HMs from the bag (as in the FireRed / Emerald builds) --------------------------------------------
+// Owning the HM (or the TM) of a field move is enough: the first POKeMON of the party uses it; the
+// Liquid Crystal badge checks stay where they are. FLY is still used from a POKeMON that knows it.
+#include "event_data.h"
+#include "field_player_avatar.h"
+#include "item.h"
+#include "script.h"
+#include "constants/items.h"
+#include "constants/flags.h"
+extern const u16 sTMHMMoves[];
+#define RTLC_NUM_MACHINES 58 // 50 TMs + 8 HMs
+
+static bool8 RtLc_PlayerHasMachineFor(u16 move)
+{
+    s32 i;
+    if (move == MOVE_FLY || move == MOVE_NONE)
+        return FALSE;
+    for (i = 0; i < RTLC_NUM_MACHINES; i++)
+        if (sTMHMMoves[i] == move && CheckBagHasItem(ITEM_TM01 + i, 1))
+            return TRUE;
+    return FALSE;
+}
+
+// the POKeMON shown using a move nobody knows: the first one that isn't an egg
+static u8 RtLc_FirstUsablePartyMon(void)
+{
+    u8 i;
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
+            break;
+        if (!GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG, NULL))
+            return i;
+    }
+    return PARTY_SIZE;
+}
+
+bool8 RtLc_ScrCmd_checkpartymove(struct ScriptContext *ctx)
+{
+    u8 i;
+    u16 moveId = ScriptReadHalfword(ctx);
+
+    gSpecialVar_Result = PARTY_SIZE;
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        u16 species = GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL);
+        if (!species)
+            break;
+        if (!GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG, NULL) && MonKnowsMove(&gPlayerParty[i], moveId) == TRUE)
+        {
+            gSpecialVar_Result = i;
+            gSpecialVar_0x8004 = species;
+            break;
+        }
+    }
+    if (gSpecialVar_Result == PARTY_SIZE && RtLc_PlayerHasMachineFor(moveId))
+    {
+        i = RtLc_FirstUsablePartyMon();
+        if (i < PARTY_SIZE)
+        {
+            gSpecialVar_Result = i;
+            gSpecialVar_0x8004 = GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL);
+        }
+    }
+    return FALSE;
+}
+
+bool8 RtLc_PartyHasMonWithSurf(void)
+{
+    u8 i;
+    if (!TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_SURFING))
+    {
+        for (i = 0; i < PARTY_SIZE; i++)
+        {
+            if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
+                break;
+            if (MonKnowsMove(&gPlayerParty[i], MOVE_SURF))
+                return TRUE;
+        }
+        if (RtLc_PlayerHasMachineFor(MOVE_SURF) && RtLc_FirstUsablePartyMon() < PARTY_SIZE)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+// dark caves light up by themselves once FLASH is in the bag (with the badge that allows FLASH: the first)
+extern const s32 gMaxFlashLevel;
+void RtLc_SetDefaultFlashLevel(void)
+{
+    if (gMapHeader.cave && !FlagGet(FLAG_SYS_FLASH_ACTIVE) && FlagGet(FLAG_BADGE01_GET) && RtLc_PlayerHasMachineFor(MOVE_FLASH))
+        FlagSet(FLAG_SYS_FLASH_ACTIVE);
+    if (!gMapHeader.cave)
+        gSaveBlock1Ptr->flashLevel = 0;
+    else if (FlagGet(FLAG_SYS_FLASH_ACTIVE))
+        gSaveBlock1Ptr->flashLevel = 0;
+    else
+        gSaveBlock1Ptr->flashLevel = gMaxFlashLevel;
+}
+
+// HM moves can be forgotten like any other move (they are used from the bag)
+bool8 RtLc_IsMoveHm(u16 move)
+{
+    return FALSE;
 }
