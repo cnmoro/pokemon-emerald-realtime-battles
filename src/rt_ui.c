@@ -148,6 +148,7 @@ static const u8 sText_HpFmt[] = _("{STR_VAR_1}/{STR_VAR_2}");
 
 static bool8 CanSwitchTo(u8 idx, bool8 msg);
 static EWRAM_DATA bool8 sTrainerPicShown = FALSE;
+static EWRAM_DATA u16 sCdBarDrawn[MAX_MON_MOVES] = {0}; // fill | color << 8 of the cooldown bar tiles
 static EWRAM_DATA bool8 sMsgActive = FALSE;
 static EWRAM_DATA u8 sMsgBuf[200] = {0};
 static EWRAM_DATA bool8 sBatonPending = FALSE;
@@ -250,6 +251,7 @@ void RtUi_Init(void)
     sReticleX = TO_FX(ARENA_W / 2);
     sReticleY = TO_FX(ARENA_H / 2);
     memset(sMoveHudState, 0xFF, sizeof(sMoveHudState));
+    memset(sCdBarDrawn, 0xFF, sizeof(sCdBarDrawn));
     {
         extern void RtAi_ResetTrainerItems(void);
         RtAi_ResetTrainerItems();
@@ -883,8 +885,12 @@ void RtUi_DrawObjs(void)
             if (p->cd[i] > p->cdMax[i])
                 fill = 0;
             color = st == 1 ? 7 : (st == 3 ? 5 : 11);
-            if ((gRt->frame & 3) == i)
+            // one bar per frame, and only when it changed
+            if ((gRt->frame & 3) == i && sCdBarDrawn[i] != (fill | (color << 8)))
+            {
+                sCdBarDrawn[i] = fill | (color << 8);
                 DrawBar(UI_TILE_CD0 + i * 4, 4, 30, fill, color, 2);
+            }
             PutObj(UI_TILE_CD0 + i * 4, 1, 1, i * 60 + 16, HUD_CD_BAR_Y, 4, 0);
         }
     }

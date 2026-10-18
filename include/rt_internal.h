@@ -724,6 +724,7 @@ struct RtBattle
     s32 lerpActX[RT_MAX_ACTORS], lerpActY[RT_MAX_ACTORS];
     s32 lerpProjX[RT_MAX_PROJ], lerpProjY[RT_MAX_PROJ];
     u8 lerpT;            // 100 = draw the current positions
+    u16 lerpQ8;          // lerpT as 0..256
 };
 
 // battle pace (OPTION menu, BATTLE SPEED): percentage of frames that advance the fight

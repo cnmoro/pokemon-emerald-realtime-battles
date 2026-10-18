@@ -617,6 +617,8 @@ static EWRAM_DATA s32 sLerpSaveActY[RT_MAX_ACTORS] = {0};
 static EWRAM_DATA s32 sLerpSaveProjX[RT_MAX_PROJ] = {0};
 static EWRAM_DATA s32 sLerpSaveProjY[RT_MAX_PROJ] = {0};
 static EWRAM_DATA bool8 sLerpOn = FALSE;
+static EWRAM_DATA u8 sLerpProjList[RT_MAX_PROJ] = {0}; // shots moved for the drawing
+static EWRAM_DATA u8 sLerpProjN = 0;
 
 static void Rt_LerpSnapshot(void)
 {
@@ -633,21 +635,22 @@ static void Rt_LerpSnapshot(void)
     }
 }
 
-static inline s32 LerpCoord(s32 from, s32 to, u32 t)
+// q: 0..256 of the way from `from` to `to`
+static inline s32 LerpCoord(s32 from, s32 to, s32 q)
 {
     s32 d = to - from;
     // a jump (sent out, teleported, a new shot in a reused slot) is drawn where it is
     if (d > TO_FX(24) || d < -TO_FX(24))
         return to;
-    return from + d * (s32)t / 100;
+    return from + ((d * q) >> 8);
 }
 
 // swaps the drawn positions in (and back out): only the drawing sees them
 static void Rt_LerpBegin(void)
 {
     s32 i;
-    u32 t = gRt->lerpT;
-    if (t >= 100 || sLerpOn)
+    s32 q = gRt->lerpQ8;
+    if (gRt->lerpT >= 100 || sLerpOn)
         return;
     sLerpOn = TRUE;
     for (i = 0; i < RT_MAX_ACTORS; i++)
@@ -657,19 +660,21 @@ static void Rt_LerpBegin(void)
         sLerpSaveActY[i] = a->y;
         if (a->active)
         {
-            a->x = LerpCoord(gRt->lerpActX[i], a->x, t);
-            a->y = LerpCoord(gRt->lerpActY[i], a->y, t);
+            a->x = LerpCoord(gRt->lerpActX[i], a->x, q);
+            a->y = LerpCoord(gRt->lerpActY[i], a->y, q);
         }
     }
+    sLerpProjN = 0;
     for (i = 0; i < RT_MAX_PROJ; i++)
     {
         struct RtProj *p = &gRt->proj[i];
-        sLerpSaveProjX[i] = p->x;
-        sLerpSaveProjY[i] = p->y;
         if (p->kind != PK_NONE && p->age > 1)
         {
-            p->x = LerpCoord(gRt->lerpProjX[i], p->x, t);
-            p->y = LerpCoord(gRt->lerpProjY[i], p->y, t);
+            sLerpProjList[sLerpProjN++] = i;
+            sLerpSaveProjX[i] = p->x;
+            sLerpSaveProjY[i] = p->y;
+            p->x = LerpCoord(gRt->lerpProjX[i], p->x, q);
+            p->y = LerpCoord(gRt->lerpProjY[i], p->y, q);
         }
     }
 }
@@ -695,10 +700,11 @@ static void Rt_LerpEnd(void)
         gRt->actors[i].x = sLerpSaveActX[i];
         gRt->actors[i].y = sLerpSaveActY[i];
     }
-    for (i = 0; i < RT_MAX_PROJ; i++)
+    for (i = 0; i < sLerpProjN; i++)
     {
-        gRt->proj[i].x = sLerpSaveProjX[i];
-        gRt->proj[i].y = sLerpSaveProjY[i];
+        u8 k = sLerpProjList[i];
+        gRt->proj[k].x = sLerpSaveProjX[k];
+        gRt->proj[k].y = sLerpSaveProjY[k];
     }
 }
 
@@ -776,13 +782,12 @@ static void CB2_RtMain(void)
     // below 100% BATTLE SPEED the fight steps on some frames only: draw (and frame the camera) between
     // the last two steps so the motion stays even
     gRt->lerpT = (gRt->state == RTS_FIGHT && RtBattleSpeedPct() < 100) ? gRt->simAcc : 100;
-    Rt_LerpBegin();
-    Rt_UpdateCamera();
-    Rt_LerpEnd();
-    PROF(3);
+    gRt->lerpQ8 = gRt->lerpT * 256 / 100;
     RtUi_Update();
     PROF(4);
     Rt_LerpBegin();
+    Rt_UpdateCamera();
+    PROF(3);
     Rt_RenderFrame();
     Rt_LerpEnd();
     PROF(5);
