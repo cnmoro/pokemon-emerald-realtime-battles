@@ -1280,6 +1280,28 @@ static bool8 UseItemOn(u16 item, u8 partyIdx)
     }
     if (ExecuteTableBasedItemEffect(mon, item, partyIdx, 0))
     {
+        // confusion and infatuation live on the real-time actor, not in gBattleMons, so the item table
+        // cannot see them: cure them here (Yellow/Red Flute, Persim/Lum Berry, Full Heal, Full Restore...)
+        bool8 curesConfusion = item == ITEM_YELLOW_FLUTE || item == ITEM_PERSIM_BERRY || item == ITEM_LUM_BERRY
+                            || item == ITEM_FULL_HEAL || item == ITEM_FULL_RESTORE || item == ITEM_HEAL_POWDER || item == ITEM_LAVA_COOKIE;
+        if (a && curesConfusion && a->confuse)
+        {
+            a->confuse = 0;
+            RtFx_Burst(FX_PLUS8, FXP_HEAL, a->x, a->y - TO_FX(a->height / 2), 5, 1, 30);
+            PlaySE(SE_USE_ITEM);
+            gRt->hudDirty = TRUE;
+            gBattleResults.numHealingItemsUsed++;
+            return TRUE;
+        }
+        if (a && item == ITEM_RED_FLUTE && a->attract)
+        {
+            a->attract = 0;
+            RtFx_Burst(FX_PLUS8, FXP_HEAL, a->x, a->y - TO_FX(a->height / 2), 5, 1, 30);
+            PlaySE(SE_USE_ITEM);
+            gRt->hudDirty = TRUE;
+            gBattleResults.numHealingItemsUsed++;
+            return TRUE;
+        }
         RtUi_Toast(sText_NoEffect, 60);
         return FALSE;
     }
