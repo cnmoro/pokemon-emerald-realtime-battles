@@ -2599,7 +2599,13 @@ bool8 RtMove_TryStart(struct RtActor *a, u8 slot, u8 angle)
     if (FoeHasPressure(a))
         a->cd[slot] += a->cdMax[slot] / 2;
     if (a->holdEffect == HOLD_EFFECT_QUICK_CLAW && (Random() % 100) < a->holdParam)
+    {
+        static const u8 sText_QuickClaw[] = _("{STR_VAR_1}'s QUICK CLAW readied its next move!");
         a->cd[slot] = a->cd[slot] / 2;
+        NameOf(a, gStringVar1);
+        RtUi_ToastFmt(sText_QuickClaw, 60);
+        RtFx_Burst(FX_PLUS8, FXP_GOLD, a->x, a->y - TO_FX(a->height / 2), 4, 1, 24);
+    }
     if (a->holdEffect == HOLD_EFFECT_CHOICE_BAND && !a->choiceMove)
         a->choiceMove = move;
     if (a->ability == ABILITY_TRUANT)
