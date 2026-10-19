@@ -56,7 +56,7 @@ static struct RtActorX *X(struct RtActor *a)
 void RtKi_InitActor(struct RtActor *a)
 {
     struct RtActorX *x = X(a);
-    x->ki = KI_START;
+    x->ki = KI_START + (a->side == RT_SIDE_PLAYER ? RtRogue_KiStart() : 0);
     x->superTimer = 0;
     x->chargeHold = 0;
     x->kiFlash = 0;
@@ -229,6 +229,7 @@ bool8 RtExt_TrySuper(struct RtActor *a)
 }
 
 // per-frame ki / form upkeep of one actor
+static const u8 sText_Sudden[] = _("SUDDEN DEATH!");
 void RtExt_BuildTick(struct RtActor *a);
 void RtKi_Tick(struct RtActor *a)
 {
@@ -404,6 +405,8 @@ void RtBuild_Load(struct RtActor *a, struct Pokemon *mon)
         struct RtBuildEntry *e = FindEntry(mon, FALSE);
         v = e ? e->p[e->sel & 1] : 0;
     }
+    else if (gRogueMode == 2 && a->side == RT_SIDE_ENEMY && mon >= gEnemyParty && mon < gEnemyParty + PARTY_SIZE)
+        v = gRogueChalBuild[mon - gEnemyParty];
     else
         v = AutoBuild(a);
     x->rune = v & 15;
@@ -415,7 +418,8 @@ void RtBuild_Load(struct RtActor *a, struct Pokemon *mon)
 
 u16 RtKi_RuneGainPct(struct RtActor *a)
 {
-    return (X(a)->rune == RUNE_KI ? 150 : 100) * (a->side == RT_SIDE_PLAYER && RtSave_Get()->meta[0] == BLS_METEOR ? 150 : 100) / 100;
+    return (X(a)->rune == RUNE_KI ? 150 : 100) * (a->side == RT_SIDE_PLAYER && RtSave_Get()->meta[0] == BLS_METEOR ? 150 : 100) / 100
+         * (gRogueMode && a->side == RT_SIDE_PLAYER ? RtRogue_KiPct() : 100) / 100;
 }
 
 // stat multiplier of rune / temporary buff, in percent
@@ -425,6 +429,7 @@ u16 RtExt_StatMul(struct RtActor *a, u8 stat)
 {
     struct RtActorX *x = X(a);
     u16 m = RtExt_BlessStatMul(a, stat);
+    if (gRogueMode) m = m * RtRogue_StatMul(a, stat) / 100;
     bool8 off = stat == STG_ATK || stat == STG_SPA;
     bool8 def = stat == STG_DEF || stat == STG_SPD;
     if (x->rune == RUNE_FURY && off) m = 110;
@@ -441,6 +446,7 @@ u16 RtExt_StatMul(struct RtActor *a, u8 stat)
 u16 RtExt_CdPct(struct RtActor *a)
 {
     u16 p = X(a)->rune == RUNE_FOCUS ? 88 : 100;
+    if (gRogueMode && a->side == RT_SIDE_PLAYER) p = p * RtRogue_CdPct() / 100;
     if (X(a)->buffTimer && X(a)->buffKind == SPELL_FRENZY)
         p = p * 85 / 100;
     return p;
@@ -593,6 +599,14 @@ void RtExt_BuildTick(struct RtActor *a)
 {
     struct RtActorX *x = X(a);
     if (x->spellCd) x->spellCd--;
+    if (gRogueMode && gRt->frame >= 2700 && a->active && a->hp > 0 && a->state == AST_NORMAL)
+    {
+        // sudden death: nothing may stalemate (e.g. a Ghost move against a Normal type)
+        if (gRt->frame == 2700 && a->id == gRt->playerLead)
+            RtUi_Toast(sText_Sudden, 100);
+        if (gRt->frame % 60 == 0)
+            RtActor_Damage(a, a->maxHp / 40 + 1, 255, TRUE);
+    }
     if (gRt->objective && a->side == RT_SIDE_ENEMY && a->id == 2 && gRt->frame == 120)
         RtUi_Toast(sGuardIntro[gRt->objective], 110);
     if (a->side == RT_SIDE_PLAYER && a->id == gRt->playerLead && gRt->frame == 240 && RtSave_Get()->meta[0] && !gRt->objective)
@@ -811,16 +825,27 @@ void RtExt_SetupObjective(void)
                           | BATTLE_TYPE_LINK | BATTLE_TYPE_FRONTIER | BATTLE_TYPE_DOUBLE | BATTLE_TYPE_REGI | BATTLE_TYPE_KYOGRE_GROUDON
                           | BATTLE_TYPE_RAYQUAZA | BATTLE_TYPE_GROUDON | BATTLE_TYPE_KYOGRE | BATTLE_TYPE_WALLY_TUTORIAL))
         return;
+    if (gRogueMode == 2)
+        return;
     b = BiomeOfMap();
+    if (gRogueMode == 1 && gRogueBoss && b == BLS_NONE)
+        b = BLS_FOREST;
     if (b == BLS_NONE)
         return;
-    if (!(gRtDebugEnabled && gRtDebugObjective) && (Random() % 100) >= 14)
+    if (gRogueMode == 1)
+    {
+        if (!gRogueBoss)
+            return;
+    }
+    else if (!(gRtDebugEnabled && gRtDebugObjective) && (Random() % 100) >= 14)
         return;
     sp = GuardianSpecies(b);
     for (i = 0; i < PARTY_SIZE; i++)
         if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) != SPECIES_NONE && GetMonData(&gPlayerParty[i], MON_DATA_LEVEL) > top)
             top = GetMonData(&gPlayerParty[i], MON_DATA_LEVEL);
     lvl = top < 14 ? 14 : (top > 95 ? 100 : top + 4);
+    if (gRogueMode == 1)
+        lvl = top > 97 ? 100 : top + 3;
     if (gRtDebugEnabled && gRtDebugObjective == 2)
         lvl = 5;
     ZeroEnemyPartyMons();
@@ -833,6 +858,12 @@ void RtExt_SetupObjective(void)
 // the guardian is bigger and starts charged up
 void RtExt_GuardianInit(struct RtActor *a)
 {
+    if (gRogueMode && a->side == RT_SIDE_PLAYER)
+    {
+        a->maxHp = a->maxHp * RtRogue_HpPct() / 100;
+        a->hp = a->hp * RtRogue_HpPct() / 100;
+        a->shownHp = a->hp;
+    }
     if (!gRt->objective || a->side != RT_SIDE_ENEMY || a->id != 2)
         return;
     a->maxHp = a->maxHp * 5 / 2;

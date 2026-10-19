@@ -234,6 +234,12 @@ static u8 FindNextUsable(u8 side, u8 from, u8 to)
 
 static void GetOpponentName(u8 *dst, u16 trainerId)
 {
+    if (gRogueMode == 2)
+    {
+        static const u8 sChalName[] = _("CHALLENGER");
+        StringCopy(dst, sChalName);
+        return;
+    }
     if (trainerId == TRAINER_SECRET_BASE)
     {
         dst[0] = EOS;
@@ -332,6 +338,7 @@ static void CB2_RtSetup(void)
         memset(&gBattleResults, 0, sizeof(gBattleResults));
         gLeveledUpInBattle = 0;
         gBattleOutcome = 0;
+        gRogueBattleEntered = TRUE;
         gRt->isTrainer = (gBattleTypeFlags & BATTLE_TYPE_TRAINER) != 0;
         gRt->isDouble = (gBattleTypeFlags & BATTLE_TYPE_DOUBLE) != 0;
         gRt->isSafari = (gBattleTypeFlags & BATTLE_TYPE_SAFARI) != 0;
@@ -1544,6 +1551,8 @@ static void Rt_GiveExpToMon(u8 partyIdx, u32 exp, u16 defeatedSpecies)
 
 void Rt_GiveExpForFaint(struct RtActor *fainted)
 {
+    if (gRogueMode)
+        return;
     u8 participants[PARTY_SIZE];
     u8 nPart = 0, nShare = 0, i;
     u32 base, expEach, shareEach = 0;
@@ -1623,6 +1632,8 @@ void Rt_GiveExpForFaint(struct RtActor *fainted)
 // ---------------------------------------------------------------------------
 bool8 Rt_TryRun(void)
 {
+    if (gRogueMode)
+        return FALSE;
     struct RtActor *p = Rt_PlayerActor();
     struct RtActor *e = &gRt->actors[2];
     u8 chance;

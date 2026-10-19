@@ -913,6 +913,13 @@ enum { RUNE_NONE, RUNE_FURY, RUNE_VAMP, RUNE_THORNS, RUNE_GUARD, RUNE_SWIFT, RUN
 enum { SPELL_NONE, SPELL_BARRIER, SPELL_HEAL, SPELL_PURIFY, SPELL_BLINK, SPELL_FRENZY, SPELL_SURGE, SPELL_COUNT };
 struct RtBuildEntry { u16 key; u8 sel; u8 p[2]; };           // p[]: rune | spell << 4
 struct RtSave { u16 magic; u8 ver; u8 pad; struct RtBuildEntry builds[8]; u8 nextSlot; u8 meta[64]; };
+extern u8 gRogueMode, gRogueBattleEntered, gRogueBoss, gRogueChalBuild[PARTY_SIZE];
+u16 RtRogue_StatMul(struct RtActor *a, u8 stat);
+u16 RtRogue_HpPct(void);
+u16 RtRogue_KiStart(void);
+u16 RtRogue_KiPct(void);
+u16 RtRogue_CdPct(void);
+bool8 RtRogue_FieldInput(void);
 struct RtSave *RtSave_Get(void);
 void RtBuild_Load(struct RtActor *a, struct Pokemon *mon);
 u8 RtBuild_Get(struct Pokemon *mon, u8 preset);
