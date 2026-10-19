@@ -586,6 +586,40 @@ struct RtProp
     s16 z;
 };
 
+// ---------------------------------------------------------------------------
+// Extended mechanics: ki, SUPER form, beam struggle (see rt_ext.c / rt_moves.c)
+// ---------------------------------------------------------------------------
+#define RT_KI_MAX 1000
+#define RT_STR_MAX 600     // beam struggle balance needed to win
+
+struct RtActorX
+{
+    u16 ki;            // 0..RT_KI_MAX
+    u16 superTimer;    // frames of SUPER form left (0 = normal)
+    u16 chargeHold;    // frames SELECT has been held (transformation)
+    u16 buffTimer;     // objective buff frames left
+    u8 buffKind;
+    u8 superKind;      // Deoxys forme: 1 attack, 2 defense, 3 speed
+    u8 build;          // active build preset (0/1)
+    u8 kiFlash;        // HUD: frames to flash the ki bar
+    u8 rune, spell;    // active build (RUNE_* / SPELL_*)
+    u16 spellCd;       // frames until the summoner spell is ready
+    u16 oldGfx;        // gfx index before a form change
+    u8 oldType[2];     // types before a form change
+};
+
+struct RtStruggle
+{
+    u8 on;
+    u8 projA, projB;   // indices into gRt->proj
+    u8 ownA, ownB;     // actor ids
+    s16 bal;           // + = A winning
+    u16 timer;
+    s32 px, py;        // clash point (Q8)
+    u8 pressA, pressB; // presses this frame
+    u8 mashA, mashB;   // smoothed mash rate (HUD)
+};
+
 struct RtBattle
 {
     u8 state;
@@ -725,6 +759,10 @@ struct RtBattle
     s32 lerpProjX[RT_MAX_PROJ], lerpProjY[RT_MAX_PROJ];
     u8 lerpT;            // 100 = draw the current positions
     u16 lerpQ8;          // lerpT as 0..256
+
+    // --- extended mechanics (always at the end) ---
+    struct RtActorX ax[RT_MAX_ACTORS];
+    struct RtStruggle str;
 };
 
 // battle pace (OPTION menu, BATTLE SPEED): percentage of frames that advance the fight
@@ -849,6 +887,20 @@ struct OamData *RtOam_Next(u8 prio);
 void RtOam_Commit(void);
 s16 RtWorldToScreenX(s32 fx);
 s16 RtWorldToScreenY(s32 fx);
+
+// rt_ext.c: ki, SUPER form, beam struggle helpers
+void RtKi_InitActor(struct RtActor *a);
+u16 RtKi_MoveCost(u16 move);
+bool8 RtKi_Spend(struct RtActor *a, u16 cost);
+void RtKi_Gain(struct RtActor *a, u16 amount);
+void RtKi_OnDamage(struct RtActor *a, s32 amount, u8 src);
+void RtKi_Tick(struct RtActor *a);
+bool8 RtKi_CanCast(struct RtActor *a, u16 move);
+u16 RtKi_DashCost(void);
+bool8 RtExt_TrySuper(struct RtActor *a);
+void RtExt_PlayerInput(struct RtActor *a, u16 held, u16 pressed);
+bool8 RtStruggle_Involves(u8 actorId);
+void RtStruggle_Press(u8 actorId);
 
 // rt_ai.c
 void RtAi_Init(struct RtActor *a);

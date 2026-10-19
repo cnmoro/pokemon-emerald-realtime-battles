@@ -165,6 +165,8 @@ static EWRAM_DATA u8 sMoveHudState[MAX_MON_MOVES] = {0};
 #define UI_TILE_ENEMY_BAR1 272
 #define UI_TILE_CD0        280
 #define UI_TILE_ALLY_BAR   296
+#define UI_TILE_KI         300 // 4 tiles: the ki bar (and the beam struggle balance bar while one is going)
+static EWRAM_DATA u16 sKiDrawn = 0;
 
 static void SetPixel(u8 *tiles, u8 widthTiles, s32 x, s32 y, u8 c)
 {
@@ -252,6 +254,7 @@ void RtUi_Init(void)
     sReticleY = TO_FX(ARENA_H / 2);
     memset(sMoveHudState, 0xFF, sizeof(sMoveHudState));
     memset(sCdBarDrawn, 0xFF, sizeof(sCdBarDrawn));
+    sKiDrawn = 0xFFFF;
     {
         extern void RtAi_ResetTrainerItems(void);
         RtAi_ResetTrainerItems();
@@ -851,7 +854,33 @@ void RtUi_DrawObjs(void)
         }
         PutObj(UI_TILE_PLAYER_BAR, 1, 1, HUD_P_BAR_X, HUD_BAR_Y, 4, 0);
         PutObj(UI_TILE_PLAYER_BAR + 4, 1, 1, HUD_P_BAR_X + 32, HUD_BAR_Y, 4, 0);
-        // low hp warning sound
+        // ki bar under the HP bar (or the struggle balance while a beam struggle is on)
+        {
+            struct RtActorX *x = &gRt->ax[p->id];
+            u8 fill, color;
+            u16 key;
+            if (gRt->str.on)
+            {
+                s32 b = gRt->str.bal + RT_STR_MAX; // 0..2*MAX, A = the player's side winning at the right
+                struct RtActor *oa = &gRt->actors[gRt->str.ownA];
+                fill = b * 30 / (RT_STR_MAX * 2);
+                if (oa->side != RT_SIDE_PLAYER)
+                    fill = 30 - fill;
+                color = 5;
+            }
+            else
+            {
+                fill = x->ki * 30 / RT_KI_MAX;
+                color = x->superTimer ? 10 : (x->ki >= 800 && (gRt->frame & 8) ? 2 : 6);
+            }
+            key = fill | (color << 8) | (gRt->str.on << 12);
+            if (sKiDrawn != key)
+            {
+                sKiDrawn = key;
+                DrawBar(UI_TILE_KI, 4, 30, fill, color, 3);
+            }
+            PutObj(UI_TILE_KI, 1, 1, HUD_P_BAR_X, HUD_BAR_Y + 7, 4, 0);
+        }
     }
     // ally floating bar
     if (gRt->isDouble)
