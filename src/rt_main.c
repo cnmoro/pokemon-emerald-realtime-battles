@@ -341,6 +341,7 @@ static void CB2_RtSetup(void)
         gRt->enemyParty = gEnemyParty;
         gBattleEnvironment = BattleSetup_GetEnvironmentId();
         RtBattle_PrepareParties();
+        RtExt_SetupObjective();
         RtArena_Build();
         gMain.state++;
         break;
@@ -860,6 +861,7 @@ static void Rt_UpdateCamera(void)
         gRt->camX += dx / 6 + (dx > 0 ? (dx % 6 != 0) : -(dx % 6 != 0));
         gRt->camY += dy / 6 + (dy > 0 ? (dy % 6 != 0) : -(dy % 6 != 0));
     }
+    RtArena_StreamUpdate();
 }
 
 // ---------------------------------------------------------------------------
@@ -1686,6 +1688,7 @@ void Rt_HandleCaught(void)
 
 void Rt_EndBattle(u8 outcome)
 {
+    RtExt_OnBattleEnd(outcome);
     Rt_StartOutro(outcome);
 }
 

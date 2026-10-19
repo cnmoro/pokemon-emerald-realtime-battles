@@ -6,6 +6,12 @@
 #include "string_util.h"
 #include "pokemon.h"
 #include "pokedex.h"
+#include "battle_setup.h"
+#include "field_player_avatar.h"
+#include "constants/region_map_sections.h"
+#include "constants/battle.h"
+#include "battle.h"
+#include "constants/songs.h"
 #include "constants/pokedex.h"
 #include "random.h"
 #include "sound.h"
@@ -16,6 +22,18 @@
 #include "constants/pokemon.h"
 #include "data/rt/forms.h"
 
+enum { BLS_NONE, BLS_DESERT, BLS_SEA, BLS_METEOR, BLS_SPIRIT, BLS_FOREST, BLS_FROST, BLS_MAGMA, BLS_STONE, BLS_COUNT };
+static const u8 sBlessName[BLS_COUNT][16] = {
+    _("None"), _("Desert Wind"), _("Deep Pressure"), _("Meteor Light"), _("Spirit Tribute"),
+    _("Forest Vigor"), _("Frost Armor"), _("Magma Heart"), _("Stone Skin")
+};
+static const u8 sGuardIntro[BLS_COUNT][34] = {
+    _(""), _("The Desert Spirit rises!"), _("An ancient guardian of the sea!"), _("A child of the meteors descends!"),
+    _("A restless spirit of Mt. Pyre!"), _("The forest elder awakens!"), _("The cave's cold heart wakes!"),
+    _("The mountain's fury erupts!"), _("The titan of the deep caves!")
+};
+static const u8 sText_Blessing[] = _("BLESSING: {STR_VAR_1}");
+static const u8 sText_BlessLeft[] = _("{STR_VAR_1}: {STR_VAR_2} battles left");
 static const u8 sText_NoKi[] = _("Not enough KI!");
 static const u8 sText_SuperUp[] = _("SUPER form!");
 static const u8 sText_SuperEnd[] = _("The power fades...");
@@ -397,14 +415,16 @@ void RtBuild_Load(struct RtActor *a, struct Pokemon *mon)
 
 u16 RtKi_RuneGainPct(struct RtActor *a)
 {
-    return X(a)->rune == RUNE_KI ? 150 : 100;
+    return (X(a)->rune == RUNE_KI ? 150 : 100) * (a->side == RT_SIDE_PLAYER && RtSave_Get()->meta[0] == BLS_METEOR ? 150 : 100) / 100;
 }
 
 // stat multiplier of rune / temporary buff, in percent
+u16 RtExt_BlessStatMul(struct RtActor *a, u8 stat);
+u16 RtExt_BlessDmgTakenPct(struct RtActor *a);
 u16 RtExt_StatMul(struct RtActor *a, u8 stat)
 {
     struct RtActorX *x = X(a);
-    u16 m = 100;
+    u16 m = RtExt_BlessStatMul(a, stat);
     bool8 off = stat == STG_ATK || stat == STG_SPA;
     bool8 def = stat == STG_DEF || stat == STG_SPD;
     if (x->rune == RUNE_FURY && off) m = 110;
@@ -431,6 +451,8 @@ void RtExt_OnHit(struct RtActor *v, s32 *amount, u8 src)
 {
     struct RtActorX *x = X(v);
     struct RtActor *s = (src < RT_MAX_ACTORS && gRt->actors[src].active && gRt->actors[src].side != v->side) ? &gRt->actors[src] : NULL;
+    *amount = *amount * RtExt_BlessDmgTakenPct(v) / 100;
+    if (*amount < 1) *amount = 1;
     if (x->buffTimer && x->buffKind == SPELL_BARRIER)
     {
         *amount = (*amount + 1) / 2;
@@ -440,6 +462,8 @@ void RtExt_OnHit(struct RtActor *v, s32 *amount, u8 src)
         return;
     if (X(s)->rune == RUNE_VAMP && RtActor_IsAlive(s))
         RtActor_Heal(s, (*amount) / 8 > 0 ? (*amount) / 8 : 1);
+    if (s->side == RT_SIDE_PLAYER && RtSave_Get()->meta[0] == BLS_SPIRIT && RtActor_IsAlive(s))
+        RtActor_Heal(s, (*amount) / 16 > 0 ? (*amount) / 16 : 1);
     if (x->rune == RUNE_THORNS && v->hp > *amount && RtActor_IsAlive(s) && s->state != AST_GONE)
         RtActor_Damage(s, (*amount) / 8 > 0 ? (*amount) / 8 : 1, RT_MAX_ACTORS, TRUE);
 }
@@ -569,6 +593,17 @@ void RtExt_BuildTick(struct RtActor *a)
 {
     struct RtActorX *x = X(a);
     if (x->spellCd) x->spellCd--;
+    if (gRt->objective && a->side == RT_SIDE_ENEMY && a->id == 2 && gRt->frame == 120)
+        RtUi_Toast(sGuardIntro[gRt->objective], 110);
+    if (a->side == RT_SIDE_PLAYER && a->id == gRt->playerLead && gRt->frame == 240 && RtSave_Get()->meta[0] && !gRt->objective)
+    {
+        StringCopy(gStringVar1, sBlessName[RtSave_Get()->meta[0] % BLS_COUNT]);
+        ConvertIntToDecimalStringN(gStringVar2, RtSave_Get()->meta[1], STR_CONV_MODE_LEFT_ALIGN, 2);
+        StringExpandPlaceholders(gStringVar4, sText_BlessLeft);
+        RtUi_Toast(gStringVar4, 80);
+    }
+    if (a->side == RT_SIDE_PLAYER && a->state == AST_NORMAL && RtSave_Get()->meta[0] == BLS_FOREST && (gRt->frame % 70) == 0 && a->hp < a->maxHp)
+        RtActor_Heal(a, a->maxHp / 60 > 0 ? a->maxHp / 60 : 1);
     if (x->buffTimer && --x->buffTimer == 0)
         x->buffKind = 0;
     if (a->side != RT_SIDE_PLAYER || a->id != gRt->playerLead)
@@ -709,4 +744,148 @@ void RtExt_TerrainTick(struct RtActor *a)
         if (t != RTT_NONE && !gRt->toast.active)
             RtUi_Toast(t == RTT_WATER ? sText_TWater : t == RTT_SAND ? sText_TSand : t == RTT_GRASS ? sText_TGrass : sText_TIce, 70);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Map objectives: in some places the wild monster is the guardian of the area. The arena is much
+// bigger (34x16 metatiles, 3x the normal field) and beating the guardian grants a blessing for a
+// number of battles.
+// ---------------------------------------------------------------------------
+
+
+#define BLESS_BATTLES 10
+
+u8 RtExt_BuffId(void) { return RtSave_Get()->meta[0]; }
+u8 RtExt_BuffLeft(void) { return RtSave_Get()->meta[1]; }
+
+static u8 BiomeOfMap(void)
+{
+    u8 sec = gMapHeader.regionMapSectionId;
+    if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_SURFING))
+        return BLS_SEA;
+    switch (sec)
+    {
+    case MAPSEC_ROUTE_111: case MAPSEC_DESERT_RUINS: case MAPSEC_DESERT_UNDERPASS:
+        return BLS_DESERT;
+    case MAPSEC_METEOR_FALLS: case MAPSEC_METEOR_FALLS2: case MAPSEC_MIRAGE_ISLAND:
+        return BLS_METEOR;
+    case MAPSEC_MT_PYRE: case MAPSEC_ABANDONED_SHIP:
+        return BLS_SPIRIT;
+    case MAPSEC_PETALBURG_WOODS: case MAPSEC_ROUTE_119: case MAPSEC_ROUTE_120: case MAPSEC_ROUTE_121:
+        return BLS_FOREST;
+    case MAPSEC_SHOAL_CAVE:
+        return BLS_FROST;
+    case MAPSEC_FIERY_PATH: case MAPSEC_FIERY_PATH2: case MAPSEC_MT_CHIMNEY: case MAPSEC_JAGGED_PASS: case MAPSEC_JAGGED_PASS2: case MAPSEC_SCORCHED_SLAB:
+        return BLS_MAGMA;
+    case MAPSEC_GRANITE_CAVE: case MAPSEC_VICTORY_ROAD: case MAPSEC_SEAFLOOR_CAVERN: case MAPSEC_CAVE_OF_ORIGIN:
+        return BLS_STONE;
+    }
+    return BLS_NONE;
+}
+
+static u16 GuardianSpecies(u8 b)
+{
+    switch (b)
+    {
+    case BLS_DESERT: return SPECIES_FLYGON;
+    case BLS_SEA: return SPECIES_RELICANTH;
+    case BLS_METEOR: return (gSaveBlock2Ptr->playTimeSeconds & 1) ? SPECIES_SOLROCK : SPECIES_LUNATONE;
+    case BLS_SPIRIT: return (gSaveBlock2Ptr->playTimeSeconds & 1) ? SPECIES_BANETTE : SPECIES_DUSCLOPS;
+    case BLS_FOREST: return SPECIES_SHIFTRY;
+    case BLS_FROST: return SPECIES_GLALIE;
+    case BLS_MAGMA: return SPECIES_CAMERUPT;
+    case BLS_STONE: return SPECIES_AGGRON;
+    }
+    return SPECIES_NONE;
+}
+
+extern u8 gRtDebugObjective;
+EWRAM_DATA u8 gRtDebugObjective = 0;
+
+void RtExt_SetupObjective(void)
+{
+    u8 b;
+    u16 sp;
+    u8 lvl, i, top = 0;
+    if (gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_SAFARI | BATTLE_TYPE_LEGENDARY | BATTLE_TYPE_ROAMER | BATTLE_TYPE_FIRST_BATTLE
+                          | BATTLE_TYPE_LINK | BATTLE_TYPE_FRONTIER | BATTLE_TYPE_DOUBLE | BATTLE_TYPE_REGI | BATTLE_TYPE_KYOGRE_GROUDON
+                          | BATTLE_TYPE_RAYQUAZA | BATTLE_TYPE_GROUDON | BATTLE_TYPE_KYOGRE | BATTLE_TYPE_WALLY_TUTORIAL))
+        return;
+    b = BiomeOfMap();
+    if (b == BLS_NONE)
+        return;
+    if (!(gRtDebugEnabled && gRtDebugObjective) && (Random() % 100) >= 14)
+        return;
+    sp = GuardianSpecies(b);
+    for (i = 0; i < PARTY_SIZE; i++)
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) != SPECIES_NONE && GetMonData(&gPlayerParty[i], MON_DATA_LEVEL) > top)
+            top = GetMonData(&gPlayerParty[i], MON_DATA_LEVEL);
+    lvl = top < 14 ? 14 : (top > 95 ? 100 : top + 4);
+    if (gRtDebugEnabled && gRtDebugObjective == 2)
+        lvl = 5;
+    ZeroEnemyPartyMons();
+    CreateMon(&gEnemyParty[0], sp, lvl, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
+    gRt->objective = b;
+    gRt->fieldW = 34;
+    gRt->fieldH = 16;
+}
+
+// the guardian is bigger and starts charged up
+void RtExt_GuardianInit(struct RtActor *a)
+{
+    if (!gRt->objective || a->side != RT_SIDE_ENEMY || a->id != 2)
+        return;
+    a->maxHp = a->maxHp * 5 / 2;
+    a->hp = a->maxHp;
+    a->shownHp = a->hp;
+    X(a)->ki = 650;
+    X(a)->spell = SPELL_BARRIER;
+    X(a)->spellCd = 900;
+}
+
+void RtExt_OnBattleEnd(u8 outcome)
+{
+    struct RtSave *sv = RtSave_Get();
+    if (outcome != B_OUTCOME_WON && outcome != B_OUTCOME_CAUGHT)
+        return;
+    if (gRt->objective)
+    {
+        sv->meta[0] = gRt->objective;
+        sv->meta[1] = BLESS_BATTLES;
+        PlayFanfare(MUS_OBTAIN_ITEM);
+        StringCopy(gStringVar1, sBlessName[gRt->objective]);
+        StringExpandPlaceholders(gStringVar4, sText_Blessing);
+        RtUi_Toast(gStringVar4, 120);
+    }
+    else if (sv->meta[1])
+    {
+        if (--sv->meta[1] == 0)
+            sv->meta[0] = 0;
+    }
+}
+
+// blessing modifiers for the player's side
+u16 RtExt_BlessStatMul(struct RtActor *a, u8 stat)
+{
+    u8 b;
+    bool8 off = stat == STG_ATK || stat == STG_SPA, def = stat == STG_DEF || stat == STG_SPD;
+    if (a->side != RT_SIDE_PLAYER)
+        return 100;
+    b = RtSave_Get()->meta[0];
+    switch (b)
+    {
+    case BLS_DESERT: return stat == STG_SPE ? 112 : 100;
+    case BLS_SEA: return def ? 110 : 100;
+    case BLS_MAGMA: return off ? 110 : 100;
+    }
+    return 100;
+}
+
+u16 RtExt_BlessDmgTakenPct(struct RtActor *a)
+{
+    u8 b;
+    if (a->side != RT_SIDE_PLAYER)
+        return 100;
+    b = RtSave_Get()->meta[0];
+    return b == BLS_FROST ? 92 : (b == BLS_STONE ? 90 : 100);
 }

@@ -21,8 +21,8 @@
 // ---------------------------------------------------------------------------
 // World / arena
 // ---------------------------------------------------------------------------
-#define ARENA_MW 32            // metatiles
-#define ARENA_MH 16
+#define ARENA_MW 40            // metatiles (the BG tilemap is a 32x16 ring that follows the camera)
+#define ARENA_MH 22
 #define FIELD_W 18             // battle field, metatiles (always this size)
 #define FIELD_H 10
 #define ARENA_W (ARENA_MW * 16) // pixels
@@ -768,6 +768,10 @@ struct RtBattle
     u16 grpHit[24];
     u16 floorMeta;
     u8 terrainShown;
+    s16 wx0, wy0;                      // metatile origin of the streamed BG window
+    u8 fieldW, fieldH;                 // battle field size in metatiles (0: default)
+    u8 objective;                      // 1..8: guardian battle of a biome
+    u8 objBuffShown;
     
     struct RtStruggle str;
 };
@@ -926,6 +930,12 @@ u8 RtExt_TerrainAt(struct RtActor *a);
 u16 RtExt_TerrainDmgPct(struct RtActor *atk, struct RtActor *def, u8 type);
 u16 RtExt_TerrainSpeedPct(struct RtActor *a);
 void RtExt_TerrainTick(struct RtActor *a);
+void RtArena_StreamUpdate(void);
+void RtExt_SetupObjective(void);
+void RtExt_OnBattleEnd(u8 outcome);
+void RtExt_GuardianInit(struct RtActor *a);
+u8 RtExt_BuffId(void);
+u8 RtExt_BuffLeft(void);
 bool8 RtArena_HitCells(s32 fx, s32 fy, s32 r, u8 dmg);
 void RtExt_OnHit(struct RtActor *victim, s32 *amount, u8 src);
 u16 RtExt_StatMul(struct RtActor *a, u8 stat);

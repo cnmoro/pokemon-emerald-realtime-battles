@@ -306,6 +306,7 @@ void RtActor_InitFromMon(struct RtActor *a, struct Pokemon *mon, u8 side, u8 par
     a->palDirty = TRUE;
     RtActor_SetAnim(a, RTA_IDLE, TRUE);
     gRt->hudDirty = TRUE;
+    RtExt_GuardianInit(a);
 }
 
 void RtActor_SyncToMon(struct RtActor *a)

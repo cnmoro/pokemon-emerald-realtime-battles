@@ -917,6 +917,7 @@ void RtArena_Build(void)
         const struct MapLayout *layout = gMapHeader.mapLayout;
         s32 mapX1 = MAP_OFFSET + layout->width, mapY1 = MAP_OFFSET + layout->height;
         s32 bestC = 0x7FFFFFFF;
+        s32 FW = gRt->fieldW ? gRt->fieldW : FIELD_W, FH = gRt->fieldH ? gRt->fieldH : FIELD_H;
         for (x = 0; x <= GRID_W; x++)
             sum[x] = 0;
         for (y = 1; y <= GRID_H; y++)
@@ -939,19 +940,19 @@ void RtArena_Build(void)
                 sRow[x] = sUp[x] + rowSum;
             }
         }
-        for (y = (ARENA_MH - FIELD_H) / 2; y + FIELD_H + (ARENA_MH - FIELD_H) / 2 <= GRID_H; y++)
+        for (y = (ARENA_MH - FH) / 2; y + FH + (ARENA_MH - FH) / 2 <= GRID_H; y++)
         {
             if (((gy0 + y) & 1) == 0)
                 continue;
-            for (x = (ARENA_MW - FIELD_W) / 2; x + FIELD_W + (ARENA_MW - FIELD_W) / 2 <= GRID_W; x++)
+            for (x = (ARENA_MW - FW) / 2; x + FW + (ARENA_MW - FW) / 2 <= GRID_W; x++)
             {
                 s32 c, dcx, dcy;
                 if (((gx0 + x) & 1) == 0)
                     continue;
-                c = sum[(y + FIELD_H) * (GRID_W + 1) + x + FIELD_W] - sum[y * (GRID_W + 1) + x + FIELD_W]
-                  - sum[(y + FIELD_H) * (GRID_W + 1) + x] + sum[y * (GRID_W + 1) + x];
-                dcx = gx0 + x + FIELD_W / 2 - px;
-                dcy = gy0 + y + FIELD_H / 2 - py;
+                c = sum[(y + FH) * (GRID_W + 1) + x + FW] - sum[y * (GRID_W + 1) + x + FW]
+                  - sum[(y + FH) * (GRID_W + 1) + x] + sum[y * (GRID_W + 1) + x];
+                dcx = gx0 + x + FW / 2 - px;
+                dcy = gy0 + y + FH / 2 - py;
                 if (dcx < 0) dcx = -dcx;
                 if (dcy < 0) dcy = -dcy;
                 c = c * 4 + dcx + dcy;
@@ -960,8 +961,8 @@ void RtArena_Build(void)
                     bestC = c;
                     cleanX = x;
                     cleanY = y;
-                    cleanW = FIELD_W;
-                    cleanH = FIELD_H;
+                    cleanW = FW;
+                    cleanH = FH;
                 }
             }
         }
@@ -1617,10 +1618,13 @@ void RtArena_Build(void)
                 cy = (cy + pyl) / 2;
             }
             // the screen is wide and short: put the sides diagonally apart so both stay in view
-            PickSpawn(walk, open, cx - 4, cy + 1, -1, -1, 0, &sx, &sy);
+            {
+            s32 sp = gRt->objective ? 11 : 4;
+            PickSpawn(walk, open, cx - sp, cy + 1, -1, -1, 0, &sx, &sy);
             sSpawnCell[RT_SIDE_PLAYER][0][0] = sx;
             sSpawnCell[RT_SIDE_PLAYER][0][1] = sy;
-            PickSpawn(walk, open, cx + 4, cy - 1, sx, sy, 5, &sSpawnCell[RT_SIDE_ENEMY][0][0], &sSpawnCell[RT_SIDE_ENEMY][0][1]);
+            PickSpawn(walk, open, cx + sp, cy - 1, sx, sy, gRt->objective ? 18 : 5, &sSpawnCell[RT_SIDE_ENEMY][0][0], &sSpawnCell[RT_SIDE_ENEMY][0][1]);
+            }
             PickSpawn(walk, open, sx, sy + 2, sx, sy, 2, &sSpawnCell[RT_SIDE_PLAYER][1][0], &sSpawnCell[RT_SIDE_PLAYER][1][1]);
             PickSpawn(walk, open, sSpawnCell[RT_SIDE_ENEMY][0][0], sSpawnCell[RT_SIDE_ENEMY][0][1] - 2,
                       sSpawnCell[RT_SIDE_ENEMY][0][0], sSpawnCell[RT_SIDE_ENEMY][0][1], 2,
@@ -1697,8 +1701,8 @@ static void PutCell(u16 *bg1, u16 *bg2, u16 *bg3, s32 mx, s32 my, u16 metatile)
     s32 k;
     for (k = 0; k < 4; k++)
     {
-        s32 tx = mx * 2 + (k & 1);
-        s32 ty = my * 2 + (k >> 1);
+        s32 tx = (mx & 31) * 2 + (k & 1);
+        s32 ty = (my & 15) * 2 + (k >> 1);
         s32 idx = (tx >> 5) * 1024 + ty * 32 + (tx & 31);
         u16 lo = t[k], hi = t[k + 4];
         switch (layer)
@@ -1729,10 +1733,12 @@ void RtArena_LoadGfx(void)
     LoadTilesetPal(layout->primaryTileset, BG_PLTT_ID(0), NUM_PALS_IN_PRIMARY * PLTT_SIZE_4BPP);
     LoadTilesetPal(layout->secondaryTileset, BG_PLTT_ID(NUM_PALS_IN_PRIMARY), (NUM_PALS_TOTAL - NUM_PALS_IN_PRIMARY) * PLTT_SIZE_4BPP);
 
-    // the overworld tile 0 is not necessarily blank; keep BG3 transparent in NORMAL cells using an empty tile index.
+    // the BG tilemap is a ring of 32x16 metatiles that follows the camera (RtArena_StreamUpdate)
     CpuFill16(0, bg1, 0x1000 * 3);
-    for (y = 0; y < ARENA_MH; y++)
-        for (x = 0; x < ARENA_MW; x++)
+    gRt->wx0 = 0;
+    gRt->wy0 = 0;
+    for (y = 0; y < 16; y++)
+        for (x = 0; x < 32; x++)
             PutCell(bg1, bg2, bg3, x, y, gRt->arenaMeta[y][x]);
     // terrain kind of every cell
     for (y = 0; y < ARENA_MH; y++)
@@ -1755,6 +1761,26 @@ void RtArena_LoadGfx(void)
 // ---------------------------------------------------------------------------
 // Destructible scenery: small isolated obstacles (trees, rocks, signs...) break under strong hits
 // ---------------------------------------------------------------------------
+void RtArena_StreamUpdate(void)
+{
+    u16 *bg1 = (u16 *)BG_SCREEN_ADDR(24);
+    u16 *bg2 = (u16 *)BG_SCREEN_ADDR(26);
+    u16 *bg3 = (u16 *)BG_SCREEN_ADDR(28);
+    s32 nx = (gRt->camX >> 4) - 8, ny = (gRt->camY >> 4) - 3, x, y;
+    if (nx > ARENA_MW - 32) nx = ARENA_MW - 32;
+    if (ny > ARENA_MH - 16) ny = ARENA_MH - 16;
+    if (nx < 0) nx = 0;
+    if (ny < 0) ny = 0;
+    if (nx == gRt->wx0 && ny == gRt->wy0)
+        return;
+    for (y = ny; y < ny + 16; y++)
+        for (x = nx; x < nx + 32; x++)
+            if (x < gRt->wx0 || x >= gRt->wx0 + 32 || y < gRt->wy0 || y >= gRt->wy0 + 16)
+                PutCell(bg1, bg2, bg3, x, y, gRt->arenaMeta[y][x]);
+    gRt->wx0 = nx;
+    gRt->wy0 = ny;
+}
+
 static void MarkBreakables(void)
 {
     u16 *q = gRt->scr.pathQueue;
@@ -1852,7 +1878,8 @@ static void BreakGroup(u8 id)
                 gRt->solid[y][x] = 0;
                 gRt->terrain[y][x] = RTT_NONE;
                 gRt->arenaMeta[y][x] = gRt->floorMeta;
-                PutCell(bg1, bg2, bg3, x, y, gRt->floorMeta);
+                if (x >= gRt->wx0 && x < gRt->wx0 + 32 && y >= gRt->wy0 && y < gRt->wy0 + 16)
+                    PutCell(bg1, bg2, bg3, x, y, gRt->floorMeta);
                 RtProps_Debris(PROP_ROCK, TO_FX(x * 16 + 8), TO_FX(y * 16 + 14));
             }
     gRt->grpHp[id] = 0;
