@@ -1061,7 +1061,7 @@ static void Rt_UpdateFight(void)
     Rt_CheckBattleOver();
 
     // player requested pause menu
-    if (gRt->state == RTS_FIGHT && (gMain.newKeys & START_BUTTON) && !gRt->isSafari)
+    if (gRt->state == RTS_FIGHT && RtExt_StartPoll() && !gRt->isSafari)
     {
         RtUi_OpenPauseMenu();
         gRt->menuReturnState = RTS_FIGHT;

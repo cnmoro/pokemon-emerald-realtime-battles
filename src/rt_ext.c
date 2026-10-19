@@ -3,6 +3,8 @@
 #include "rt_internal.h"
 #include "rt_vfx.h"
 #include "main.h"
+#include "string_util.h"
+#include "pokemon.h"
 #include "random.h"
 #include "sound.h"
 #include "constants/moves.h"
@@ -95,9 +97,9 @@ void RtKi_OnDamage(struct RtActor *a, s32 amount, u8 src)
     u32 pct = a->maxHp ? (u32)amount * 100 / a->maxHp : 0;
     if (pct > 60)
         pct = 60;
-    RtKi_Gain(a, 15 + pct * 3);
+    RtKi_Gain(a, (15 + pct * 3) * RtKi_RuneGainPct(a) / 100);
     if (src < RT_MAX_ACTORS && gRt->actors[src].active && gRt->actors[src].side != a->side)
-        RtKi_Gain(&gRt->actors[src], 25 + pct * 4);
+        RtKi_Gain(&gRt->actors[src], (25 + pct * 4) * RtKi_RuneGainPct(&gRt->actors[src]) / 100);
 }
 
 // SUPER form: Mega / Primal / Deoxys formes where a sprite exists, otherwise a golden power-up
@@ -206,9 +208,11 @@ bool8 RtExt_TrySuper(struct RtActor *a)
 }
 
 // per-frame ki / form upkeep of one actor
+void RtExt_BuildTick(struct RtActor *a);
 void RtKi_Tick(struct RtActor *a)
 {
     struct RtActorX *x = X(a);
+    RtExt_BuildTick(a);
     if (gRtDebugEnabled && gRtDebugKi && a->side == RT_SIDE_PLAYER && a->id == gRt->playerLead)
     {
         x->ki = RT_KI_MAX;
@@ -277,4 +281,292 @@ void RtKi_NoKiToast(struct RtActor *a)
 {
     if (a->side == RT_SIDE_PLAYER && a->id == gRt->playerLead && !gRt->toast.active)
         RtUi_Toast(sText_NoKi, 40);
+}
+
+// ---------------------------------------------------------------------------
+// Builds: one rune (passive) + one summoner spell (START held), two presets per Pokemon
+// ---------------------------------------------------------------------------
+static const u8 sRuneNames[RUNE_COUNT][9] = {
+    _("None"), _("Fury"), _("Vampire"), _("Thorns"), _("Guard"), _("Swift"), _("Focus"), _("Ki")
+};
+static const u8 sSpellNames[SPELL_COUNT][9] = {
+    _("None"), _("Barrier"), _("Heal"), _("Purify"), _("Blink"), _("Frenzy"), _("Surge")
+};
+static const u8 sText_SpellCd[] = _("Spell recharging...");
+static const u8 sText_SpellOk[] = _("{STR_VAR_1} cast!");
+#define SPELL_CD 2700
+
+const u8 *RtBuild_RuneName(u8 r) { return sRuneNames[r % RUNE_COUNT]; }
+const u8 *RtBuild_SpellName(u8 sp) { return sSpellNames[sp % SPELL_COUNT]; }
+
+// the overlay lives in the (never used) link-record area of SaveBlock2
+struct RtSave *RtSave_Get(void)
+{
+    struct RtSave *sv = (struct RtSave *)gSaveBlock2Ptr->hallRecords2P;
+    STATIC_ASSERT(sizeof(struct RtSave) <= sizeof(gSaveBlock2Ptr->hallRecords2P), RtSaveFits);
+    if (sv->magic != 0x7254)
+    {
+        CpuFill32(0, sv, sizeof(*sv));
+        sv->magic = 0x7254;
+        sv->ver = 1;
+    }
+    return sv;
+}
+
+static u16 MonKey(struct Pokemon *mon)
+{
+    u32 pid = GetMonData(mon, MON_DATA_PERSONALITY);
+    u16 k = (pid ^ (pid >> 16)) & 0xFFFF;
+    return k ? k : 1;
+}
+
+static struct RtBuildEntry *FindEntry(struct Pokemon *mon, bool8 create)
+{
+    struct RtSave *sv = RtSave_Get();
+    u16 k = MonKey(mon);
+    s32 i;
+    for (i = 0; i < 8; i++)
+        if (sv->builds[i].key == k)
+            return &sv->builds[i];
+    if (!create)
+        return NULL;
+    i = sv->nextSlot++ & 7;           // round robin: the oldest entry is recycled
+    sv->builds[i].key = k;
+    sv->builds[i].sel = 0;
+    sv->builds[i].p[0] = sv->builds[i].p[1] = 0;
+    return &sv->builds[i];
+}
+
+u8 RtBuild_Get(struct Pokemon *mon, u8 preset)
+{
+    struct RtBuildEntry *e = FindEntry(mon, FALSE);
+    return e ? e->p[preset & 1] : 0;
+}
+
+void RtBuild_Set(struct Pokemon *mon, u8 preset, u8 val)
+{
+    FindEntry(mon, TRUE)->p[preset & 1] = val;
+}
+
+u8 RtBuild_GetSel(struct Pokemon *mon)
+{
+    struct RtBuildEntry *e = FindEntry(mon, FALSE);
+    return e ? e->sel : 0;
+}
+
+void RtBuild_SetSel(struct Pokemon *mon, u8 sel)
+{
+    FindEntry(mon, TRUE)->sel = sel & 1;
+}
+
+// foes (and the partner) get a build picked from their stats
+static u8 AutoBuild(struct RtActor *a)
+{
+    u32 h = (a->species * 7 + a->level * 13) % 6;
+    u8 rune, spell;
+    if (a->atk > a->spa) rune = (h & 1) ? RUNE_FURY : RUNE_VAMP;
+    else rune = (h & 1) ? RUNE_FOCUS : RUNE_KI;
+    if (a->def + a->spd > a->atk + a->spa) rune = (h & 1) ? RUNE_GUARD : RUNE_THORNS;
+    if (a->spe > 100 && h == 4) rune = RUNE_SWIFT;
+    spell = SPELL_BARRIER + (h % 3) * 2 % 5;   // barrier / purify / frenzy ...
+    if (h == 5) spell = SPELL_HEAL;
+    return rune | (spell << 4);
+}
+
+void RtBuild_Load(struct RtActor *a, struct Pokemon *mon)
+{
+    struct RtActorX *x = X(a);
+    u8 v;
+    if (a->side == RT_SIDE_PLAYER && !gRt->isSafari)
+    {
+        struct RtBuildEntry *e = FindEntry(mon, FALSE);
+        v = e ? e->p[e->sel & 1] : 0;
+    }
+    else
+        v = AutoBuild(a);
+    x->rune = v & 15;
+    x->spell = v >> 4;
+    x->spellCd = 600;   // a short opening cooldown so that nothing happens at frame 0
+    x->buffTimer = 0;
+    x->buffKind = 0;
+}
+
+u16 RtKi_RuneGainPct(struct RtActor *a)
+{
+    return X(a)->rune == RUNE_KI ? 150 : 100;
+}
+
+// stat multiplier of rune / temporary buff, in percent
+u16 RtExt_StatMul(struct RtActor *a, u8 stat)
+{
+    struct RtActorX *x = X(a);
+    u16 m = 100;
+    bool8 off = stat == STG_ATK || stat == STG_SPA;
+    bool8 def = stat == STG_DEF || stat == STG_SPD;
+    if (x->rune == RUNE_FURY && off) m = 110;
+    else if (x->rune == RUNE_GUARD && def) m = 115;
+    else if (x->rune == RUNE_SWIFT && stat == STG_SPE) m = 115;
+    if (x->buffTimer && x->buffKind == SPELL_FRENZY)
+    {
+        if (off) m = m * 130 / 100;
+        else if (stat == STG_SPE) m = m * 115 / 100;
+    }
+    return m;
+}
+
+u16 RtExt_CdPct(struct RtActor *a)
+{
+    u16 p = X(a)->rune == RUNE_FOCUS ? 88 : 100;
+    if (X(a)->buffTimer && X(a)->buffKind == SPELL_FRENZY)
+        p = p * 85 / 100;
+    return p;
+}
+
+// called from RtActor_Damage before the damage is applied: barrier, thorns, vampire
+void RtExt_OnHit(struct RtActor *v, s32 *amount, u8 src)
+{
+    struct RtActorX *x = X(v);
+    struct RtActor *s = (src < RT_MAX_ACTORS && gRt->actors[src].active && gRt->actors[src].side != v->side) ? &gRt->actors[src] : NULL;
+    if (x->buffTimer && x->buffKind == SPELL_BARRIER)
+    {
+        *amount = (*amount + 1) / 2;
+        RtFx_Burst(FX_SPARK8, FXP_WHITE, v->x, v->y - TO_FX(v->height / 2), 2, 1, 10);
+    }
+    if (!s)
+        return;
+    if (X(s)->rune == RUNE_VAMP && RtActor_IsAlive(s))
+        RtActor_Heal(s, (*amount) / 8 > 0 ? (*amount) / 8 : 1);
+    if (x->rune == RUNE_THORNS && v->hp > *amount && RtActor_IsAlive(s) && s->state != AST_GONE)
+        RtActor_Damage(s, (*amount) / 8 > 0 ? (*amount) / 8 : 1, RT_MAX_ACTORS, TRUE);
+}
+
+static void DoSpell(struct RtActor *a)
+{
+    struct RtActorX *x = X(a);
+    s32 cx = a->x, cy = a->y - TO_FX(a->height / 2);
+    switch (x->spell)
+    {
+    case SPELL_BARRIER:
+        x->buffKind = SPELL_BARRIER; x->buffTimer = 240;
+        RtFx_Ring(FX_SPARK8, FXP_WHITE, cx, cy, 10, 18, 20);
+        break;
+    case SPELL_HEAL:
+        RtActor_Heal(a, a->maxHp * 30 / 100);
+        break;
+    case SPELL_PURIFY:
+        a->mstatus = MST_NONE;
+        a->mstatusTimer = 0;
+        a->hpBarDirty = TRUE;
+        RtFx_Burst(FX_PLUS8, FXP_HEAL, cx, cy, 6, 2, 24);
+        break;
+    case SPELL_BLINK:
+        {
+            s32 step;
+            for (step = 80; step >= 16; step -= 8)
+            {
+                s32 nx = a->x + RtCos(a->aim) * step, ny = a->y + RtSin(a->aim) * step;
+                if (!RtArena_CircleBlocked(nx, ny, a->radius))
+                {
+                    RtFx_Burst(FX_SPARK8, FXP_WATER, cx, cy, 6, 2, 16);
+                    a->x = nx; a->y = ny; a->vx = a->vy = 0;
+                    RtFx_Burst(FX_SPARK8, FXP_WATER, a->x, a->y - TO_FX(a->height / 2), 6, 2, 16);
+                    break;
+                }
+            }
+        }
+        break;
+    case SPELL_FRENZY:
+        x->buffKind = SPELL_FRENZY; x->buffTimer = 360;
+        RtFx_Ring(FX_SPARK8, FXP_FIRE, cx, cy, 10, 18, 20);
+        break;
+    case SPELL_SURGE:
+        RtKi_Gain(a, 400);
+        RtFx_Ring(FX_SPARK8, FXP_GOLD, cx, cy, 10, 18, 20);
+        break;
+    default:
+        return;
+    }
+    a->flash = 6;
+    x->spellCd = SPELL_CD;
+    PlaySE(SE_M_COSMIC_POWER);
+    if (a->side == RT_SIDE_PLAYER)
+    {
+        u8 *d = gStringVar1;
+        StringCopy(d, RtBuild_SpellName(x->spell));
+        StringExpandPlaceholders(gStringVar4, sText_SpellOk);
+        RtUi_Toast(gStringVar4, 40);
+    }
+}
+
+bool8 RtExt_CastSpell(struct RtActor *a)
+{
+    struct RtActorX *x = X(a);
+    if (x->spell == SPELL_NONE || a->state != AST_NORMAL)
+        return FALSE;
+    if (x->spellCd)
+    {
+        if (a->side == RT_SIDE_PLAYER && !gRt->toast.active)
+            RtUi_Toast(sText_SpellCd, 30);
+        return FALSE;
+    }
+    DoSpell(a);
+    return TRUE;
+}
+
+static void AiSpell(struct RtActor *a)
+{
+    struct RtActorX *x = X(a);
+    struct RtActor *t;
+    if (x->spell == SPELL_NONE || x->spellCd || a->state != AST_NORMAL)
+        return;
+    t = Rt_NearestFoe(a);
+    if (!t)
+        return;
+    switch (x->spell)
+    {
+    case SPELL_HEAL: if (a->hp * 10 > a->maxHp * 4) return; break;
+    case SPELL_PURIFY: if (a->mstatus == MST_NONE) return; break;
+    case SPELL_BARRIER: if (a->hp * 10 > a->maxHp * 8 || RtDist(t->x - a->x, t->y - a->y) > TO_FX(90)) return; break;
+    case SPELL_FRENZY: if (a->hp * 10 < a->maxHp * 4 || RtDist(t->x - a->x, t->y - a->y) > TO_FX(110)) return; break;
+    case SPELL_SURGE: if (x->ki > 250) return; break;
+    case SPELL_BLINK: if (a->hp * 10 > a->maxHp * 3) return; a->aim += 128; break;
+    }
+    DoSpell(a);
+}
+
+// START: short tap (released within 20 frames) opens the pause menu, hold casts the spell
+bool8 RtExt_StartPoll(void)
+{
+    static EWRAM_DATA u8 sHold = 0;
+    struct RtActor *p = Rt_PlayerActor();
+    if (gMain.heldKeys & START_BUTTON)
+    {
+        if (sHold < 0xFE)
+        {
+            sHold++;
+            if (sHold == 20 && p)
+            {
+                RtExt_CastSpell(p);
+                sHold = 0xFF;
+            }
+        }
+        return FALSE;
+    }
+    if (sHold && sHold < 20)
+    {
+        sHold = 0;
+        return TRUE;
+    }
+    sHold = 0;
+    return FALSE;
+}
+
+void RtExt_BuildTick(struct RtActor *a)
+{
+    struct RtActorX *x = X(a);
+    if (x->spellCd) x->spellCd--;
+    if (x->buffTimer && --x->buffTimer == 0)
+        x->buffKind = 0;
+    if (a->side != RT_SIDE_PLAYER || a->id != gRt->playerLead)
+        AiSpell(a);
 }

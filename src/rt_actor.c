@@ -129,6 +129,7 @@ u16 RtActor_GetStat(struct RtActor *a, u8 stat)
         else
             v = v * (off ? 140 : (stat == STG_SPE ? 125 : 120)) / 100;
     }
+    v = v * RtExt_StatMul(a, stat) / 100;
     return v ? v : 1;
 }
 
@@ -264,6 +265,8 @@ void RtActor_InitFromMon(struct RtActor *a, struct Pokemon *mon, u8 side, u8 par
     a->gfxDex = a->dex;
     a->shiny = IsMonShiny(mon);
     RtKi_InitActor(a);
+    a->level = GetMonData(mon, MON_DATA_LEVEL);
+    RtBuild_Load(a, mon);
     a->vramSlot = slot;
     a->palSlot = slot;
     a->level = GetMonData(mon, MON_DATA_LEVEL);
@@ -666,6 +669,7 @@ void RtActor_Damage(struct RtActor *a, s32 amount, u8 src, bool8 direct)
         return;
     if (amount <= 0)
         amount = 1;
+    RtExt_OnHit(a, &amount, src);
     RtKi_OnDamage(a, amount, src);
     if (amount >= a->hp)
     {

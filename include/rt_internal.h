@@ -897,6 +897,25 @@ void RtKi_OnDamage(struct RtActor *a, s32 amount, u8 src);
 void RtKi_Tick(struct RtActor *a);
 bool8 RtKi_CanCast(struct RtActor *a, u16 move);
 u16 RtKi_DashCost(void);
+// builds: runes and summoner spells
+enum { RUNE_NONE, RUNE_FURY, RUNE_VAMP, RUNE_THORNS, RUNE_GUARD, RUNE_SWIFT, RUNE_FOCUS, RUNE_KI, RUNE_COUNT };
+enum { SPELL_NONE, SPELL_BARRIER, SPELL_HEAL, SPELL_PURIFY, SPELL_BLINK, SPELL_FRENZY, SPELL_SURGE, SPELL_COUNT };
+struct RtBuildEntry { u16 key; u8 sel; u8 p[2]; };           // p[]: rune | spell << 4
+struct RtSave { u16 magic; u8 ver; u8 pad; struct RtBuildEntry builds[8]; u8 nextSlot; u8 meta[64]; };
+struct RtSave *RtSave_Get(void);
+void RtBuild_Load(struct RtActor *a, struct Pokemon *mon);
+u8 RtBuild_Get(struct Pokemon *mon, u8 preset);
+void RtBuild_Set(struct Pokemon *mon, u8 preset, u8 val);
+u8 RtBuild_GetSel(struct Pokemon *mon);
+void RtBuild_SetSel(struct Pokemon *mon, u8 sel);
+const u8 *RtBuild_RuneName(u8 r);
+const u8 *RtBuild_SpellName(u8 sp);
+bool8 RtExt_StartPoll(void);
+bool8 RtExt_CastSpell(struct RtActor *a);
+u16 RtKi_RuneGainPct(struct RtActor *a);
+void RtExt_OnHit(struct RtActor *victim, s32 *amount, u8 src);
+u16 RtExt_StatMul(struct RtActor *a, u8 stat);
+u16 RtExt_CdPct(struct RtActor *a);
 bool8 RtExt_TrySuper(struct RtActor *a);
 void RtExt_PlayerInput(struct RtActor *a, u16 held, u16 pressed);
 bool8 RtStruggle_Involves(u8 actorId);
