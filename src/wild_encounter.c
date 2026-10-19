@@ -863,7 +863,8 @@ static bool8 IsWildLevelAllowedByRepel(u8 wildLevel)
 {
     u8 i;
 
-    if (!VarGet(VAR_REPEL_STEP_COUNT))
+    // holding L while walking works as a REPEL
+    if (!VarGet(VAR_REPEL_STEP_COUNT) && !(gMain.heldKeysRaw & L_BUTTON))
         return TRUE;
 
     for (i = 0; i < PARTY_SIZE; i++)
