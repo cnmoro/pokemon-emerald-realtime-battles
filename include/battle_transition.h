@@ -6,6 +6,7 @@ void BattleTransition_Start(u8 transitionId);
 bool8 IsBattleTransitionDone(void);
 bool8 FldEff_PokeballTrail(void);
 void Task_BattleTransition_Intro(u8 taskId);
+s8 BattleTransition_TurboFadeDelay(s8 delay);
 void GetBg0TilesDst(u16 **tilemap, u16 **tileset);
 
 extern const struct SpritePalette gSpritePalette_Pokeball;

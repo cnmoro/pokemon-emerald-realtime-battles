@@ -27,6 +27,8 @@
 #include "constants/trainers.h"
 #include "constants/rgb.h"
 
+#define BeginNormalPaletteFade(sel, delay, startY, targetY, color) BeginNormalPaletteFade(sel, BattleTransition_TurboFadeDelay(delay), startY, targetY, color)
+
 #define PALTAG_UNUSED_MUGSHOT 0x100A
 
 #define B_TRANS_DMA_FLAGS (1 | ((DMA_SRC_INC | DMA_DEST_FIXED | DMA_REPEAT | DMA_16BIT | DMA_START_HBLANK | DMA_ENABLE) << 16))
@@ -1003,15 +1005,30 @@ static void UNUSED TestBattleTransition(u8 transitionId)
     SetMainCallback2(CB2_TestBattleTransition);
 }
 
+// real-time mod: the field transition into a battle plays 3x faster
+static EWRAM_DATA bool8 sTransitionTurbo = FALSE;
+
+// palette fades started by a transition go 3x faster too (frames per fade step / 3)
+s8 BattleTransition_TurboFadeDelay(s8 delay)
+{
+    if (!sTransitionTurbo)
+        return delay;
+    if (delay > 0)
+        return (delay + 1) / 3 > 0 ? (delay + 1) / 3 - 1 : 0;
+    return delay * 3 - 2;
+}
+
 void BattleTransition_StartOnField(u8 transitionId)
 {
     gMain.callback2 = CB2_OverworldBasic;
     LaunchBattleTransitionTask(transitionId);
+    sTransitionTurbo = TRUE;
 }
 
 void BattleTransition_Start(u8 transitionId)
 {
     LaunchBattleTransitionTask(transitionId);
+    sTransitionTurbo = FALSE;
 }
 
 // main task that launches sub-tasks for phase1 and phase2
@@ -1023,6 +1040,7 @@ bool8 IsBattleTransitionDone(void)
     u8 taskId = FindTaskIdByFunc(Task_BattleTransition);
     if (gTasks[taskId].tTransitionDone)
     {
+        sTransitionTurbo = FALSE;
         DestroyTask(taskId);
         FREE_AND_SET_NULL(sTransitionData);
         return TRUE;
@@ -1040,9 +1058,33 @@ static void LaunchBattleTransitionTask(u8 transitionId)
     sTransitionData = AllocZeroed(sizeof(*sTransitionData));
 }
 
+static void RunTransitionTaskOnce(TaskFunc func)
+{
+    u8 id;
+    if (func == NULL)
+        return;
+    id = FindTaskIdByFunc(func);
+    if (id != TASK_NONE)
+        func(id);
+}
+
 static void Task_BattleTransition(u8 taskId)
 {
     while (sTaskHandlers[gTasks[taskId].tState](&gTasks[taskId]));
+
+    // real-time mod: the transition's own tasks run twice more per frame (3x faster)
+    if (sTransitionTurbo && !gTasks[taskId].tTransitionDone)
+    {
+        u8 id = gTasks[taskId].tTransitionId, k;
+        for (k = 0; k < 2; k++)
+        {
+            RunTransitionTaskOnce(sTasks_Intro[id]);
+            RunTransitionTaskOnce(Task_BattleTransition_Intro);
+            RunTransitionTaskOnce(sTasks_Main[id]);
+            if (sTasks_Main[id] != NULL && FindTaskIdByFunc(sTasks_Main[id]) != TASK_NONE)
+                AnimateSprites(); // sprite-based transitions (mugshots, Poke Balls, circles) keep up
+        }
+    }
 }
 
 static bool8 Transition_StartIntro(struct Task *task)

@@ -166,6 +166,13 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     gSpecialVar_LastTalked = LOCALID_NONE;
     gSelectedObjectEvent = 0;
 
+    {
+        extern const u8 gRtDebugEnabled;
+        extern bool8 RtDebug_FieldInput(void);
+        if (gRtDebugEnabled && RtDebug_FieldInput())
+            return TRUE;
+    }
+
     gMsgIsSignPost = FALSE;
     playerDirection = GetPlayerFacingDirection();
     GetPlayerPosition(&position);

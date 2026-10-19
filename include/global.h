@@ -591,8 +591,12 @@ struct SaveBlock2
              u16 optionsBattleStyle:1; // OPTIONS_BATTLE_STYLE_[SHIFT/SET]
              u16 optionsBattleSceneOff:1; // whether battle animations are disabled
              u16 regionMapZoom:1; // whether the map is zoomed in
-             //u16 padding1:4;
-             //u16 padding2;
+             u16 optionsRtDifficulty:2; // real-time battle AI: 0 medium (default), 1 easy, 2 hard
+             u16 optionsRtAutoAim:1; // real-time battles: moves aim at the foe by themselves
+             //u16 padding1:1;
+             u8 optionsRtBattleSpeed; // real-time battle pace: 0 = 80 % (default), 1 = 60, 2 = 70, 3 = 90, 4 = 100 %
+             u8 optionsRtExpShare:3;  // automatic EXP share: 0 off, 1..5 = first 2..6 party POKeMON
+             u8 optionsRtExpBonus:3;  // EXP bonus: 0 off, 1..7 = +25/50/100/150/200/300/400 %
     /*0x18*/ struct Pokedex pokedex;
     /*0x90*/ u8 rivalName[PLAYER_NAME_LENGTH + 1];
     /*0x98*/ struct Time localTimeOffset;

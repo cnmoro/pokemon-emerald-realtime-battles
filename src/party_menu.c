@@ -5545,6 +5545,33 @@ u16 ItemIdToBattleMoveId(u16 item)
     return (GetItemPocket(item) == POCKET_TM_HM) ? GetItemTMHMMoveId(item) : MOVE_NONE;
 }
 
+// Owning an HM is enough to use its field move outside battle: no POKeMON has to know it.
+// FLY is the exception (it is still picked from a POKeMON that knows it).
+bool8 PlayerHasHmForFieldMove(u16 move)
+{
+    u16 item;
+    if (move == MOVE_FLY)
+        return FALSE;
+    for (item = ITEM_HM01; item <= ITEM_HM08; item++)
+        if (ItemIdToBattleMoveId(item) == move && CheckBagHasItem(item, 1))
+            return TRUE;
+    return FALSE;
+}
+
+// the POKeMON shown using an HM nobody knows: the first one that isn't an egg
+u8 FirstUsablePartyMonForHm(void)
+{
+    u8 i;
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE)
+            break;
+        if (!GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG))
+            return i;
+    }
+    return PARTY_SIZE;
+}
+
 bool8 MonKnowsMove(struct Pokemon *mon, u16 move)
 {
     u8 i;

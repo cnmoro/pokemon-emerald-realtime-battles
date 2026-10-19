@@ -1312,6 +1312,45 @@ static void HandleBattleVariantEndParty(void)
     FlagClear(B_FLAG_SKY_BATTLE);
 }
 
+static void CB2_RtDebugEndTrainer(void)
+{
+    CpuFill16(0, (void *)(BG_PLTT), BG_PLTT_SIZE);
+    ResetOamRange(0, 128);
+    if (IsPlayerDefeated(gBattleOutcome) == TRUE)
+    {
+        SetMainCallback2(CB2_WhiteOut);
+    }
+    else
+    {
+        SetMainCallback2(CB2_ReturnToField);
+        gFieldCallback = FieldCB_ReturnToFieldNoScriptCheckMusic;
+    }
+}
+
+void RtDebug_StartTrainerBattle(u16 trainerId)
+{
+    TRAINER_BATTLE_PARAM.opponentA = trainerId;
+    gBattleTypeFlags = BATTLE_TYPE_TRAINER;
+    if (GetTrainerBattleType(trainerId) == TRAINER_BATTLE_TYPE_DOUBLES)
+        gBattleTypeFlags |= BATTLE_TYPE_DOUBLE;
+    LockPlayerFieldControls();
+    FreezeObjectEvents();
+    StopPlayerAvatar();
+    gMain.savedCallback = CB2_RtDebugEndTrainer;
+    CreateBattleStartTask(GetTrainerBattleTransition(), 0);
+}
+
+// debug: wild battle (gEnemyParty already set) that starts with transition `transition`
+void RtDebug_StartWildBattleWithTransition(u8 transition)
+{
+    LockPlayerFieldControls();
+    FreezeObjectEvents();
+    StopPlayerAvatar();
+    gMain.savedCallback = CB2_RtDebugEndTrainer;
+    gBattleTypeFlags = 0;
+    CreateBattleStartTask(transition, 0);
+}
+
 static void CB2_EndTrainerBattle(void)
 {
     HandleBattleVariantEndParty();

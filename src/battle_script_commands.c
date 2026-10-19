@@ -13201,6 +13201,12 @@ static void Cmd_unused_0xE4(void)
 {
 }
 
+// Used by the real-time battle engine at the end of a battle.
+void RtBattle_DoPickup(void)
+{
+    Cmd_pickup();
+}
+
 static void Cmd_pickup(void)
 {
     CMD_ARGS();

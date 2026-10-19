@@ -18,17 +18,23 @@
 
 #define tMenuSelection data[0]
 #define tTextSpeed data[1]
-#define tBattleSceneOff data[2]
-#define tBattleStyle data[3]
+#define tDifficulty data[2]   // replaces the battle scene option (battles are real-time): 0 easy, 1 medium, 2 hard
+#define tBattleStyle data[3]  // shows the AUTO AIM toggle (battles are real-time): 0 off, 1 on
 #define tSound data[4]
 #define tButtonMode data[5]
 #define tWindowFrameType data[6]
+#define tExpShare data[7]
+#define tExpBonus data[8]
+#define tBattleSpeed data[9]  // menu order: 0 = 60 % .. 4 = 100 %
 
 enum
 {
     MENUITEM_TEXTSPEED,
     MENUITEM_BATTLESCENE,
     MENUITEM_BATTLESTYLE,
+    MENUITEM_EXPSHARE,
+    MENUITEM_EXPBONUS,
+    MENUITEM_BATTLESPEED,
     MENUITEM_SOUND,
     MENUITEM_BUTTONMODE,
     MENUITEM_FRAMETYPE,
@@ -42,12 +48,16 @@ enum
     WIN_OPTIONS
 };
 
-#define YPOS_TEXTSPEED    (MENUITEM_TEXTSPEED * 16)
-#define YPOS_BATTLESCENE  (MENUITEM_BATTLESCENE * 16)
-#define YPOS_BATTLESTYLE  (MENUITEM_BATTLESTYLE * 16)
-#define YPOS_SOUND        (MENUITEM_SOUND * 16)
-#define YPOS_BUTTONMODE   (MENUITEM_BUTTONMODE * 16)
-#define YPOS_FRAMETYPE    (MENUITEM_FRAMETYPE * 16)
+#define OPTION_ROW_H      11   // 10 rows (EXP SHARE, EXP BONUS, BATTLE SPEED added) in the same window
+#define YPOS_EXPSHARE     (MENUITEM_EXPSHARE * OPTION_ROW_H)
+#define YPOS_EXPBONUS     (MENUITEM_EXPBONUS * OPTION_ROW_H)
+#define YPOS_BATTLESPEED  (MENUITEM_BATTLESPEED * OPTION_ROW_H)
+#define YPOS_TEXTSPEED    (MENUITEM_TEXTSPEED * OPTION_ROW_H)
+#define YPOS_BATTLESCENE  (MENUITEM_BATTLESCENE * OPTION_ROW_H)
+#define YPOS_BATTLESTYLE  (MENUITEM_BATTLESTYLE * OPTION_ROW_H)
+#define YPOS_SOUND        (MENUITEM_SOUND * OPTION_ROW_H)
+#define YPOS_BUTTONMODE   (MENUITEM_BUTTONMODE * OPTION_ROW_H)
+#define YPOS_FRAMETYPE    (MENUITEM_FRAMETYPE * OPTION_ROW_H)
 
 static void Task_OptionMenuFadeIn(u8 taskId);
 static void Task_OptionMenuProcessInput(u8 taskId);
@@ -55,9 +65,15 @@ static void Task_OptionMenuSave(u8 taskId);
 static void Task_OptionMenuFadeOut(u8 taskId);
 static void HighlightOptionMenuItem(u8 selection);
 static u8 TextSpeed_ProcessInput(u8 selection);
+static u8 Difficulty_ProcessInput(u8 selection);
 static void TextSpeed_DrawChoices(u8 selection);
-static u8 BattleScene_ProcessInput(u8 selection);
-static void BattleScene_DrawChoices(u8 selection);
+
+static void Difficulty_DrawChoices(u8 selection);
+static void ExpShare_DrawChoices(u8 selection);
+static u8 ExpShare_ProcessInput(u8 selection);
+static void ExpBonus_DrawChoices(u8 selection);
+static u8 ExpBonus_ProcessInput(u8 selection);
+static void BattleSpeed_DrawChoices(u8 selection);
 static u8 BattleStyle_ProcessInput(u8 selection);
 static void BattleStyle_DrawChoices(u8 selection);
 static u8 Sound_ProcessInput(u8 selection);
@@ -73,6 +89,27 @@ static void DrawBgWindowFrames(void);
 EWRAM_DATA static bool8 sArrowPressed = FALSE;
 
 static const u8 gText_Option[]             = _("OPTION");
+static const u8 gText_TextSpeed[]          = _("TEXT SPEED");
+static const u8 gText_BattleScene[]        = _("BATTLE SCENE");
+static const u8 gText_RtDifficulty[]       = _("DIFFICULTY");
+static const u8 gText_RtAutoAim[]          = _("AUTO AIM");
+static const u8 gText_RtExpShare[]         = _("EXP SHARE");
+static const u8 gText_RtExpShareOff[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
+static const u8 gText_RtExpShare2[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}FIRST 2");
+static const u8 gText_RtExpShare3[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}FIRST 3");
+static const u8 gText_RtExpShare4[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}FIRST 4");
+static const u8 gText_RtExpShare5[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}FIRST 5");
+static const u8 gText_RtExpShareAll[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ALL 6");
+static const u8 gText_RtExpBonus[]         = _("EXP BONUS");
+static const u8 gText_RtBattleSpeed[]      = _("BATTLE SPEED");
+static const u8 gText_RtDifficultyEasy[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}EASY");
+static const u8 gText_RtDifficultyMedium[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}MEDIUM");
+static const u8 gText_RtDifficultyHard[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HARD");
+static const u8 gText_BattleStyle[]        = _("BATTLE STYLE");
+static const u8 gText_Sound[]              = _("SOUND");
+static const u8 gText_Frame[]              = _("FRAME");
+static const u8 gText_OptionMenuCancel[]   = _("CANCEL");
+static const u8 gText_ButtonMode[]         = _("BUTTON MODE");
 static const u8 gText_TextSpeedSlow[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}SLOW");
 static const u8 gText_TextSpeedMid[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}MID");
 static const u8 gText_TextSpeedFast[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}FAST");
@@ -94,13 +131,16 @@ static const u8 sEqualSignGfx[] = INCBIN_U8("graphics/interface/option_menu_equa
 
 static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
 {
-    [MENUITEM_TEXTSPEED]   = COMPOUND_STRING("TEXT SPEED"),
-    [MENUITEM_BATTLESCENE] = COMPOUND_STRING("BATTLE SCENE"),
-    [MENUITEM_BATTLESTYLE] = COMPOUND_STRING("BATTLE STYLE"),
-    [MENUITEM_SOUND]       = COMPOUND_STRING("SOUND"),
-    [MENUITEM_BUTTONMODE]  = COMPOUND_STRING("BUTTON MODE"),
-    [MENUITEM_FRAMETYPE]   = COMPOUND_STRING("FRAME"),
-    [MENUITEM_CANCEL]      = COMPOUND_STRING("CANCEL"),
+    [MENUITEM_TEXTSPEED]   = gText_TextSpeed,
+    [MENUITEM_BATTLESCENE] = gText_RtDifficulty,
+    [MENUITEM_BATTLESTYLE] = gText_RtAutoAim,
+    [MENUITEM_EXPSHARE]    = gText_RtExpShare,
+    [MENUITEM_EXPBONUS]    = gText_RtExpBonus,
+    [MENUITEM_BATTLESPEED] = gText_RtBattleSpeed,
+    [MENUITEM_SOUND]       = gText_Sound,
+    [MENUITEM_BUTTONMODE]  = gText_ButtonMode,
+    [MENUITEM_FRAMETYPE]   = gText_Frame,
+    [MENUITEM_CANCEL]      = gText_OptionMenuCancel,
 };
 
 static const struct WindowTemplate sOptionMenuWinTemplates[] =
@@ -245,18 +285,30 @@ void CB2_InitOptionMenu(void)
 
         gTasks[taskId].tMenuSelection = 0;
         gTasks[taskId].tTextSpeed = gSaveBlock2Ptr->optionsTextSpeed;
-        gTasks[taskId].tBattleSceneOff = gSaveBlock2Ptr->optionsBattleSceneOff;
-        gTasks[taskId].tBattleStyle = gSaveBlock2Ptr->optionsBattleStyle;
+        // saved 0 medium / 1 easy / 2 hard -> menu 0 easy / 1 medium / 2 hard
+        gTasks[taskId].tDifficulty = gSaveBlock2Ptr->optionsRtDifficulty == 1 ? 0 : (gSaveBlock2Ptr->optionsRtDifficulty == 2 ? 2 : 1);
+        gTasks[taskId].tBattleStyle = gSaveBlock2Ptr->optionsRtAutoAim;
         gTasks[taskId].tSound = gSaveBlock2Ptr->optionsSound;
         gTasks[taskId].tButtonMode = gSaveBlock2Ptr->optionsButtonMode;
         gTasks[taskId].tWindowFrameType = gSaveBlock2Ptr->optionsWindowFrameType;
+        gTasks[taskId].tExpShare = gSaveBlock2Ptr->optionsRtExpShare;
+        gTasks[taskId].tExpBonus = gSaveBlock2Ptr->optionsRtExpBonus;
+        {
+            // saved code (0 = 80 % default, 1 = 60, 2 = 70, 3 = 90, 4 = 100) -> menu order 60..100
+            static const u8 sCodeToMenu[] = {2, 0, 1, 3, 4};
+            u8 code = gSaveBlock2Ptr->optionsRtBattleSpeed;
+            gTasks[taskId].tBattleSpeed = sCodeToMenu[code < 5 ? code : 0];
+        }
 
         TextSpeed_DrawChoices(gTasks[taskId].tTextSpeed);
-        BattleScene_DrawChoices(gTasks[taskId].tBattleSceneOff);
+        Difficulty_DrawChoices(gTasks[taskId].tDifficulty);
         BattleStyle_DrawChoices(gTasks[taskId].tBattleStyle);
         Sound_DrawChoices(gTasks[taskId].tSound);
         ButtonMode_DrawChoices(gTasks[taskId].tButtonMode);
         FrameType_DrawChoices(gTasks[taskId].tWindowFrameType);
+        ExpShare_DrawChoices(gTasks[taskId].tExpShare);
+        ExpBonus_DrawChoices(gTasks[taskId].tExpBonus);
+        BattleSpeed_DrawChoices(gTasks[taskId].tBattleSpeed);
         HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
 
         CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
@@ -318,11 +370,11 @@ static void Task_OptionMenuProcessInput(u8 taskId)
                 TextSpeed_DrawChoices(gTasks[taskId].tTextSpeed);
             break;
         case MENUITEM_BATTLESCENE:
-            previousOption = gTasks[taskId].tBattleSceneOff;
-            gTasks[taskId].tBattleSceneOff = BattleScene_ProcessInput(gTasks[taskId].tBattleSceneOff);
+            previousOption = gTasks[taskId].tDifficulty;
+            gTasks[taskId].tDifficulty = Difficulty_ProcessInput(gTasks[taskId].tDifficulty);
 
-            if (previousOption != gTasks[taskId].tBattleSceneOff)
-                BattleScene_DrawChoices(gTasks[taskId].tBattleSceneOff);
+            if (previousOption != gTasks[taskId].tDifficulty)
+                Difficulty_DrawChoices(gTasks[taskId].tDifficulty);
             break;
         case MENUITEM_BATTLESTYLE:
             previousOption = gTasks[taskId].tBattleStyle;
@@ -344,6 +396,35 @@ static void Task_OptionMenuProcessInput(u8 taskId)
 
             if (previousOption != gTasks[taskId].tButtonMode)
                 ButtonMode_DrawChoices(gTasks[taskId].tButtonMode);
+            break;
+        case MENUITEM_EXPSHARE:
+            previousOption = gTasks[taskId].tExpShare;
+            gTasks[taskId].tExpShare = ExpShare_ProcessInput(gTasks[taskId].tExpShare);
+
+            if (previousOption != gTasks[taskId].tExpShare)
+                ExpShare_DrawChoices(gTasks[taskId].tExpShare);
+            break;
+        case MENUITEM_EXPBONUS:
+            previousOption = gTasks[taskId].tExpBonus;
+            gTasks[taskId].tExpBonus = ExpBonus_ProcessInput(gTasks[taskId].tExpBonus);
+
+            if (previousOption != gTasks[taskId].tExpBonus)
+                ExpBonus_DrawChoices(gTasks[taskId].tExpBonus);
+            break;
+        case MENUITEM_BATTLESPEED:
+            previousOption = gTasks[taskId].tBattleSpeed;
+            if (JOY_NEW(DPAD_RIGHT) && gTasks[taskId].tBattleSpeed < 4)
+            {
+                gTasks[taskId].tBattleSpeed++;
+                sArrowPressed = TRUE;
+            }
+            if (JOY_NEW(DPAD_LEFT) && gTasks[taskId].tBattleSpeed > 0)
+            {
+                gTasks[taskId].tBattleSpeed--;
+                sArrowPressed = TRUE;
+            }
+            if (previousOption != gTasks[taskId].tBattleSpeed)
+                BattleSpeed_DrawChoices(gTasks[taskId].tBattleSpeed);
             break;
         case MENUITEM_FRAMETYPE:
             previousOption = gTasks[taskId].tWindowFrameType;
@@ -367,8 +448,14 @@ static void Task_OptionMenuProcessInput(u8 taskId)
 static void Task_OptionMenuSave(u8 taskId)
 {
     gSaveBlock2Ptr->optionsTextSpeed = gTasks[taskId].tTextSpeed;
-    gSaveBlock2Ptr->optionsBattleSceneOff = gTasks[taskId].tBattleSceneOff;
-    gSaveBlock2Ptr->optionsBattleStyle = gTasks[taskId].tBattleStyle;
+    gSaveBlock2Ptr->optionsRtDifficulty = gTasks[taskId].tDifficulty == 0 ? 1 : (gTasks[taskId].tDifficulty == 2 ? 2 : 0);
+    gSaveBlock2Ptr->optionsRtAutoAim = gTasks[taskId].tBattleStyle;
+    gSaveBlock2Ptr->optionsRtExpShare = gTasks[taskId].tExpShare;
+    gSaveBlock2Ptr->optionsRtExpBonus = gTasks[taskId].tExpBonus;
+    {
+        static const u8 sMenuToCode[] = {1, 2, 0, 3, 4};
+        gSaveBlock2Ptr->optionsRtBattleSpeed = sMenuToCode[gTasks[taskId].tBattleSpeed < 5 ? gTasks[taskId].tBattleSpeed : 2];
+    }
     gSaveBlock2Ptr->optionsSound = gTasks[taskId].tSound;
     gSaveBlock2Ptr->optionsButtonMode = gTasks[taskId].tButtonMode;
     gSaveBlock2Ptr->optionsWindowFrameType = gTasks[taskId].tWindowFrameType;
@@ -390,7 +477,17 @@ static void Task_OptionMenuFadeOut(u8 taskId)
 static void HighlightOptionMenuItem(u8 index)
 {
     SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(16, DISPLAY_WIDTH - 16));
-    SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(index * 16 + 40, index * 16 + 56));
+    SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(index * OPTION_ROW_H + 42, index * OPTION_ROW_H + 42 + OPTION_ROW_H));
+}
+
+// rows are 11 px apart but a glyph cell is 14 px tall: text is drawn with a transparent
+// background so a row never paints over the shadow of its neighbours, and a row of
+// choices is cleared (only its own pixels) before it is redrawn
+static const u8 sOptionTextColors[] = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY};
+
+static void ClearChoiceRow(u8 y)
+{
+    FillWindowPixelRect(WIN_OPTIONS, PIXEL_FILL(1), 100, y + 3, 208 - 100, OPTION_ROW_H);
 }
 
 static void DrawOptionMenuChoice(const u8 *text, u8 x, u8 y, u8 style)
@@ -408,27 +505,127 @@ static void DrawOptionMenuChoice(const u8 *text, u8 x, u8 y, u8 style)
     }
 
     dst[i] = EOS;
-    AddTextPrinterParameterized(WIN_OPTIONS, FONT_NORMAL, dst, x, y + 1, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized3(WIN_OPTIONS, FONT_NORMAL, x, y + 1, sOptionTextColors, TEXT_SKIP_DRAW, dst);
 }
 
-static u8 TextSpeed_ProcessInput(u8 selection)
+static void Difficulty_DrawChoices(u8 selection)
+{
+    u8 styles[3] = {0, 0, 0};
+    s32 wEasy, wMed, wHard, xMed;
+    styles[selection] = 1;
+    wEasy = GetStringWidth(FONT_NORMAL, gText_RtDifficultyEasy, 0);
+    wMed = GetStringWidth(FONT_NORMAL, gText_RtDifficultyMedium, 0);
+    wHard = GetStringWidth(FONT_NORMAL, gText_RtDifficultyHard, 0);
+    // the middle choice centred in the gap between the outer two
+    xMed = 104 + wEasy + ((198 - wHard) - (104 + wEasy) - wMed) / 2;
+    ClearChoiceRow(YPOS_BATTLESCENE);
+    DrawOptionMenuChoice(gText_RtDifficultyEasy, 104, YPOS_BATTLESCENE, styles[0]);
+    DrawOptionMenuChoice(gText_RtDifficultyMedium, xMed, YPOS_BATTLESCENE, styles[1]);
+    DrawOptionMenuChoice(gText_RtDifficultyHard, GetStringRightAlignXOffset(FONT_NORMAL, gText_RtDifficultyHard, 198), YPOS_BATTLESCENE, styles[2]);
+}
+
+// EXP SHARE: OFF, or the EXP of each win split among the first 2..6 POKeMON of the party
+static u8 ExpShare_ProcessInput(u8 selection)
 {
     if (JOY_NEW(DPAD_RIGHT))
     {
-        if (selection <= 1)
-            selection++;
-        else
-            selection = 0;
-
+        selection = selection < 5 ? selection + 1 : 0;
         sArrowPressed = TRUE;
     }
     if (JOY_NEW(DPAD_LEFT))
     {
-        if (selection != 0)
-            selection--;
-        else
-            selection = 2;
+        selection = selection != 0 ? selection - 1 : 5;
+        sArrowPressed = TRUE;
+    }
+    return selection;
+}
 
+static void ExpShare_DrawChoices(u8 selection)
+{
+    static const u8 *const sTexts[] = {gText_RtExpShareOff, gText_RtExpShare2, gText_RtExpShare3, gText_RtExpShare4, gText_RtExpShare5, gText_RtExpShareAll};
+    ClearChoiceRow(YPOS_EXPSHARE);
+    DrawOptionMenuChoice(sTexts[selection], 104, YPOS_EXPSHARE, 1);
+}
+
+// EXP BONUS: extra EXP on every win, OFF or +25 .. +400 %
+static u8 ExpBonus_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_RIGHT))
+    {
+        selection = selection < 7 ? selection + 1 : 0;
+        sArrowPressed = TRUE;
+    }
+    if (JOY_NEW(DPAD_LEFT))
+    {
+        selection = selection != 0 ? selection - 1 : 7;
+        sArrowPressed = TRUE;
+    }
+    return selection;
+}
+
+static void ExpBonus_DrawChoices(u8 selection)
+{
+    static const u8 sOff[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
+    static const u8 s25[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}+25%");
+    static const u8 s50[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}+50%");
+    static const u8 s100[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}+100%");
+    static const u8 s150[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}+150%");
+    static const u8 s200[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}+200%");
+    static const u8 s300[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}+300%");
+    static const u8 s400[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}+400%");
+    static const u8 *const sTexts[] = {sOff, s25, s50, s100, s150, s200, s300, s400};
+    ClearChoiceRow(YPOS_EXPBONUS);
+    DrawOptionMenuChoice(sTexts[selection & 7], 104, YPOS_EXPBONUS, 1);
+}
+
+// BATTLE SPEED: how fast the real-time fights run, from very slow to the original pace
+static void BattleSpeed_DrawChoices(u8 selection)
+{
+    static const u8 s60[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}60%");
+    static const u8 s70[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}70%");
+    static const u8 s80[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}80%");
+    static const u8 s90[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}90%");
+    static const u8 s100[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}100%");
+    static const u8 sSlowest[] = _("SLOWEST");
+    static const u8 sOriginal[] = _("ORIGINAL");
+    static const u8 *const sTexts[] = {s60, s70, s80, s90, s100};
+    if (selection > 4)
+        selection = 2;
+    ClearChoiceRow(YPOS_BATTLESPEED);
+    DrawOptionMenuChoice(sTexts[selection], 104, YPOS_BATTLESPEED, 1);
+    if (selection == 0)
+        DrawOptionMenuChoice(sSlowest, 144, YPOS_BATTLESPEED, 0);
+    else if (selection == 4)
+        DrawOptionMenuChoice(sOriginal, 144, YPOS_BATTLESPEED, 0);
+}
+
+// DIFFICULTY: EASY / MEDIUM / HARD, cycling
+static u8 Difficulty_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_RIGHT))
+    {
+        selection = selection < 2 ? selection + 1 : 0;
+        sArrowPressed = TRUE;
+    }
+    if (JOY_NEW(DPAD_LEFT))
+    {
+        selection = selection != 0 ? selection - 1 : 2;
+        sArrowPressed = TRUE;
+    }
+    return selection;
+}
+
+// TEXT SPEED: SLOW / MID / FAST / INSTANT (real-time mod), one value at a time like the other new rows
+static u8 TextSpeed_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_RIGHT))
+    {
+        selection = selection < OPTIONS_TEXT_SPEED_FAST ? selection + 1 : 0;
+        sArrowPressed = TRUE;
+    }
+    if (JOY_NEW(DPAD_LEFT))
+    {
+        selection = selection != 0 ? selection - 1 : OPTIONS_TEXT_SPEED_FAST;
         sArrowPressed = TRUE;
     }
     return selection;
@@ -436,48 +633,12 @@ static u8 TextSpeed_ProcessInput(u8 selection)
 
 static void TextSpeed_DrawChoices(u8 selection)
 {
-    u8 styles[3];
-    s32 widthSlow, widthMid, widthFast, xMid;
-
-    styles[0] = 0;
-    styles[1] = 0;
-    styles[2] = 0;
-    styles[selection] = 1;
-
-    DrawOptionMenuChoice(gText_TextSpeedSlow, 104, YPOS_TEXTSPEED, styles[0]);
-
-    widthSlow = GetStringWidth(FONT_NORMAL, gText_TextSpeedSlow, 0);
-    widthMid = GetStringWidth(FONT_NORMAL, gText_TextSpeedMid, 0);
-    widthFast = GetStringWidth(FONT_NORMAL, gText_TextSpeedFast, 0);
-
-    widthMid -= 94;
-    xMid = (widthSlow - widthMid - widthFast) / 2 + 104;
-    DrawOptionMenuChoice(gText_TextSpeedMid, xMid, YPOS_TEXTSPEED, styles[1]);
-
-    DrawOptionMenuChoice(gText_TextSpeedFast, GetStringRightAlignXOffset(FONT_NORMAL, gText_TextSpeedFast, 198), YPOS_TEXTSPEED, styles[2]);
-}
-
-static u8 BattleScene_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
-    {
-        selection ^= 1;
-        sArrowPressed = TRUE;
-    }
-
-    return selection;
-}
-
-static void BattleScene_DrawChoices(u8 selection)
-{
-    u8 styles[2];
-
-    styles[0] = 0;
-    styles[1] = 0;
-    styles[selection] = 1;
-
-    DrawOptionMenuChoice(gText_BattleSceneOn, 104, YPOS_BATTLESCENE, styles[0]);
-    DrawOptionMenuChoice(gText_BattleSceneOff, GetStringRightAlignXOffset(FONT_NORMAL, gText_BattleSceneOff, 198), YPOS_BATTLESCENE, styles[1]);
+    static const u8 sInstant[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}INSTANT");
+    static const u8 *const sTexts[] = {gText_TextSpeedSlow, gText_TextSpeedMid, gText_TextSpeedFast, sInstant};
+    if (selection > OPTIONS_TEXT_SPEED_FAST)
+        selection = OPTIONS_TEXT_SPEED_MID;
+    ClearChoiceRow(YPOS_TEXTSPEED);
+    DrawOptionMenuChoice(sTexts[selection], 104, YPOS_TEXTSPEED, 1);
 }
 
 static u8 BattleStyle_ProcessInput(u8 selection)
@@ -495,12 +656,13 @@ static void BattleStyle_DrawChoices(u8 selection)
 {
     u8 styles[2];
 
+    ClearChoiceRow(YPOS_BATTLESTYLE);
     styles[0] = 0;
     styles[1] = 0;
     styles[selection] = 1;
 
-    DrawOptionMenuChoice(gText_BattleStyleShift, 104, YPOS_BATTLESTYLE, styles[0]);
-    DrawOptionMenuChoice(gText_BattleStyleSet, GetStringRightAlignXOffset(FONT_NORMAL, gText_BattleStyleSet, 198), YPOS_BATTLESTYLE, styles[1]);
+    DrawOptionMenuChoice(gText_BattleSceneOff, 104, YPOS_BATTLESTYLE, styles[0]);
+    DrawOptionMenuChoice(gText_BattleSceneOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_BattleSceneOn, 198), YPOS_BATTLESTYLE, styles[1]);
 }
 
 static u8 Sound_ProcessInput(u8 selection)
@@ -519,6 +681,7 @@ static void Sound_DrawChoices(u8 selection)
 {
     u8 styles[2];
 
+    ClearChoiceRow(YPOS_SOUND);
     styles[0] = 0;
     styles[1] = 0;
     styles[selection] = 1;
@@ -581,6 +744,7 @@ static void FrameType_DrawChoices(u8 selection)
 
     text[i] = EOS;
 
+    ClearChoiceRow(YPOS_FRAMETYPE);
     DrawOptionMenuChoice(gText_FrameType, 104, YPOS_FRAMETYPE, 0);
     DrawOptionMenuChoice(text, 128, YPOS_FRAMETYPE, 1);
 }
@@ -613,6 +777,7 @@ static void ButtonMode_DrawChoices(u8 selection)
     s32 widthNormal, widthLR, widthLA, xLR;
     u8 styles[3];
 
+    ClearChoiceRow(YPOS_BUTTONMODE);
     styles[0] = 0;
     styles[1] = 0;
     styles[2] = 0;
@@ -644,7 +809,7 @@ static void DrawOptionMenuTexts(void)
 
     FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));
     for (i = 0; i < MENUITEM_COUNT; i++)
-        AddTextPrinterParameterized(WIN_OPTIONS, FONT_NORMAL, sOptionMenuItemsNames[i], 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);
+        AddTextPrinterParameterized3(WIN_OPTIONS, FONT_NORMAL, 8, (i * OPTION_ROW_H), sOptionTextColors, TEXT_SKIP_DRAW, sOptionMenuItemsNames[i]);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
 
