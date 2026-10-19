@@ -229,6 +229,7 @@ bool8 RtExt_TrySuper(struct RtActor *a)
 }
 
 // per-frame ki / form upkeep of one actor
+#define SUDDEN_FRAME (gRogueMode ? 2700 : 5400)   // 45 s in runs, 90 s elsewhere
 static const u8 sText_Sudden[] = _("SUDDEN DEATH!");
 void RtExt_BuildTick(struct RtActor *a);
 void RtKi_Tick(struct RtActor *a)
@@ -599,10 +600,10 @@ void RtExt_BuildTick(struct RtActor *a)
 {
     struct RtActorX *x = X(a);
     if (x->spellCd) x->spellCd--;
-    if (gRogueMode && gRt->frame >= 2700 && a->active && a->hp > 0 && a->state == AST_NORMAL)
+    if (gRt->frame >= SUDDEN_FRAME && a->active && a->hp > 0 && a->state == AST_NORMAL)
     {
         // sudden death: nothing may stalemate (e.g. a Ghost move against a Normal type)
-        if (gRt->frame == 2700 && a->id == gRt->playerLead)
+        if (gRt->frame == SUDDEN_FRAME && a->id == gRt->playerLead)
             RtUi_Toast(sText_Sudden, 100);
         if (gRt->frame % 60 == 0)
             RtActor_Damage(a, a->maxHp / 40 + 1, 255, TRUE);
