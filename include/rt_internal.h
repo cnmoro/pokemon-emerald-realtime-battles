@@ -911,6 +911,7 @@ void RtBuild_SetSel(struct Pokemon *mon, u8 sel);
 const u8 *RtBuild_RuneName(u8 r);
 const u8 *RtBuild_SpellName(u8 sp);
 bool8 RtExt_StartPoll(void);
+bool8 RtExt_TryEvolve(struct RtActor *a, struct Pokemon *mon);
 bool8 RtExt_CastSpell(struct RtActor *a);
 u16 RtKi_RuneGainPct(struct RtActor *a);
 void RtExt_OnHit(struct RtActor *victim, s32 *amount, u8 src);

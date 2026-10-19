@@ -140,6 +140,13 @@ bool8 RtDebug_FieldInput(void)
         AddBagItem(gRtDebugTestMove, 1);
         return FALSE;
     }
+    if (cmd == 31)
+    {
+        // lead: 1 exp point short of the next level
+        u32 e = gExperienceTables[gSpeciesInfo[GetMonData(&gPlayerParty[0], MON_DATA_SPECIES)].growthRate][GetMonData(&gPlayerParty[0], MON_DATA_LEVEL) + 1] - 1;
+        SetMonData(&gPlayerParty[0], MON_DATA_EXP, &e);
+        return FALSE;
+    }
     if (cmd == 25)
     {
         // gRtDebugLevel more of item gRtDebugTestMove in the bag (cleared afterwards)

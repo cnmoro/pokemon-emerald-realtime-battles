@@ -1532,6 +1532,7 @@ static void Rt_GiveExpToMon(u8 partyIdx, u32 exp, u16 defeatedSpecies)
                 }
                 RtFx_Word(a->x, a->y - TO_FX(a->height + 8), FX_W_LV_UP);
                 a->hpBarDirty = TRUE;
+                RtExt_TryEvolve(a, mon);
             }
         }
         RtUi_RefreshHud();

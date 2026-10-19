@@ -5,6 +5,8 @@
 #include "main.h"
 #include "string_util.h"
 #include "pokemon.h"
+#include "pokedex.h"
+#include "constants/pokedex.h"
 #include "random.h"
 #include "sound.h"
 #include "constants/moves.h"
@@ -569,4 +571,69 @@ void RtExt_BuildTick(struct RtActor *a)
         x->buffKind = 0;
     if (a->side != RT_SIDE_PLAYER || a->id != gRt->playerLead)
         AiSpell(a);
+}
+
+// ---------------------------------------------------------------------------
+// Evolution in the middle of the fight (right after a level-up)
+// ---------------------------------------------------------------------------
+extern u8 gLeveledUpInBattle;
+static const u8 sText_Evolved[] = _("{STR_VAR_1} evolved into {STR_VAR_2}!");
+
+bool8 RtExt_TryEvolve(struct RtActor *a, struct Pokemon *mon)
+{
+    struct RtActorX *x = X(a);
+    u16 from = a->species, to = GetEvolutionTargetSpecies(mon, EVO_MODE_NORMAL, 0);
+    u16 oldMax = a->maxHp;
+    u8 nick[POKEMON_NAME_LENGTH + 1];
+    bool8 defaultName;
+    if (to == SPECIES_NONE || a->state == AST_GONE || a->state == AST_FAINT || !RtActor_IsAlive(a))
+        return FALSE;
+    if (x->superTimer)
+        EndSuper(a);
+    GetMonData(mon, MON_DATA_NICKNAME, nick);
+    StringGet_Nickname(nick);
+    GetSpeciesName(gStringVar3, from);
+    defaultName = StringCompare(nick, gStringVar3) == 0;
+    StringCopy(gStringVar1, nick);
+    SetMonData(mon, MON_DATA_SPECIES, &to);
+    GetSpeciesName(gStringVar3, to);
+    if (defaultName)
+        SetMonData(mon, MON_DATA_NICKNAME, gStringVar3);
+    CalculateMonStats(mon);
+    GetSetPokedexFlag(SpeciesToNationalPokedexNum(to), FLAG_SET_SEEN);
+    GetSetPokedexFlag(SpeciesToNationalPokedexNum(to), FLAG_SET_CAUGHT);
+    gLeveledUpInBattle &= ~(1 << a->partyIdx);
+    a->species = to;
+    a->dex = SpeciesToNationalPokedexNum(to);
+    if (a->dex == 0 || a->dex > NATIONAL_DEX_COUNT)
+        a->dex = 1;
+    a->gfxDex = a->dex;
+    a->types[0] = gSpeciesInfo[to].types[0];
+    a->types[1] = gSpeciesInfo[to].types[1];
+    a->ability = GetMonAbility(mon);
+    a->maxHp = GetMonData(mon, MON_DATA_MAX_HP);
+    a->hp += a->maxHp - oldMax;
+    if (a->hp > a->maxHp) a->hp = a->maxHp;
+    a->atk = GetMonData(mon, MON_DATA_ATK);
+    a->def = GetMonData(mon, MON_DATA_DEF);
+    a->spe = GetMonData(mon, MON_DATA_SPEED);
+    a->spa = GetMonData(mon, MON_DATA_SPATK);
+    a->spd = GetMonData(mon, MON_DATA_SPDEF);
+    a->radius = gRtSpeciesGfx[a->gfxDex].radius;
+    a->height = gRtSpeciesGfx[a->gfxDex].height;
+    a->palDirty = TRUE;
+    a->needLoad = TRUE;
+    a->flash = 14;
+    a->hpBarDirty = TRUE;
+    StringCopy(gStringVar2, gStringVar3);
+    StringExpandPlaceholders(gStringVar4, sText_Evolved);
+    RtUi_Toast(gStringVar4, 110);
+    RtFx_Flash(0, 14);
+    RtFx_Shake(3, 24);
+    RtFx_Dim(5, 40);
+    RtFx_Ring(FX_SPARK8, FXP_WHITE, a->x, a->y - TO_FX(a->height / 2), 14, 28, 24);
+    RtFx_Impact(RTI_STAR, FXP_WHITE, a->x, a->y - TO_FX(a->height / 2));
+    PlayCry_Normal(to, 0);
+    gRt->pauseFrames = 30;
+    return TRUE;
 }
