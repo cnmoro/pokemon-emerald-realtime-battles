@@ -220,7 +220,7 @@ static void BreakProp(struct RtProp *p)
 bool8 RtProps_HitAt(s32 fx, s32 fy, s32 r, u8 dmg)
 {
     s32 i;
-    bool8 hit = FALSE;
+    bool8 hit = RtArena_HitCells(fx, fy + TO_FX(6), r + 1, dmg);
     for (i = 0; i < RT_MAX_PROPS; i++)
     {
         struct RtProp *p = &gRt->props[i];

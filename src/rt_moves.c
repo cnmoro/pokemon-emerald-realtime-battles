@@ -553,6 +553,7 @@ s32 RtMove_CalcDamage(struct RtActor *atk, struct RtActor *def, u16 move, u16 po
             if (type == TYPE_WATER) dmg /= 2;
         }
     }
+    dmg = dmg * RtExt_TerrainDmgPct(atk, def, type) / 100;
     if (crit)
         dmg *= 2;
     if (RtActor_HasType(atk, type) && gBattleMoves[move].effect != EFFECT_FUTURE_SIGHT)
@@ -932,6 +933,7 @@ static void UpdateBullet(struct RtProj *p)
     }
     if (!(p->flags & RTMF_ARC) && RtArena_PointBlocksShot(FROM_FX(p->x), FROM_FX(p->y)))
     {
+        RtArena_HitCells(p->x, p->y, 2, gBattleMoves[p->move].power >= 80 ? 2 : 1);
         ProjImpact(p, p->x, p->y);
         if (p->param & 4)
             goto zone;

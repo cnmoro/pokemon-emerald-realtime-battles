@@ -789,6 +789,7 @@ static bool8 PickSpawn(const u8 *comp, const u8 *open, s32 tx, s32 ty, s32 avoid
 }
 
 static void RtArena_ResetPaths(void);
+static void MarkBreakables(void);
 void RtArena_ClampCamera(s32 *tx, s32 *ty)
 {
     // visible play field is screen y in [HUD_TOP, DISPLAY_HEIGHT - HUD_BOTTOM)
@@ -1629,6 +1630,7 @@ void RtArena_Build(void)
     }
     gRt->floorKind = water ? 1 : ((MetatileBehavior_IsTallGrass(playerBehav) || MetatileBehavior_IsLongGrass(playerBehav)) ? 2 : 0);
     RtMapCache_End();
+    MarkBreakables();
     RtProps_Place(); // after floorKind: nothing is put down on water
     Free(grid);
     Free(sum);
@@ -1732,7 +1734,163 @@ void RtArena_LoadGfx(void)
     for (y = 0; y < ARENA_MH; y++)
         for (x = 0; x < ARENA_MW; x++)
             PutCell(bg1, bg2, bg3, x, y, gRt->arenaMeta[y][x]);
+    // terrain kind of every cell
+    for (y = 0; y < ARENA_MH; y++)
+        for (x = 0; x < ARENA_MW; x++)
+        {
+            u8 b = BehaviorOf(gRt->arenaMeta[y][x]), t = RTT_NONE;
+            if (MetatileBehavior_IsSurfableWaterOrUnderwater(b))
+                t = RTT_WATER;
+            else if (MetatileBehavior_IsSandOrDeepSand(b))
+                t = RTT_SAND;
+            else if (MetatileBehavior_IsTallGrass(b) || MetatileBehavior_IsLongGrass(b))
+                t = RTT_GRASS;
+            else if (MetatileBehavior_IsIce(b))
+                t = RTT_ICE;
+            gRt->terrain[y][x] = t;
+        }
     InitTilesetAnimations();
+}
+
+// ---------------------------------------------------------------------------
+// Destructible scenery: small isolated obstacles (trees, rocks, signs...) break under strong hits
+// ---------------------------------------------------------------------------
+static void MarkBreakables(void)
+{
+    u16 *q = gRt->scr.pathQueue;
+    u16 cnt[16], ids[16];
+    u8 nIds = 0, nGrp = 0, best = 0;
+    s32 x, y, k;
+    memset(gRt->grpId, 0, sizeof(gRt->grpId));
+    memset(gRt->grpHp, 0, sizeof(gRt->grpHp));
+    memset(gRt->grpHit, 0, sizeof(gRt->grpHit));
+    gRt->floorMeta = 0xFFFF;
+    for (y = 0; y < ARENA_MH; y++)
+        for (x = 0; x < ARENA_MW; x++)
+        {
+            u16 m = gRt->arenaMeta[y][x];
+            if (gRt->solid[y][x] || BehaviorOf(m) != MB_NORMAL
+             || (GetMetatileAttributesById(m) & METATILE_ATTR_LAYER_MASK) != (METATILE_LAYER_TYPE_NORMAL << METATILE_ATTR_LAYER_SHIFT))
+                continue;
+            for (k = 0; k < nIds; k++)
+                if (ids[k] == m)
+                    break;
+            if (k < nIds)
+                cnt[k]++;
+            else if (nIds < 16)
+            {
+                ids[nIds] = m;
+                cnt[nIds++] = 1;
+            }
+        }
+    if (nIds == 0)
+        return;
+    for (k = 1; k < nIds; k++)
+        if (cnt[k] > cnt[best])
+            best = k;
+    gRt->floorMeta = ids[best];
+    // flood the blocked groups (kept in grpId as 0xFF while they are being looked at)
+    for (y = 1; y < ARENA_MH - 1; y++)
+        for (x = 1; x < ARENA_MW - 1; x++)
+        {
+            u16 head = 0, tail = 0;
+            bool8 ok = TRUE;
+            if (!(gRt->solid[y][x] & RT_SOLID_WALK) || gRt->grpId[y][x])
+                continue;
+            gRt->grpId[y][x] = 0xFF;
+            q[tail++] = y * ARENA_MW + x;
+            while (head < tail)
+            {
+                s32 cx = q[head] % ARENA_MW, cy = q[head] / ARENA_MW;
+                head++;
+                if (cx <= 1 || cy <= 1 || cx >= ARENA_MW - 2 || cy >= ARENA_MH - 2 || !(gRt->solid[cy][cx] & RT_SOLID_SHOT))
+                    ok = FALSE;
+                for (k = 0; k < 8; k++)
+                {
+                    static const s8 sDx[8] = {1, -1, 0, 0, 1, 1, -1, -1};
+                    static const s8 sDy[8] = {0, 0, 1, -1, 1, -1, 1, -1};
+                    s32 nx = cx + sDx[k], ny = cy + sDy[k];
+                    if (nx < 0 || ny < 0 || nx >= ARENA_MW || ny >= ARENA_MH)
+                    {
+                        ok = FALSE;
+                        continue;
+                    }
+                    if (!(gRt->solid[ny][nx] & RT_SOLID_WALK) || gRt->grpId[ny][nx])
+                        continue;
+                    gRt->grpId[ny][nx] = 0xFF;
+                    q[tail++] = ny * ARENA_MW + nx;
+                }
+            }
+            if (ok && tail <= 8 && nGrp < 23)
+            {
+                nGrp++;
+                gRt->grpHp[nGrp] = 6;
+                for (k = 0; k < tail; k++)
+                    gRt->grpId[q[k] / ARENA_MW][q[k] % ARENA_MW] = nGrp;
+            }
+            else
+                for (k = 0; k < tail; k++)
+                    gRt->grpId[q[k] / ARENA_MW][q[k] % ARENA_MW] = 0xFE;
+        }
+    for (y = 0; y < ARENA_MH; y++)
+        for (x = 0; x < ARENA_MW; x++)
+            if (gRt->grpId[y][x] >= 0xFE)
+                gRt->grpId[y][x] = 0;
+}
+
+static void BreakGroup(u8 id)
+{
+    u16 *bg1 = (u16 *)BG_SCREEN_ADDR(24);
+    u16 *bg2 = (u16 *)BG_SCREEN_ADDR(26);
+    u16 *bg3 = (u16 *)BG_SCREEN_ADDR(28);
+    s32 x, y;
+    for (y = 0; y < ARENA_MH; y++)
+        for (x = 0; x < ARENA_MW; x++)
+            if (gRt->grpId[y][x] == id)
+            {
+                gRt->grpId[y][x] = 0;
+                gRt->solid[y][x] = 0;
+                gRt->terrain[y][x] = RTT_NONE;
+                gRt->arenaMeta[y][x] = gRt->floorMeta;
+                PutCell(bg1, bg2, bg3, x, y, gRt->floorMeta);
+                RtProps_Debris(PROP_ROCK, TO_FX(x * 16 + 8), TO_FX(y * 16 + 14));
+            }
+    gRt->grpHp[id] = 0;
+    RtArena_ResetPaths();
+    RtFx_Shake(2, 10);
+}
+
+// Returns TRUE when the circle (FX position, pixel radius) touches scenery that can break
+bool8 RtArena_HitCells(s32 fx, s32 fy, s32 r, u8 dmg)
+{
+    s32 x = FROM_FX(fx), y = FROM_FX(fy);
+    s32 cx0 = (x - r) >> 4, cx1 = (x + r) >> 4, cy0 = (y - r) >> 4, cy1 = (y + r) >> 4, cx, cy;
+    bool8 hit = FALSE;
+    if (gRt->floorMeta == 0xFFFF)
+        return FALSE;
+    for (cy = cy0; cy <= cy1; cy++)
+        for (cx = cx0; cx <= cx1; cx++)
+        {
+            u8 id;
+            if (cx < 0 || cy < 0 || cx >= ARENA_MW || cy >= ARENA_MH)
+                continue;
+            id = gRt->grpId[cy][cx];
+            if (id == 0)
+                continue;
+            hit = TRUE;
+            if (gRt->grpHit[id] && (u16)(gRt->frame - gRt->grpHit[id]) < 14)
+                continue;
+            gRt->grpHit[id] = gRt->frame | 1;
+            RtFx_Spawn(FX_SPARK8, FXP_WHITE, TO_FX(cx * 16 + 8), TO_FX(cy * 16 + 8), 8);
+            if (gRt->grpHp[id] <= dmg)
+                BreakGroup(id);
+            else
+            {
+                gRt->grpHp[id] -= dmg;
+                RtFx_Shake(1, 3);
+            }
+        }
+    return hit;
 }
 
 // ---------------------------------------------------------------------------

@@ -12,6 +12,7 @@
 #include "constants/moves.h"
 #include "constants/songs.h"
 #include "constants/species.h"
+#include "constants/abilities.h"
 #include "constants/pokemon.h"
 #include "data/rt/forms.h"
 
@@ -215,6 +216,7 @@ void RtKi_Tick(struct RtActor *a)
 {
     struct RtActorX *x = X(a);
     RtExt_BuildTick(a);
+    RtExt_TerrainTick(a);
     if (gRtDebugEnabled && gRtDebugKi && a->side == RT_SIDE_PLAYER && a->id == gRt->playerLead)
     {
         x->ki = RT_KI_MAX;
@@ -636,4 +638,75 @@ bool8 RtExt_TryEvolve(struct RtActor *a, struct Pokemon *mon)
     PlayCry_Normal(to, 0);
     gRt->pauseFrames = 30;
     return TRUE;
+}
+
+// ---------------------------------------------------------------------------
+// Terrain with its own rules (taken from the metatiles of the arena)
+// ---------------------------------------------------------------------------
+static const u8 sText_TWater[] = _("WATER: Water fast, Electric +30%, Fire -25%");
+static const u8 sText_TSand[]  = _("SAND: slows most, Ground/Rock +15%");
+static const u8 sText_TGrass[] = _("GRASS: Grass heals/faster, Fire +20%");
+static const u8 sText_TIce[]   = _("ICE: Ice moves +20%, Fire -15%");
+
+static bool8 Airborne(struct RtActor *a)
+{
+    return RtActor_HasType(a, TYPE_FLYING) || a->ability == ABILITY_LEVITATE || a->invuln == 1 || a->z > 6;
+}
+
+u8 RtExt_TerrainAt(struct RtActor *a)
+{
+    s32 cx = FROM_FX(a->x) >> 4, cy = FROM_FX(a->y) >> 4;
+    if (cx < 0 || cy < 0 || cx >= ARENA_MW || cy >= ARENA_MH)
+        return RTT_NONE;
+    return gRt->terrain[cy][cx];
+}
+
+u16 RtExt_TerrainSpeedPct(struct RtActor *a)
+{
+    u8 t = RtExt_TerrainAt(a);
+    if (t == RTT_NONE || Airborne(a))
+        return 100;
+    switch (t)
+    {
+    case RTT_WATER:
+        if (RtActor_HasType(a, TYPE_WATER) || a->ability == ABILITY_SWIFT_SWIM) return 115;
+        return 82;
+    case RTT_SAND:
+        if (RtActor_HasType(a, TYPE_GROUND) || RtActor_HasType(a, TYPE_ROCK) || a->ability == ABILITY_SAND_VEIL) return 100;
+        return 88;
+    case RTT_GRASS:
+        return RtActor_HasType(a, TYPE_GRASS) ? 110 : 100;
+    }
+    return 100;
+}
+
+u16 RtExt_TerrainDmgPct(struct RtActor *atk, struct RtActor *def, u8 type)
+{
+    u8 ta = RtExt_TerrainAt(atk), td = RtExt_TerrainAt(def);
+    u16 m = 100;
+    if (type == TYPE_ELECTRIC && td == RTT_WATER && !Airborne(def)) m = m * 130 / 100;
+    if (type == TYPE_FIRE && (ta == RTT_WATER || td == RTT_WATER)) m = m * 75 / 100;
+    if (type == TYPE_FIRE && ta == RTT_GRASS) m = m * 120 / 100;
+    if (type == TYPE_FIRE && ta == RTT_ICE) m = m * 85 / 100;
+    if (type == TYPE_GRASS && ta == RTT_GRASS) m = m * 120 / 100;
+    if ((type == TYPE_GROUND || type == TYPE_ROCK) && ta == RTT_SAND) m = m * 115 / 100;
+    if (type == TYPE_ICE && ta == RTT_ICE) m = m * 120 / 100;
+    if (type == TYPE_WATER && ta == RTT_WATER) m = m * 110 / 100;
+    return m;
+}
+
+void RtExt_TerrainTick(struct RtActor *a)
+{
+    u8 t;
+    if (a->state != AST_NORMAL)
+        return;
+    t = RtExt_TerrainAt(a);
+    if (t == RTT_GRASS && RtActor_HasType(a, TYPE_GRASS) && (gRt->frame & 63) == 0 && a->hp < a->maxHp)
+        RtActor_Heal(a, a->maxHp / 40 > 0 ? a->maxHp / 40 : 1);
+    if (a->side == RT_SIDE_PLAYER && a->id == gRt->playerLead && t != gRt->terrainShown)
+    {
+        gRt->terrainShown = t;
+        if (t != RTT_NONE && !gRt->toast.active)
+            RtUi_Toast(t == RTT_WATER ? sText_TWater : t == RTT_SAND ? sText_TSand : t == RTT_GRASS ? sText_TGrass : sText_TIce, 70);
+    }
 }

@@ -762,6 +762,13 @@ struct RtBattle
 
     // --- extended mechanics (always at the end) ---
     struct RtActorX ax[RT_MAX_ACTORS];
+    u8 terrain[ARENA_MH][ARENA_MW];   // RTT_*
+    u8 grpId[ARENA_MH][ARENA_MW];     // breakable obstacle group of every cell (0: none)
+    u8 grpHp[24];
+    u16 grpHit[24];
+    u16 floorMeta;
+    u8 terrainShown;
+    
     struct RtStruggle str;
 };
 
@@ -914,6 +921,12 @@ bool8 RtExt_StartPoll(void);
 bool8 RtExt_TryEvolve(struct RtActor *a, struct Pokemon *mon);
 bool8 RtExt_CastSpell(struct RtActor *a);
 u16 RtKi_RuneGainPct(struct RtActor *a);
+enum { RTT_NONE, RTT_WATER, RTT_SAND, RTT_GRASS, RTT_ICE };
+u8 RtExt_TerrainAt(struct RtActor *a);
+u16 RtExt_TerrainDmgPct(struct RtActor *atk, struct RtActor *def, u8 type);
+u16 RtExt_TerrainSpeedPct(struct RtActor *a);
+void RtExt_TerrainTick(struct RtActor *a);
+bool8 RtArena_HitCells(s32 fx, s32 fy, s32 r, u8 dmg);
 void RtExt_OnHit(struct RtActor *victim, s32 *amount, u8 src);
 u16 RtExt_StatMul(struct RtActor *a, u8 stat);
 u16 RtExt_CdPct(struct RtActor *a);

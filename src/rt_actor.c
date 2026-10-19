@@ -153,6 +153,7 @@ u8 RtActor_SpeedPx(struct RtActor *a)
         v = v * 60 / 100;
     if (a->trap)
         v = v * 35 / 100;
+    v = v * RtExt_TerrainSpeedPct(a) / 100;
     if (v < 160) v = 160;
     if (v > 255) v = 255;
     if (a->mstatus == MST_PAR && v > 150)
