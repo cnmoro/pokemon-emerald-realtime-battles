@@ -486,3 +486,17 @@ bool8 RtLc_IsMoveHm(u16 move)
 {
     return FALSE;
 }
+
+// holding L while walking works as a REPEL: wild POKeMON weaker than the first healthy party member stay away
+bool8 RtLc_IsWildLevelAllowedByRepel(u8 wildLevel)
+{
+    u8 i;
+    if (!VarGet(VAR_REPEL_STEP_COUNT) && !(gMain.heldKeysRaw & L_BUTTON))
+        return TRUE;
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_HP) && !GetMonData(&gPlayerParty[i], MON_DATA_IS_EGG))
+            return wildLevel >= GetMonData(&gPlayerParty[i], MON_DATA_LEVEL);
+    }
+    return FALSE;
+}

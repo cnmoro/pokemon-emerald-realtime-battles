@@ -120,6 +120,7 @@ def main():
     hook(rom, v['PartyHasMonWithSurf'], syms['RtLc_PartyHasMonWithSurf'])
     hook(rom, v['SetDefaultFlashLevel'], syms['RtLc_SetDefaultFlashLevel'])
     hook(rom, v['IsMoveHm'], syms['RtLc_IsMoveHm'])
+    hook(rom, v['IsWildLevelAllowedByRepel'], syms['RtLc_IsWildLevelAllowedByRepel'])
     # ... and the relearner goes back to the party menu when it was opened from there
     f = v['MoveRelearnerStateMachine'] & 0x1FFFFFF
     lits = [i for i in range(f, f + 0x600, 4) if struct.unpack_from('<I', rom, i)[0] == (v['CB2_ReturnToField'] | 1)]
