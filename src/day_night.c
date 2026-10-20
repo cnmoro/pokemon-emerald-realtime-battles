@@ -149,7 +149,7 @@ void DayNight_FrameEnd(void)
 const u16 *DayNight_GetTransferBuffer(void)
 {
     // while the overworld runs (a long frame must not fall back to the ungraded colours: that flickers)
-    if (sValid && (gMain.callback2 == CB2_Overworld || gMain.callback2 == CB2_OverworldBasic) && gMain.vblankCounter1 - gDnsFrame < 30)
+    if (sValid && (gMain.callback2 == CB2_Overworld || gMain.callback2 == CB2_OverworldBasic))
         return sGraded;
     return gPlttBufferFaded;
 }
