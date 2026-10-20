@@ -1475,3 +1475,12 @@ void RtRogue_DebugChallenge(void)
         RtDebug_StartTrainerBattle(TRAINER_ALLEN);
     }
 }
+
+u8 RtRogue_AiSkill(void)
+{
+    u8 sk;
+    if (gRogueMode == RG_CHALLENGE)
+        return 8;
+    sk = 3 + sRun.floor / 3;
+    return sk > 9 ? 9 : sk;
+}

@@ -110,6 +110,15 @@ bool8 RtDebug_FieldInput(void)
         RtDebug_StartTrainerBattle(gRtDebugTrainer ? gRtDebugTrainer : TRAINER_ROXANNE_1);
         return TRUE;
     }
+    if (cmd == 41)
+    {
+        // duel setup: only the lead stays in the party
+        u8 i;
+        for (i = 1; i < PARTY_SIZE; i++)
+            ZeroMonData(&gPlayerParty[i]);
+        CalculatePlayerPartyCount();
+        return FALSE;
+    }
     if (cmd == 40)
     {
         extern void RtRogue_DebugChallenge(void);
