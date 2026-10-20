@@ -1,4 +1,5 @@
 #include "global.h"
+#include "follower.h"
 #include "battle_setup.h"
 #include "bike.h"
 #include "coord_event_weather.h"
@@ -549,6 +550,7 @@ static bool8 TryStartStepCountScript(u16 metatileBehavior)
 
     IncrementRematchStepCounter();
     UpdateFriendshipStepCounter();
+    Follower_OnStep();
     UpdateFarawayIslandStepCounter();
 
     if (!(gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_FORCED_MOVE) && !MetatileBehavior_IsForcedMovementTile(metatileBehavior))
