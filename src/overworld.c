@@ -1,4 +1,5 @@
 #include "global.h"
+#include "day_night.h"
 #include "follower.h"
 #include "world_tiles.h"
 #include "overworld.h"
@@ -1482,6 +1483,7 @@ static void OverworldBasic(void)
     UpdateTilesetAnimations();
     DoScheduledBgTilemapCopiesToVram();
     WorldTiles_FrameEnd();
+    DayNight_FrameEnd();
 }
 
 // This CB2 is used when starting

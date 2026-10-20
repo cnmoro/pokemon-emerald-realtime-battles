@@ -27,6 +27,8 @@ static EWRAM_DATA u8 sHistHead = 0;
 static EWRAM_DATA u8 sAnim = 0, sAnimFrame = 0, sAnimTimer = 0, sFacing = 0, sStill = 0;
 static EWRAM_DATA s16 sLastPx = 0, sLastPy = 0;
 static EWRAM_DATA u16 sTileNum = 0;
+static EWRAM_DATA u8 sMatrix = 0xFF;
+#define FOLLOW_SCALE 160 // drawn at 160/256 of the battle sprite size (closer to the overworld scale)
 
 static void SpriteCB_Follower(struct Sprite *sprite)
 {
@@ -121,6 +123,7 @@ static bool8 CreateFollower(struct Pokemon *mon)
     gSprites[sSpriteId].centerToCornerVecX = 0;
     gSprites[sSpriteId].centerToCornerVecY = 0;
     gSprites[sSpriteId].invisible = TRUE;
+    sMatrix = AllocOamMatrix();
     sGfxDex = 0xFFFF;
     sCurFrame = 0xFFFF;
     return TRUE;
@@ -288,12 +291,28 @@ void Follower_Update(void)
     }
     {
         static const u8 sW[3][4] = {{8, 16, 32, 64}, {16, 32, 32, 64}, {8, 8, 16, 32}};
-        u8 w = sW[shape][size];
+        static const u8 sH[3][4] = {{8, 16, 32, 64}, {8, 8, 16, 32}, {16, 32, 32, 64}};
+        u8 w = sW[shape][size], h = sH[shape][size];
+        s32 cx = hf ? -(f->x + w / 2) : f->x + w / 2, cy = f->y + h / 2;
         fs->oam.shape = shape;
         fs->oam.size = size;
-        fs->oam.matrixNum = hf ? ST_OAM_HFLIP : 0;
-        fs->x = hf ? fx - (f->x + w) : fx + f->x;
-        fs->y = fy + f->y;
+        if (sMatrix < 32)
+        {
+            // shrunk around the feet with an affine (double size) sprite
+            s16 inv = 256 * 256 / FOLLOW_SCALE;
+            SetOamMatrix(sMatrix, hf ? -inv : inv, 0, 0, inv);
+            fs->oam.affineMode = ST_OAM_AFFINE_DOUBLE;
+            fs->oam.matrixNum = sMatrix;
+            fs->x = fx + cx * FOLLOW_SCALE / 256 - w;
+            fs->y = fy + cy * FOLLOW_SCALE / 256 - h;
+        }
+        else
+        {
+            fs->oam.affineMode = ST_OAM_AFFINE_OFF;
+            fs->oam.matrixNum = hf ? ST_OAM_HFLIP : 0;
+            fs->x = hf ? fx - (f->x + w) : fx + f->x;
+            fs->y = fy + f->y;
+        }
     }
     fs->oam.priority = ps->oam.priority;
     // drawn behind the player when above it on screen, in front when below
