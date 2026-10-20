@@ -1,5 +1,9 @@
 // Real-time battle extensions: ki (energy), SUPER form and the helpers for the beam struggle.
 #include "global.h"
+#include "constants/weather.h"
+#include "constants/map_types.h"
+#include "constants/region_map_sections.h"
+#include "overworld.h"
 #include "rt_internal.h"
 #include "rt_vfx.h"
 #include "main.h"
@@ -414,10 +418,23 @@ void RtMod_Setup(void)
         return;
     if (gRtDebugEnabled && gRtDebugArenaMod)
         gRt->arenaMod = gRtDebugArenaMod;
-    else if ((Random() % 100) >= 30)
-        return;
     else
-        gRt->arenaMod = 1 + Random() % (ARENA_MOD_COUNT - 1);
+    {
+        // rare, and only where it fits the place: eruptions on the volcano, fog where the weather is
+        // foggy or on the misty routes, wind in the desert, on the sea and up the Sky Pillar
+        u8 sec = gMapHeader.regionMapSectionId, w = gMapHeader.weather, mod = ARENA_MOD_NONE;
+        if (sec == MAPSEC_MT_CHIMNEY || sec == MAPSEC_FIERY_PATH || sec == MAPSEC_FIERY_PATH2 || sec == MAPSEC_JAGGED_PASS
+         || sec == MAPSEC_JAGGED_PASS2 || sec == MAPSEC_LAVARIDGE_TOWN || sec == MAPSEC_MAGMA_HIDEOUT || sec == MAPSEC_ROUTE_112)
+            mod = ARENA_MOD_ERUPTION;
+        else if (w == WEATHER_FOG_HORIZONTAL || w == WEATHER_FOG_DIAGONAL || sec == MAPSEC_ROUTE_119 || sec == MAPSEC_ROUTE_120
+         || sec == MAPSEC_MT_PYRE)
+            mod = ARENA_MOD_FOG;
+        else if (w == WEATHER_SANDSTORM || sec == MAPSEC_ROUTE_111 || sec == MAPSEC_SKY_PILLAR || gMapHeader.mapType == MAP_TYPE_OCEAN_ROUTE)
+            mod = ARENA_MOD_WIND;
+        if (mod == ARENA_MOD_NONE || (Random() % 100) >= 12)
+            return;
+        gRt->arenaMod = mod;
+    }
     gRt->windAng = Random() & 0xFF;
     gRt->modTimer = 180;
 }
