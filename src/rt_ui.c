@@ -649,12 +649,12 @@ static void RtUi_MovesStep(void)
 // ---------------------------------------------------------------------------
 void RtUi_Toast(const u8 *str, u16 frames)
 {
-    FillWindowPixelBuffer(WIN_TOAST, PIXEL_FILL(11));
+    FillWindowPixelBuffer(WIN_TOAST, PIXEL_FILL(0)); // transparent, like the rest of the HUD
     {
         s32 w = GetStringWidth(FONT_SMALL, str, 0);
         s32 x = (28 * 8 - w) / 2;
         if (x < 2) x = 2;
-        AddTextPrinterParameterized3(WIN_TOAST, FONT_SMALL, x, 2, (const u8[]){11, 2, 3}, TEXT_SKIP_DRAW, str);
+        AddTextPrinterParameterized3(WIN_TOAST, FONT_SMALL, x, 2, (const u8[]){0, 2, 1}, TEXT_SKIP_DRAW, str);
     }
     PutWindowTilemap(WIN_TOAST);
     CopyWindowToVram(WIN_TOAST, COPYWIN_FULL);
