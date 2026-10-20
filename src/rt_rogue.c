@@ -32,6 +32,7 @@
 #include "malloc.h"
 #include "gba/flash_internal.h"
 #include "save.h"
+#include "load_save.h"
 #include "constants/items.h"
 #include "constants/battle_move_effects.h"
 #include "script_pokemon_util.h"
@@ -849,7 +850,7 @@ static bool8 DecodeCode(u8 *code, u8 n)
 }
 
 // ---- challenge screens: create a code / type a code ----
-enum { CS_MAIN, CS_COUNT, CS_SHOW, CS_ENTER, CS_BAD };
+enum { CS_MAIN, CS_COUNT, CS_SHOW, CS_ENTER, CS_BAD, CS_NOPARTY };
 
 static const u8 sText_Challenge[] = _("CHALLENGE");
 static const u8 sText_CreateCode[] = _("CREATE CODE");
@@ -860,7 +861,7 @@ static const u8 sText_TypeCode[] = _("Type the code:");
 static const u8 sText_BadCode[] = _("That code is not valid.");
 static const u8 sText_Del[] = _("DEL");
 static const u8 sText_Go[] = _("GO");
-static const u8 sText_NoParty[] = _("You have no Pokemon.");
+static const u8 sText_NoParty[] = _("Load a saved game first.");
 static const u8 sText_ChalWins[] = _("Challenges won:");
 
 static EWRAM_DATA u8 sTyped[96] = {0};
@@ -995,7 +996,14 @@ static void CB2_ChallengeMenu(void)
             if (sCursor == 0)
             {
                 if (PartyCount() == 0)
+                {
+                    sScreen = CS_NOPARTY;
+                    Rg_Clear();
+                    Rg_Text(24, 60, sColRed, sText_NoParty);
+                    Rg_Text(84, 126, sColGray, sText_PressA);
+                    Rg_Present();
                     return;
+                }
                 sScreen = CS_COUNT;
                 sSub = PartyCount() < 3 ? PartyCount() : 3;  // up to 4 Pokemon (a 4 mon code has 62 characters)
                 DrawChalCount();
@@ -1087,12 +1095,17 @@ static void CB2_ChallengeMenu(void)
     case CS_BAD:
         if (JOY_NEW(A_BUTTON | B_BUTTON)) { sScreen = CS_ENTER; DrawChalEnter(); }
         break;
+    case CS_NOPARTY:
+        if (JOY_NEW(A_BUTTON | B_BUTTON)) { sScreen = CS_MAIN; DrawChalMain(); }
+        break;
     }
 }
 
 void CB2_RtChallengeStart(void)
 {
     Meta_Load();
+    if (PartyCount() == 0)
+        LoadPlayerParty();   // the title screen has the save loaded but not the party
     Rg_Open();
     sScreen = CS_MAIN;
     sCursor = 0;
