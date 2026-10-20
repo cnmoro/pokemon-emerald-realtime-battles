@@ -148,7 +148,8 @@ void DayNight_FrameEnd(void)
 // palette for the hardware this VBlank: the graded copy while the overworld is running
 const u16 *DayNight_GetTransferBuffer(void)
 {
-    if (sValid && gMain.vblankCounter1 - gDnsFrame <= 1)
+    // while the overworld runs (a long frame must not fall back to the ungraded colours: that flickers)
+    if (sValid && (gMain.callback2 == CB2_Overworld || gMain.callback2 == CB2_OverworldBasic) && gMain.vblankCounter1 - gDnsFrame < 30)
         return sGraded;
     return gPlttBufferFaded;
 }
