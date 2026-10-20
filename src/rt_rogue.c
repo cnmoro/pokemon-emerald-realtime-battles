@@ -1115,7 +1115,6 @@ static void StartChallengeBattle(void)
 // ---------------------------------------------------------------------------
 // BUILD EDITOR (also reachable from the start menu)
 // ---------------------------------------------------------------------------
-static const u8 sBeHelp[] = _("Runes work on their own; spells are cast in battle.");
 static EWRAM_DATA u8 sBeMon = 0;
 static EWRAM_DATA u8 sBeRow = 0;
 static EWRAM_DATA u8 sBeEdit = 0;
@@ -1174,7 +1173,34 @@ static void DrawBuildEdit(void)
         }
     }
     Rg_Arrow(26 + sBeRow * 16);
-    Rg_TextS(12, 120, sColBlue, sBeHelp);
+    {
+        static const u8 sRuneDesc[RUNE_COUNT][34] = {
+            _("No rune."), _("+10% Atk and Sp.Atk."), _("Heal 1/8 of the damage you deal."),
+            _("Attackers take 1/8 of the hit."), _("+15% Def and Sp.Def."), _("+15% Speed."),
+            _("Moves recharge 12% faster."), _("Ki builds 50% faster.")};
+        static const u8 sSpellDesc[SPELL_COUNT][34] = {
+            _("No spell."), _("4s: take half damage."), _("Heal 30% of max HP."),
+            _("Cure your status condition."), _("Dash a short way forward."),
+            _("6s: +30% Atk, +15% Spd, quick moves"), _("Instantly gain lots of Ki.")};
+        static const u8 sRuneHdr[] = _("RUNE (always active):");
+        static const u8 sSpellHdr[] = _("SPELL (hold START in battle):");
+        static const u8 sActHdr[] = _("Which build is used in battle.");
+        static const u8 sSpellCd[] = _("Recharge: 45 seconds.");
+        u8 v = RtBuild_Get(mon, sBeRow / 2);
+        if (sBeRow == 4)
+            Rg_TextS(12, 108, sColBlue, sActHdr);
+        else if (sBeRow & 1)
+        {
+            Rg_TextS(12, 105, sColGold, sSpellHdr);
+            Rg_TextS(12, 117, sColBlue, sSpellDesc[(v >> 4) % SPELL_COUNT]);
+            Rg_TextS(12, 129, sColGray, sSpellCd);
+        }
+        else
+        {
+            Rg_TextS(12, 105, sColGold, sRuneHdr);
+            Rg_TextS(12, 117, sColBlue, sRuneDesc[(v & 15) % RUNE_COUNT]);
+        }
+    }
     Rg_TextS(12, 146, sColGray, sHint3);
     Rg_Present();
 }
