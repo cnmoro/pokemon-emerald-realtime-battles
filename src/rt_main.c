@@ -1238,7 +1238,51 @@ static void Rt_HandlePlayerInput(struct RtActor *a)
         }
     }
 
-    RtExt_PlayerInput(a, held, pressed);
+    // input buffer: a move or dash pressed while the POKeMON is still busy (end of the last move, hit
+    // stun, a dash) comes out as soon as it is free again, instead of being dropped
+    {
+        static EWRAM_DATA s8 sBufSlot = -1;
+        static EWRAM_DATA u8 sBufAng = 0, sBufT = 0, sDashT = 0;
+        bool8 busy = a->state != AST_NORMAL || a->gcd || a->flinch || a->recharge;
+        if (a->inSlot >= 0)
+        {
+            if (busy)
+            {
+                sBufSlot = a->inSlot;
+                sBufAng = a->inAim;
+                sBufT = 18;
+                a->inSlot = -1;
+            }
+            else
+                sBufT = 0;
+        }
+        else if (sBufT)
+        {
+            sBufT--;
+            if (!busy && sBufSlot >= 0)
+            {
+                a->inSlot = sBufSlot;
+                a->inAim = sBufAng;
+                sBufT = 0;
+            }
+        }
+        RtExt_PlayerInput(a, held, pressed);
+        bool8 dashBusy = a->state != AST_NORMAL || a->flinch || a->recharge;
+        if (a->inDash && (dashBusy || a->dashCd))
+        {
+            sDashT = 10;
+            a->inDash = FALSE;
+        }
+        else if (sDashT)
+        {
+            sDashT--;
+            if (!dashBusy && !a->dashCd)
+            {
+                a->inDash = TRUE;
+                sDashT = 0;
+            }
+        }
+    }
 
     a->inMoveX = mx;
     a->inMoveY = my;

@@ -3014,7 +3014,7 @@ static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot)
 }
 
 // shared pause after any move before the next one can start (all moves, both sides)
-#define RT_MOVE_GCD 24
+#define RT_MOVE_GCD 18
 
 static void FinishCast(struct RtActor *a, u16 recovery)
 {

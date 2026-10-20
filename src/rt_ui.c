@@ -472,7 +472,7 @@ static void HudElemDraw(u8 id)
             // one dot per POKéMON of the foe's party under its HP bar: red = still able, dark = fainted
             s32 k;
             for (k = 0; k < sEnemyPartyTotalCache && k < PARTY_SIZE; k++)
-                FillWindowPixelRect(WIN_TOP, PIXEL_FILL(k < sEnemyPartyCountCache ? 5 : 3), el->x + 1 + k * 6, 13, 4, 2);
+                FillWindowPixelRect(WIN_TOP, PIXEL_FILL(k < sEnemyPartyCountCache ? 5 : 4), el->x + 1 + k * 6, 13, 4, 2);
         }
         break;
     case HE_P_NAME:
