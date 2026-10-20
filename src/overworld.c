@@ -1,6 +1,5 @@
 #include "global.h"
 #include "day_night.h"
-#include "follower.h"
 #include "world_tiles.h"
 #include "overworld.h"
 #include "party_menu.h"
@@ -1477,7 +1476,6 @@ static void OverworldBasic(void)
     AnimateSprites();
     CameraUpdate();
     UpdateCameraPanning();
-    Follower_Update();
     BuildOamBuffer();
     UpdatePaletteFade();
     UpdateTilesetAnimations();
