@@ -87,14 +87,14 @@ static const u16 sMenuPal[16] = {
     0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static const u8 sColHud[] = {1, 2, 3};
-static const u8 sColHudGray[] = {1, 4, 3};
-static const u8 sColHudRed[] = {1, 5, 3};
-static const u8 sColHudYellow[] = {1, 6, 3};
-static const u8 sColHudGreen[] = {1, 7, 3};
-static const u8 sColHudBlue[] = {1, 8, 3};
-static const u8 sColHudPurple[] = {1, 9, 3};
-static const u8 sColHudOrange[] = {1, 10, 3};
+static const u8 sColHud[] = {0, 2, 1};
+static const u8 sColHudGray[] = {0, 4, 1};
+static const u8 sColHudRed[] = {0, 5, 1};
+static const u8 sColHudYellow[] = {0, 6, 1};
+static const u8 sColHudGreen[] = {0, 7, 1};
+static const u8 sColHudBlue[] = {0, 8, 1};
+static const u8 sColHudPurple[] = {0, 9, 1};
+static const u8 sColHudOrange[] = {0, 10, 1};
 static const u8 sColMenu[] = {1, 2, 3};
 static const u8 sColMenuRed[] = {1, 5, 3};
 // cursor arrow: transparent background, so the glyph's empty right side doesn't paint over the row's text
@@ -165,8 +165,10 @@ static EWRAM_DATA u8 sMoveHudState[MAX_MON_MOVES] = {0};
 #define UI_TILE_ENEMY_BAR1 272
 #define UI_TILE_CD0        280
 #define UI_TILE_ALLY_BAR   296
+#define UI_TILE_STAMINA    304 // 4 tiles: the dash stamina bar
 #define UI_TILE_KI         300 // 4 tiles: the ki bar (and the beam struggle balance bar while one is going)
 static EWRAM_DATA u16 sKiDrawn = 0;
+static EWRAM_DATA u16 sStaDrawn = 0;
 
 static void SetPixel(u8 *tiles, u8 widthTiles, s32 x, s32 y, u8 c)
 {
@@ -241,8 +243,8 @@ void RtUi_Init(void)
     DeactivateAllTextPrinters();
     LoadPalette(sHudPal, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
     LoadPalette(sMenuPal, BG_PLTT_ID(14), PLTT_SIZE_4BPP);
-    FillWindowPixelBuffer(WIN_TOP, PIXEL_FILL(1));
-    FillWindowPixelBuffer(WIN_BOTTOM, PIXEL_FILL(1));
+    FillWindowPixelBuffer(WIN_TOP, PIXEL_FILL(0));
+    FillWindowPixelBuffer(WIN_BOTTOM, PIXEL_FILL(0));
     PutWindowTilemap(WIN_TOP);
     PutWindowTilemap(WIN_BOTTOM);
     CopyWindowToVram(WIN_TOP, COPYWIN_FULL);
@@ -255,6 +257,7 @@ void RtUi_Init(void)
     memset(sMoveHudState, 0xFF, sizeof(sMoveHudState));
     memset(sCdBarDrawn, 0xFF, sizeof(sCdBarDrawn));
     sKiDrawn = 0xFFFF;
+    sStaDrawn = 0xFFFF;
     {
         extern void RtAi_ResetTrainerItems(void);
         RtAi_ResetTrainerItems();
@@ -414,9 +417,9 @@ static void HudElemDraw(u8 id)
     u8 y = 2;
     const u8 *col, *st;
     if (gRt->isSafari && id == HE_TOP_EXTRA)
-        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(1), 0, 0, HUD_SPLIT_X - 1, 16);
+        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(0), 0, 0, HUD_SPLIT_X - 1, 16);
     else if (el->w)
-        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(1), el->x, 0, el->w, 16);
+        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(0), el->x, 0, el->w, 16);
     switch (id)
     {
     case HE_E0_NAME:
@@ -502,6 +505,7 @@ static void HudElemDraw(u8 id)
 
 static void DrawHudDivider(void)
 {
+    return; // minimal HUD: no divider
     if (!gRt->isSafari)
         FillWindowPixelRect(WIN_TOP, PIXEL_FILL(3), HUD_SPLIT_X - 1, 2, 1, 12);
     if (gRt->isDouble)
@@ -514,7 +518,7 @@ void RtUi_RefreshHud(void)
     s32 i;
     gRt->hudDirty = FALSE;
     RefreshEnemyPartyCount();
-    FillWindowPixelBuffer(WIN_TOP, PIXEL_FILL(1));
+    FillWindowPixelBuffer(WIN_TOP, PIXEL_FILL(0));
     DrawHudDivider();
     for (i = 0; i < HE_COUNT; i++)
     {
@@ -568,7 +572,7 @@ static void DrawMoveCell(struct RtActor *p, u8 i, u8 st)
 {
     static const u8 *const sBtn[] = {sButtonA, sButtonB, sButtonL, sButtonR};
     const u8 *col = st == 1 ? sColHud : (st == 3 ? sColHudRed : (st == 4 ? sColHudYellow : sColHudGray));
-    FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(1), i * 60, HUD_ROW2_Y, 60, 16 - HUD_ROW2_Y);
+    FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(0), i * 60, HUD_ROW2_Y, 60, 16 - HUD_ROW2_Y);
     sMoveHudState[i] = st;
     if (st == 0)
         return;
@@ -602,7 +606,7 @@ void RtUi_RefreshMoves(void)
     sMovesPending = 0;
     if (gRt->isSafari)
     {
-        FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(1), 0, HUD_ROW2_Y, 240, 16 - HUD_ROW2_Y);
+        FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(0), 0, HUD_ROW2_Y, 240, 16 - HUD_ROW2_Y);
         AddTextPrinterParameterized3(WIN_BOTTOM, FONT_SMALL, 2, HUD_ROW2_TEXT_Y, sColHudYellow, TEXT_SKIP_DRAW, sText_SafariHelp);
         CopyWindowToVram(WIN_BOTTOM, COPYWIN_GFX);
         return;
@@ -880,6 +884,17 @@ void RtUi_DrawObjs(void)
                 DrawBar(UI_TILE_KI, 4, 30, fill, color, 3);
             }
             PutObj(UI_TILE_KI, 1, 1, HUD_P_BAR_X, HUD_BAR_Y + 7, 4, 0);
+            // dash stamina under the ki bar
+            {
+                u8 sf = x->stamina * 30 / RT_STAMINA_MAX;
+                u16 sk = sf | ((x->stamina < RT_STAMINA_DASH) << 8);
+                if (sStaDrawn != sk)
+                {
+                    sStaDrawn = sk;
+                    DrawBar(UI_TILE_STAMINA, 4, 30, sf, x->stamina < RT_STAMINA_DASH ? 5 : 8, 2);
+                }
+                PutObj(UI_TILE_STAMINA, 1, 1, HUD_P_BAR_X, HUD_BAR_Y + 11, 4, 0);
+            }
         }
     }
     // ally floating bar

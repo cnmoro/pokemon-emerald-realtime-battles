@@ -60,6 +60,24 @@ void RtKi_InitActor(struct RtActor *a)
     x->superTimer = 0;
     x->chargeHold = 0;
     x->kiFlash = 0;
+    x->stamina = RT_STAMINA_MAX;
+    x->staminaWait = 0;
+}
+
+// dash: costs stamina, which refills by itself shortly after the last dash
+static const u8 sText_NoStamina[] = _("Out of stamina!");
+bool8 RtStamina_Spend(struct RtActor *a)
+{
+    struct RtActorX *x = X(a);
+    if (x->stamina < RT_STAMINA_DASH)
+    {
+        if (a->side == RT_SIDE_PLAYER && a->id == gRt->playerLead && !gRt->toast.active)
+            RtUi_Toast(sText_NoStamina, 30);
+        return FALSE;
+    }
+    x->stamina -= RT_STAMINA_DASH;
+    x->staminaWait = 40;
+    return TRUE;
 }
 
 // ki a move costs: only the heavy hitters cost any
@@ -235,6 +253,10 @@ void RtExt_BuildTick(struct RtActor *a);
 void RtKi_Tick(struct RtActor *a)
 {
     struct RtActorX *x = X(a);
+    if (x->staminaWait)
+        x->staminaWait--;
+    else if (x->stamina < RT_STAMINA_MAX)
+        x->stamina = x->stamina + 3 > RT_STAMINA_MAX ? RT_STAMINA_MAX : x->stamina + 3;
     RtExt_BuildTick(a);
     RtExt_TerrainTick(a);
     if (gRtDebugEnabled && gRtDebugKi && a->side == RT_SIDE_PLAYER && a->id == gRt->playerLead)

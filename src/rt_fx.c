@@ -996,7 +996,7 @@ void RtFx_DrawAll(void)
         if (p->life == 0)
             continue;
         // out of frame time: drop the remaining (cosmetic) particles this frame
-        if ((i & 7) == 7 && RtFrameLinesUsed() > 185 && !(p->flags & PF_HUD))
+        if ((i & 3) == 3 && RtFrameLinesUsed() > 172 && !(p->flags & PF_HUD))
             break;
         if ((p->flags & PF_FLICKER) && p->life < 10 && (p->life & 1))
             continue;

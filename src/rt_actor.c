@@ -682,6 +682,7 @@ void RtActor_Damage(struct RtActor *a, s32 amount, u8 src, bool8 direct)
     a->hp -= amount;
     a->hpBarDirty = TRUE;
     gRt->hudDirty = TRUE;
+    gRt->ax[a->id].pulse = 12;
     if (!direct)
         RtFx_Number(a->x, a->y - TO_FX(a->height + 4), amount, 3);
     // berries
@@ -1264,7 +1265,7 @@ void RtActor_Update(struct RtActor *a)
                 break;
             }
         }
-        if (a->inDash && a->dashCd == 0 && !a->ingrain && !a->trap && RtKi_Spend(a, RtKi_DashCost()))
+        if (a->inDash && a->dashCd == 0 && !a->ingrain && !a->trap && RtStamina_Spend(a))
         {
             u8 ang;
             if (a->inMoveX || a->inMoveY)
@@ -1464,15 +1465,29 @@ void RtActor_Draw(struct RtActor *a)
                 y += (50 - a->stateTimer) / 4;
             if (!(x + w < 0 || x > DISPLAY_WIDTH || y + h < 0 || y > DISPLAY_HEIGHT) && !(blink && (gRt->frame & 1)))
             {
-                u8 m = 0xFF;
+                u8 m = 0xFF, extra = 0, scale;
+                struct RtActorX *ax = &gRt->ax[a->id];
+                // pulse: briefly bigger when hit, throbbing while winding up a powerful move
+                if (ax->pulse)
+                {
+                    u8 t = ax->pulse;
+                    extra = (t > 6 ? 12 - t : t) / 2;
+                    ax->pulse--;
+                }
+                else if (a->state == AST_CAST && a->act.phase == 0 && a->act.power >= 80)
+                {
+                    u8 t = gRt->frame & 15;
+                    extra = (t < 8 ? t : 16 - t) / 3;
+                }
+                scale = (16 + (f->shapeSize >> 4)) * (16 + extra) / 16;
                 o = RtOam_Next(2);
-                if (o && (f->shapeSize >> 4))
-                    m = RtFx_AllocAffine(0, 16 + (f->shapeSize >> 4), hf);
+                if (o && scale > 16)
+                    m = RtFx_AllocAffine(0, scale, hf);
                 if (o && m != 0xFF)
                 {
-                    // oversized frame (stored reduced): enlarge it with an affine, double-size sprite
+                    // oversized frame (stored reduced) or pulse: affine, double-size sprite
                     s32 cxs = hf ? (sx - (f->x + w / 2)) : (sx + f->x + w / 2);
-                    s32 cys = y + h / 2;
+                    s32 cys = y + h / 2 - h * extra / 32;
                     oam = (u16 *)o;
                     oam[0] = ((cys - h) & 0xFF) | (3 << 8) | (shape << 14) | (a->state == AST_DASH ? (1 << 10) : 0);
                     oam[1] = ((cxs - w) & 0x1FF) | (m << 9) | (size << 14);

@@ -809,9 +809,9 @@ static void CB2_RtMain(void)
         // frame load: when a frame ran long, cosmetic particle spawns are thinned out for a while
         extern u8 gRtFxHeavy;
         u16 end = RtFrameLinesUsed();
-        bool8 over = end < sFrameStartLine || end > 200;
+        bool8 over = end < sFrameStartLine || end > 180;
         if (over)
-            gRtFxHeavy = 20;
+            gRtFxHeavy = 40;
         else if (gRtFxHeavy)
             gRtFxHeavy--;
     }

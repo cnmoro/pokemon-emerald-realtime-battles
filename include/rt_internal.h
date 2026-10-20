@@ -14,7 +14,9 @@
 // ---------------------------------------------------------------------------
 #define FXS 8
 #define RT_UI_TILE_BASE 256
-#define RT_FX_TILE_BASE 304
+#define RT_FX_TILE_BASE 308   // 304..307: stamina bar
+#define RT_STAMINA_MAX 300
+#define RT_STAMINA_DASH 100
 #define TO_FX(v) ((s32)(v) << FXS)
 #define FROM_FX(v) ((s32)(v) >> FXS)
 
@@ -30,8 +32,8 @@
 #define ARENA_BORDER 1         // metatiles of border on each side
 #define RT_SOLID_WALK 1
 #define RT_SOLID_SHOT 2
-#define HUD_TOP 16
-#define HUD_BOTTOM 16
+#define HUD_TOP 0
+#define HUD_BOTTOM 0
 
 #define MAX_OBSTACLES 24
 
@@ -601,6 +603,9 @@ struct RtActorX
     u8 buffKind;
     u8 superKind;      // Deoxys forme: 1 attack, 2 defense, 3 speed
     u8 kiFlash;        // HUD: frames to flash the ki bar
+    u16 stamina;       // dash stamina (0..RT_STAMINA_MAX)
+    u8 staminaWait;    // frames before stamina refills after a dash
+    u8 pulse;          // frames of the 'hit' pulse (sprite grows and shrinks back)
     u16 oldGfx;        // gfx index before a form change
     u8 oldType[2];     // types before a form change
 };
@@ -905,6 +910,7 @@ void RtKi_OnDamage(struct RtActor *a, s32 amount, u8 src);
 void RtKi_Tick(struct RtActor *a);
 bool8 RtKi_CanCast(struct RtActor *a, u16 move);
 u16 RtKi_DashCost(void);
+bool8 RtStamina_Spend(struct RtActor *a);
 struct RtSave { u16 magic; u8 ver; u8 pad; u8 meta[64]; };
 struct RtSave *RtSave_Get(void);
 bool8 RtExt_StartPoll(void);
