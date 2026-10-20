@@ -33,6 +33,8 @@
 #include "gba/flash_internal.h"
 #include "save.h"
 #include "constants/items.h"
+#include "constants/battle_move_effects.h"
+#include "script_pokemon_util.h"
 #include "constants/maps.h"
 #include "constants/moves.h"
 #include "constants/songs.h"
@@ -42,6 +44,8 @@
 #include "constants/opponents.h"
 #include "data/rt/rogue_maps.h"
 
+extern const struct Evolution gEvolutionTable[][EVOS_PER_MON];
+
 // ---------------------------------------------------------------------------
 // state
 // ---------------------------------------------------------------------------
@@ -49,7 +53,7 @@ EWRAM_DATA u8 gRogueMode = 0;            // RG_*
 EWRAM_DATA u8 gRogueBattleEntered = 0;   // set by the battle engine when a battle starts
 EWRAM_DATA u8 gRogueBoss = 0;
 EWRAM_DATA u8 gRogueChalBuild[PARTY_SIZE] = {0};
-enum { RG_OFF, RG_RUN, RG_CHALLENGE };
+enum { RG_OFF, RG_RUN, RG_CHALLENGE, RG_FRONTIER };
 
 #define RUN_MAX_FLOOR 25
 #define META_SECTOR   31
@@ -83,6 +87,8 @@ struct RogueRun
     u8 result;
     u16 starterSpecies[6];
     u8 nStarters;
+    u8 fSize, fDiff, fSpeed, fFac, nPick, sub;
+    u16 pick[6];
 };
 
 static EWRAM_DATA struct RogueMeta sMeta = {0};
@@ -333,7 +339,7 @@ static const u8 sUpDesc[UP_COUNT][28] =
 static const u8 sText_Victory[] = _("VICTORY!");
 static const u8 sText_Defeat[] = _("DEFEAT...");
 static const u8 sText_Slash[] = _("/");
-static const u8 sText_Roguelike[] = _("ROGUELIKE");
+
 static const u8 sText_Sanctuary[] = _("SANCTUARY");
 static const u8 sText_StartRun[] = _("START RUN");
 static const u8 sText_Back[] = _("BACK");
@@ -497,194 +503,8 @@ static void Rg_Leave(void)
     SetMainCallback2(CB2_InitMainMenu);
 }
 
-static void CB2_RogueMenu(void);
 static void CB2_RogueReward(void);
 static void CB2_RogueOver(void);
-
-static void DrawRogueMain(void)
-{
-    u8 buf[16];
-    Rg_Clear();
-    Rg_Text(12, 6, sColGold, sText_Roguelike);
-    Rg_Text(16, 34, sCursor == 0 ? sColWhite : sColGray, sText_StartRun);
-    Rg_Text(16, 50, sCursor == 1 ? sColWhite : sColGray, sText_Sanctuary);
-    Rg_Text(16, 66, sCursor == 2 ? sColWhite : sColGray, sText_Back);
-    Rg_Arrow(34 + sCursor * 16);
-    Rg_TextS(12, 96, sColGreen, sText_Essence);
-    Rg_Number(buf, sMeta.essence, 5);
-    Rg_TextS(84, 96, sColWhite, buf);
-    Rg_TextS(12, 109, sColGreen, sText_Best);
-    Rg_Number(buf, sMeta.best, 3);
-    Rg_TextS(84, 109, sColWhite, buf);
-    Rg_TextS(12, 122, sColGreen, sText_Runs);
-    Rg_Number(buf, sMeta.runs, 4);
-    Rg_TextS(84, 122, sColWhite, buf);
-    Rg_TextS(12, 135, sColGreen, sText_Wins);
-    Rg_Number(buf, sMeta.victories, 4);
-    Rg_TextS(84, 135, sColWhite, buf);
-    Rg_Present();
-}
-
-static u8 StarterCount(void)
-{
-    u8 n = 9 + sMeta.up[UP_BEAST] * 4;
-    return n > ARRAY_COUNT(sStarterPool) ? ARRAY_COUNT(sStarterPool) : n;
-}
-
-static void DrawDraft(void)
-{
-    u8 i;
-    Rg_Clear();
-    Rg_Text(12, 6, sColGold, sText_ChooseStarter);
-    for (i = 0; i < sRun.nStarters; i++)
-    {
-        u8 name[POKEMON_NAME_LENGTH + 1];
-        GetSpeciesName(name, sRun.starterSpecies[i]);
-        Rg_Text(16, 30 + i * 16, sCursor == i ? sColWhite : sColGray, name);
-        StringCopy(gStringVar1, gTypeNames[gSpeciesInfo[sRun.starterSpecies[i]].types[0]]);
-        if (gSpeciesInfo[sRun.starterSpecies[i]].types[1] != gSpeciesInfo[sRun.starterSpecies[i]].types[0])
-        {
-            StringAppend(gStringVar1, sText_Slash);
-            StringAppend(gStringVar1, gTypeNames[gSpeciesInfo[sRun.starterSpecies[i]].types[1]]);
-        }
-        Rg_TextS(100, 32 + i * 16, sColBlue, gStringVar1);
-    }
-    Rg_Arrow(30 + sCursor * 16);
-    Rg_TextS(12, 146, sColGray, sText_Hint);
-    Rg_Present();
-}
-
-static void DrawSanctuary(void)
-{
-    u8 i, buf[12];
-    Rg_Clear();
-    Rg_Text(12, 2, sColGold, sText_Sanctuary);
-    Rg_Number(buf, sMeta.essence, 5);
-    Rg_TextS(150, 5, sColGreen, sText_Essence);
-    Rg_TextS(200, 5, sColWhite, buf);
-    for (i = 0; i < UP_COUNT; i++)
-    {
-        const u8 *col = sCursor == i ? sColWhite : sColGray;
-        Rg_TextS(16, 22 + i * 14, col, sUpName[i]);
-        ConvertIntToDecimalStringN(buf, sMeta.up[i], STR_CONV_MODE_LEFT_ALIGN, 1);
-        StringAppend(buf, sText_Slash);
-        ConvertIntToDecimalStringN(&buf[StringLength(buf)], sUpMax[i], STR_CONV_MODE_LEFT_ALIGN, 1);
-        Rg_TextS(98, 22 + i * 14, col, buf);
-        if (sMeta.up[i] >= sUpMax[i])
-            Rg_TextS(130, 22 + i * 14, sColGreen, sText_Max);
-        else
-        {
-            Rg_Number(buf, sUpCost[i] * (sMeta.up[i] + 1), 5);
-            Rg_TextS(130, 22 + i * 14, sMeta.essence >= sUpCost[i] * (sMeta.up[i] + 1) ? sColGold : sColRed, buf);
-        }
-    }
-    Rg_TextS(6, 22 + sCursor * 14, sColGold, (const u8[]){CHAR_RIGHT_ARROW, EOS});
-    Rg_TextS(12, 124, sColBlue, sUpDesc[sCursor]);
-    Rg_TextS(12, 146, sColGray, sText_Hint);
-    Rg_Present();
-}
-
-enum { SC_MAIN, SC_DRAFT, SC_SANCT };
-
-static void PrepareDraft(void)
-{
-    u8 n = StarterCount(), i, k;
-    u8 want = 3 + sMeta.up[UP_REWARD];
-    sRun.nStarters = 0;
-    for (i = 0; i < want && sRun.nStarters < ARRAY_COUNT(sRun.starterSpecies); i++)
-    {
-        u16 sp;
-        do
-        {
-            sp = sStarterPool[Random() % n];
-            for (k = 0; k < sRun.nStarters; k++)
-                if (sRun.starterSpecies[k] == sp)
-                    break;
-        } while (k < sRun.nStarters);
-        sRun.starterSpecies[sRun.nStarters++] = sp;
-    }
-}
-
-static void CB2_RogueRunPlay(void)
-{
-    // the new game is initialised by CB2_NewGame; the field hook drives the run from there
-    extern void CB2_NewGame(void);
-    sSavedName[0] = EOS;
-    StringCopy(sSavedName, gSaveBlock2Ptr->playerName);
-    sRun.state = RS_INIT;
-    gRogueMode = RG_RUN;
-    SetMainCallback2(CB2_NewGame);
-}
-
-static void CB2_RogueMenu(void)
-{
-    AnimateSprites();
-    BuildOamBuffer();
-    RunTextPrinters();
-    UpdatePaletteFade();
-    if (sScreen == SC_MAIN)
-    {
-        if (JOY_NEW(DPAD_UP) && sCursor > 0) { sCursor--; PlaySE(SE_SELECT); DrawRogueMain(); }
-        else if (JOY_NEW(DPAD_DOWN) && sCursor < 2) { sCursor++; PlaySE(SE_SELECT); DrawRogueMain(); }
-        else if (JOY_NEW(B_BUTTON)) { PlaySE(SE_SELECT); SetMainCallback2(CB2_InitMainMenu); }
-        else if (JOY_NEW(A_BUTTON))
-        {
-            PlaySE(SE_SELECT);
-            if (sCursor == 0) { sScreen = SC_DRAFT; sCursor = 0; PrepareDraft(); DrawDraft(); }
-            else if (sCursor == 1) { sScreen = SC_SANCT; sCursor = 0; DrawSanctuary(); }
-            else SetMainCallback2(CB2_InitMainMenu);
-        }
-    }
-    else if (sScreen == SC_DRAFT)
-    {
-        if (JOY_NEW(DPAD_UP) && sCursor > 0) { sCursor--; PlaySE(SE_SELECT); DrawDraft(); }
-        else if (JOY_NEW(DPAD_DOWN) && sCursor + 1 < sRun.nStarters) { sCursor++; PlaySE(SE_SELECT); DrawDraft(); }
-        else if (JOY_NEW(B_BUTTON)) { PlaySE(SE_SELECT); sScreen = SC_MAIN; sCursor = 0; DrawRogueMain(); }
-        else if (JOY_NEW(A_BUTTON))
-        {
-            u16 starter = sRun.starterSpecies[sCursor];
-            u8 w = sMeta.up[UP_WIND];
-            PlaySE(SE_SELECT);
-            memset(&sRun, 0, sizeof(sRun));
-            sRun.starter = 1;
-            sRun.starterSpecies[0] = starter;
-            sRun.wind = w;
-            sMeta.runs++;
-            Meta_Save();
-            CB2_RogueRunPlay();
-        }
-    }
-    else if (sScreen == SC_SANCT)
-    {
-        if (JOY_NEW(DPAD_UP) && sCursor > 0) { sCursor--; PlaySE(SE_SELECT); DrawSanctuary(); }
-        else if (JOY_NEW(DPAD_DOWN) && sCursor + 1 < UP_COUNT) { sCursor++; PlaySE(SE_SELECT); DrawSanctuary(); }
-        else if (JOY_NEW(B_BUTTON)) { PlaySE(SE_SELECT); sScreen = SC_MAIN; sCursor = 1; DrawRogueMain(); }
-        else if (JOY_NEW(A_BUTTON))
-        {
-            u16 cost = sUpCost[sCursor] * (sMeta.up[sCursor] + 1);
-            if (sMeta.up[sCursor] < sUpMax[sCursor] && sMeta.essence >= cost)
-            {
-                sMeta.essence -= cost;
-                sMeta.up[sCursor]++;
-                Meta_Save();
-                PlaySE(SE_SUCCESS);
-            }
-            else
-                PlaySE(SE_FAILURE);
-            DrawSanctuary();
-        }
-    }
-}
-
-void CB2_RtRogueStart(void)
-{
-    Meta_Load();
-    Rg_Open();
-    sScreen = SC_MAIN;
-    sCursor = 0;
-    DrawRogueMain();
-    SetMainCallback2(CB2_RogueMenu);
-}
 
 // ---------------------------------------------------------------------------
 // rewards
@@ -1293,6 +1113,888 @@ static void StartChallengeBattle(void)
 }
 
 // ---------------------------------------------------------------------------
+// BUILD EDITOR (also reachable from the start menu)
+// ---------------------------------------------------------------------------
+static const u8 sBeHelp[] = _("Runes work on their own; spells are cast in battle.");
+static EWRAM_DATA u8 sBeMon = 0;
+static EWRAM_DATA u8 sBeRow = 0;
+static EWRAM_DATA u8 sBeEdit = 0;
+
+static void BeMonName(u8 i, u8 *dst)
+{
+    GetMonData(&gPlayerParty[i], MON_DATA_NICKNAME, dst);
+    StringGet_Nickname(dst);
+}
+
+static void DrawBuildList(void)
+{
+    u8 i, n = PartyCount(), name[POKEMON_NAME_LENGTH + 1];
+    static const u8 sTitle[] = _("BUILDS");
+    static const u8 sHint2[] = _("A: edit   B: back");
+    Rg_Clear();
+    Rg_Text(12, 4, sColGold, sTitle);
+    for (i = 0; i < n; i++)
+    {
+        u8 v = RtBuild_Get(&gPlayerParty[i], RtBuild_GetSel(&gPlayerParty[i]));
+        BeMonName(i, name);
+        Rg_Text(16, 22 + i * 16, sBeMon == i ? sColWhite : sColGray, name);
+        StringCopy(gStringVar1, RtBuild_RuneName(v & 15));
+        StringAppend(gStringVar1, sText_Slash);
+        StringAppend(gStringVar1, RtBuild_SpellName(v >> 4));
+        Rg_TextS(110, 24 + i * 16, sColBlue, gStringVar1);
+    }
+    Rg_Arrow(22 + sBeMon * 16);
+    Rg_TextS(12, 146, sColGray, sHint2);
+    Rg_Present();
+}
+
+static void DrawBuildEdit(void)
+{
+    static const u8 sLbl[5][9] = {_("1 Rune"), _("1 Spell"), _("2 Rune"), _("2 Spell"), _("Active")};
+    static const u8 sHint3[] = _("Left/Right: change   B: back");
+    u8 i, name[POKEMON_NAME_LENGTH + 1];
+    struct Pokemon *mon = &gPlayerParty[sBeMon];
+    Rg_Clear();
+    BeMonName(sBeMon, name);
+    Rg_Text(12, 4, sColGold, name);
+    for (i = 0; i < 5; i++)
+    {
+        const u8 *col = sBeRow == i ? sColWhite : sColGray;
+        Rg_Text(16, 26 + i * 16, col, sLbl[i]);
+        if (i < 4)
+        {
+            u8 v = RtBuild_Get(mon, i / 2);
+            Rg_Text(90, 26 + i * 16, col, (i & 1) ? RtBuild_SpellName(v >> 4) : RtBuild_RuneName(v & 15));
+        }
+        else
+        {
+            u8 b[4];
+            ConvertIntToDecimalStringN(b, RtBuild_GetSel(mon) + 1, STR_CONV_MODE_LEFT_ALIGN, 1);
+            Rg_Text(90, 26 + i * 16, col, b);
+        }
+    }
+    Rg_Arrow(26 + sBeRow * 16);
+    Rg_TextS(12, 120, sColBlue, sBeHelp);
+    Rg_TextS(12, 146, sColGray, sHint3);
+    Rg_Present();
+}
+
+void CB2_RtBuildEditor(void)
+{
+    static bool8 sInit = FALSE;
+    (void)sInit;
+    if (gMain.state == 0)
+    {
+        Rg_Open();
+        sBeMon = 0;
+        sBeRow = 0;
+        sBeEdit = 0;
+        DrawBuildList();
+        gMain.state = 1;
+        return;
+    }
+    AnimateSprites();
+    BuildOamBuffer();
+    RunTextPrinters();
+    UpdatePaletteFade();
+    if (!sBeEdit)
+    {
+        u8 n = PartyCount();
+        if (JOY_NEW(DPAD_UP) && sBeMon > 0) { sBeMon--; PlaySE(SE_SELECT); DrawBuildList(); }
+        else if (JOY_NEW(DPAD_DOWN) && sBeMon + 1 < n) { sBeMon++; PlaySE(SE_SELECT); DrawBuildList(); }
+        else if (JOY_NEW(A_BUTTON) && n > 0) { sBeEdit = 1; sBeRow = 0; PlaySE(SE_SELECT); DrawBuildEdit(); }
+        else if (JOY_NEW(B_BUTTON))
+        {
+            PlaySE(SE_SELECT);
+            gMain.state = 0;
+            SetMainCallback2(gMain.savedCallback);
+        }
+    }
+    else
+    {
+        struct Pokemon *mon = &gPlayerParty[sBeMon];
+        if (JOY_NEW(DPAD_UP) && sBeRow > 0) { sBeRow--; PlaySE(SE_SELECT); DrawBuildEdit(); }
+        else if (JOY_NEW(DPAD_DOWN) && sBeRow < 4) { sBeRow++; PlaySE(SE_SELECT); DrawBuildEdit(); }
+        else if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT | A_BUTTON))
+        {
+            s8 d = JOY_NEW(DPAD_LEFT) ? -1 : 1;
+            if (sBeRow == 4)
+                RtBuild_SetSel(mon, RtBuild_GetSel(mon) ^ 1);
+            else
+            {
+                u8 pr = sBeRow / 2, v = RtBuild_Get(mon, pr);
+                if (sBeRow & 1)
+                {
+                    s8 s = (v >> 4) + d;
+                    if (s < 0) s = SPELL_COUNT - 1;
+                    if (s >= SPELL_COUNT) s = 0;
+                    v = (v & 0x0F) | (s << 4);
+                }
+                else
+                {
+                    s8 r = (v & 15) + d;
+                    if (r < 0) r = RUNE_COUNT - 1;
+                    if (r >= RUNE_COUNT) r = 0;
+                    v = (v & 0xF0) | r;
+                }
+                RtBuild_Set(mon, pr, v);
+            }
+            PlaySE(SE_SELECT);
+            DrawBuildEdit();
+        }
+        else if (JOY_NEW(B_BUTTON)) { sBeEdit = 0; PlaySE(SE_SELECT); DrawBuildList(); }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// BATTLE FRONTIER: a Lv50 draft run through one facility
+// ---------------------------------------------------------------------------
+#define FR_LEVEL    50
+#define FR_SET_LEN  7
+#define FR_MAX_ROUND 21
+#define FR_BST_LO   430
+#define FR_BST_HI   530
+
+EWRAM_DATA u8 gRogueSpeedPct = 80;
+
+static const struct { s8 group, num; u8 x, y; } sFac[] =
+{
+    {MAP_GROUP(MAP_BATTLE_FRONTIER_BATTLE_TOWER_BATTLE_ROOM), MAP_NUM(MAP_BATTLE_FRONTIER_BATTLE_TOWER_BATTLE_ROOM), 5, 4},
+    {MAP_GROUP(MAP_BATTLE_FRONTIER_BATTLE_ARENA_BATTLE_ROOM), MAP_NUM(MAP_BATTLE_FRONTIER_BATTLE_ARENA_BATTLE_ROOM), 8, 5},
+    {MAP_GROUP(MAP_BATTLE_FRONTIER_BATTLE_DOME_BATTLE_ROOM), MAP_NUM(MAP_BATTLE_FRONTIER_BATTLE_DOME_BATTLE_ROOM), 10, 5},
+    {MAP_GROUP(MAP_BATTLE_FRONTIER_BATTLE_PALACE_BATTLE_ROOM), MAP_NUM(MAP_BATTLE_FRONTIER_BATTLE_PALACE_BATTLE_ROOM), 7, 5},
+    {MAP_GROUP(MAP_BATTLE_FRONTIER_BATTLE_FACTORY_BATTLE_ROOM), MAP_NUM(MAP_BATTLE_FRONTIER_BATTLE_FACTORY_BATTLE_ROOM), 6, 6},
+};
+static const u8 sFacName[5][16] = {_("Battle Tower"), _("Battle Arena"), _("Battle Dome"), _("Battle Palace"), _("Battle Factory")};
+static const u8 sDiffName[3][8] = {_("Easy"), _("Normal"), _("Hard")};
+static const u8 sDiffDesc[3][36] = {_("Gentler foes, simple tactics"), _("Even match, smart foes"), _("Strong foes, sharp tactics")};
+static const u8 sSpeedName[3][8] = {_("Slow"), _("Normal"), _("Fast")};
+static const u8 sSpeedPct[3] = {60, 80, 100};
+static const u8 sSizeName[2][3] = {_("3"), _("6")};
+
+static const u8 sText_Frontier[] = _("BATTLE FRONTIER");
+static const u8 sText_Records[] = _("RECORDS");
+static const u8 sText_PartySize[] = _("Party size");
+static const u8 sText_Difficulty[] = _("Difficulty");
+static const u8 sText_Speed[] = _("Battle speed");
+static const u8 sText_Facility[] = _("Facility");
+static const u8 sText_Start[] = _("START");
+static const u8 sText_Lv50[] = _("Every battle is at Lv 50");
+static const u8 sText_PickSlot[] = _("Pick your team");
+static const u8 sText_Of[] = _(" of ");
+static const u8 sText_BstLbl[] = _("Total");
+static const u8 sText_Round[] = _("Round");
+static const u8 sText_Cleared[] = _("cleared!");
+static const u8 sText_SetCleared[] = _("SET CLEARED!");
+static const u8 sText_Continue[] = _("CONTINUE");
+static const u8 sText_Recruit[] = _("RECRUIT");
+static const u8 sText_Builds[] = _("BUILDS");
+static const u8 sText_Retire[] = _("RETIRE");
+static const u8 sText_NextBoss[] = _("Next: the facility leader");
+static const u8 sText_NextFoe[] = _("Next: a new challenger");
+static const u8 sText_PickNew[] = _("Choose a new teammate");
+static const u8 sText_Replace[] = _("Who leaves the team?");
+static const u8 sText_Streak[] = _("Best streak");
+static const u8 sText_Easy[] = _("Easy");
+static const u8 sText_Normal[] = _("Normal");
+static const u8 sText_Hard[] = _("Hard");
+static const u8 sText_StatLbl[2][20] = {_("HP  ATK  DEF"), _("SPA  SPD  SPE")};
+
+enum { FS_MAIN, FS_SETUP, FS_DRAFT, FS_RECORDS };
+enum { BK_MAIN, BK_OFFER, BK_REPL };
+
+static u16 FrBst(u16 sp) { return BaseTotal(sp); }
+
+static bool8 FrSpeciesOk(u16 sp)
+{
+    u16 dex;
+    if (sp == SPECIES_NONE || sp >= NUM_SPECIES || gSpeciesInfo[sp].baseHP == 0)
+        return FALSE;
+    dex = SpeciesToNationalPokedexNum(sp);
+    if (dex == 0 || dex > NATIONAL_DEX_COUNT || IsLegendaryDex(dex))
+        return FALSE;
+    if (gEvolutionTable[sp][0].targetSpecies != SPECIES_NONE)
+        return FALSE;
+    if (sp == SPECIES_DITTO || sp == SPECIES_UNOWN || sp == SPECIES_SHEDINJA || sp == SPECIES_SMEARGLE)
+        return FALSE;
+    return TRUE;
+}
+
+static u16 FrPickSpecies(u16 lo, u16 hi, const u16 *ex, u8 nEx, bool8 distinctType, u8 avoidType)
+{
+    u16 tries;
+    u8 k;
+    for (tries = 0; tries < 600; tries++)
+    {
+        u16 sp = 1 + Random() % (NUM_SPECIES - 1), bst;
+        if (!FrSpeciesOk(sp))
+            continue;
+        bst = FrBst(sp);
+        if (bst < lo || bst > hi)
+            continue;
+        for (k = 0; k < nEx; k++)
+            if (ex[k] == sp)
+                break;
+        if (k < nEx)
+            continue;
+        if (distinctType && tries < 300 && (gSpeciesInfo[sp].types[0] == avoidType || gSpeciesInfo[sp].types[1] == avoidType))
+            continue;
+        return sp;
+    }
+    return SPECIES_SNORLAX;
+}
+
+// offers of balanced mons: different species, mostly different types
+static void FrMakeOffers(u8 n, u16 lo, u16 hi)
+{
+    u16 ex[10];
+    u8 i, nEx = 0;
+    for (i = 0; i < sRun.nPick && nEx < 6; i++)
+        ex[nEx++] = sRun.pick[i];
+    sRun.nStarters = 0;
+    for (i = 0; i < n; i++)
+    {
+        u16 sp = FrPickSpecies(lo, hi, ex, nEx, i > 0, i > 0 ? gSpeciesInfo[sRun.starterSpecies[i - 1]].types[0] : TYPE_NONE);
+        sRun.starterSpecies[sRun.nStarters++] = sp;
+        ex[nEx++] = sp;
+    }
+}
+
+static void FrTypeString(u16 sp)
+{
+    StringCopy(gStringVar1, gTypeNames[gSpeciesInfo[sp].types[0]]);
+    if (gSpeciesInfo[sp].types[1] != gSpeciesInfo[sp].types[0])
+    {
+        StringAppend(gStringVar1, sText_Slash);
+        StringAppend(gStringVar1, gTypeNames[gSpeciesInfo[sp].types[1]]);
+    }
+}
+
+static void FrDrawOfferRows(u8 n, u8 y0)
+{
+    u8 i;
+    for (i = 0; i < n; i++)
+    {
+        u8 name[POKEMON_NAME_LENGTH + 1];
+        u16 sp = sRun.starterSpecies[i];
+        GetSpeciesName(name, sp);
+        Rg_Text(16, y0 + i * 16, sCursor == i ? sColWhite : sColGray, name);
+        FrTypeString(sp);
+        Rg_TextS(100, y0 + 2 + i * 16, sColBlue, gStringVar1);
+    }
+    Rg_Arrow(y0 + sCursor * 16);
+    {
+        const struct SpeciesInfo *s = &gSpeciesInfo[sRun.starterSpecies[sCursor]];
+        u8 b[6];
+        u8 y = y0 + n * 16 + 4;
+        static const u8 sL[6][4] = {_("HP"), _("ATK"), _("DEF"), _("SPA"), _("SPD"), _("SPE")};
+        u16 v[6] = {s->baseHP, s->baseAttack, s->baseDefense, s->baseSpAttack, s->baseSpDefense, s->baseSpeed};
+        u8 k;
+        for (k = 0; k < 6; k++)
+        {
+            u8 x = 14 + (k % 3) * 52, yy = y + (k / 3) * 11;
+            Rg_TextS(x, yy, sColGreen, sL[k]);
+            Rg_Number(b, v[k], 3);
+            Rg_TextS(x + 22, yy, sColWhite, b);
+        }
+        Rg_TextS(176, y, sColGreen, sText_BstLbl);
+        Rg_Number(b, FrBst(sRun.starterSpecies[sCursor]), 3);
+        Rg_TextS(206, y, sColGold, b);
+    }
+}
+
+static void DrawFrMain(void)
+{
+    u8 buf[8];
+    Rg_Clear();
+    Rg_Text(12, 6, sColGold, sText_Frontier);
+    Rg_Text(16, 34, sCursor == 0 ? sColWhite : sColGray, sText_StartRun);
+    Rg_Text(16, 50, sCursor == 1 ? sColWhite : sColGray, sText_Records);
+    Rg_Text(16, 66, sCursor == 2 ? sColWhite : sColGray, sText_Back);
+    Rg_Arrow(34 + sCursor * 16);
+    Rg_TextS(12, 100, sColBlue, sText_Lv50);
+    Rg_TextS(12, 122, sColGreen, sText_Runs);
+    Rg_Number(buf, sMeta.runs, 4);
+    Rg_TextS(84, 122, sColWhite, buf);
+    Rg_TextS(12, 135, sColGreen, sText_Wins);
+    Rg_Number(buf, sMeta.victories, 4);
+    Rg_TextS(84, 135, sColWhite, buf);
+    Rg_Present();
+}
+
+static void DrawFrSetup(void)
+{
+    u8 i;
+    const u8 *val[4];
+    static const u8 sLeft[] = {CHAR_LEFT_ARROW, EOS};
+    static const u8 sRight[] = {CHAR_RIGHT_ARROW, EOS};
+    val[0] = sSizeName[sRun.fSize];
+    val[1] = sDiffName[sRun.fDiff];
+    val[2] = sSpeedName[sRun.fSpeed];
+    val[3] = sFacName[sRun.fFac];
+    Rg_Clear();
+    Rg_Text(12, 4, sColGold, sText_Frontier);
+    {
+        const u8 *lbl[4] = {sText_PartySize, sText_Difficulty, sText_Speed, sText_Facility};
+        for (i = 0; i < 4; i++)
+        {
+            const u8 *col = sCursor == i ? sColWhite : sColGray;
+            Rg_Text(16, 26 + i * 18, col, lbl[i]);
+            if (sCursor == i)
+                Rg_Text(112, 26 + i * 18, sColGold, sLeft);
+            Rg_Text(124, 26 + i * 18, col, val[i]);
+            if (sCursor == i)
+                Rg_Text(222, 26 + i * 18, sColGold, sRight);
+        }
+    }
+    Rg_Text(16, 26 + 4 * 18, sCursor == 4 ? sColWhite : sColGray, sText_Start);
+    Rg_Arrow(26 + sCursor * 18);
+    Rg_TextS(12, 118, sColBlue, sDiffDesc[sRun.fDiff]);
+    Rg_TextS(12, 130, sColBlue, sText_Lv50);
+    Rg_TextS(12, 146, sColGray, sText_Hint);
+    Rg_Present();
+}
+
+static void DrawFrDraft(void)
+{
+    u8 b[4];
+    Rg_Clear();
+    Rg_Text(12, 4, sColGold, sText_PickSlot);
+    Rg_Number(b, sRun.nPick + 1, 1);
+    Rg_TextS(180, 8, sColWhite, b);
+    Rg_TextS(188, 8, sColGray, sText_Of);
+    Rg_Number(b, sRun.fSize ? 6 : 3, 1);
+    Rg_TextS(208, 8, sColWhite, b);
+    FrDrawOfferRows(sRun.nStarters, 24);
+    Rg_TextS(12, 146, sColGray, sText_Hint);
+    Rg_Present();
+}
+
+static void DrawFrRecords(void)
+{
+    u8 buf[6];
+    Rg_Clear();
+    Rg_Text(12, 6, sColGold, sText_Records);
+    Rg_TextS(16, 30, sColGreen, sText_Streak);
+    Rg_Text(16, 46, sColWhite, sText_Easy);
+    Rg_Number(buf, sMeta.up[0], 2); Rg_Text(110, 46, sColGold, buf);
+    Rg_Text(16, 62, sColWhite, sText_Normal);
+    Rg_Number(buf, sMeta.up[1], 2); Rg_Text(110, 62, sColGold, buf);
+    Rg_Text(16, 78, sColWhite, sText_Hard);
+    Rg_Number(buf, sMeta.up[2], 2); Rg_Text(110, 78, sColGold, buf);
+    Rg_TextS(12, 108, sColGreen, sText_Runs);
+    Rg_Number(buf, sMeta.runs, 4); Rg_TextS(84, 108, sColWhite, buf);
+    Rg_TextS(12, 121, sColGreen, sText_Wins);
+    Rg_Number(buf, sMeta.victories, 4); Rg_TextS(84, 121, sColWhite, buf);
+    Rg_TextS(12, 146, sColGray, sText_Hint);
+    Rg_Present();
+}
+
+static void CB2_FrMenu(void);
+
+static void FrStartRun(void)
+{
+    extern void CB2_NewGame(void);
+    sSavedName[0] = EOS;
+    StringCopy(sSavedName, gSaveBlock2Ptr->playerName);
+    sRun.state = RS_INIT;
+    sRun.floor = 1;
+    gRogueMode = RG_FRONTIER;
+    gRogueSpeedPct = sSpeedPct[sRun.fSpeed];
+    sMeta.runs++;
+    Meta_Save();
+    SetMainCallback2(CB2_NewGame);
+}
+
+static void FrBeginDraft(void)
+{
+    sRun.nPick = 0;
+    FrMakeOffers(4, FR_BST_LO, FR_BST_HI);
+    sScreen = FS_DRAFT;
+    sCursor = 0;
+    DrawFrDraft();
+}
+
+static void CB2_FrMenu(void)
+{
+    u8 max = 2;
+    AnimateSprites();
+    BuildOamBuffer();
+    RunTextPrinters();
+    UpdatePaletteFade();
+    if (sScreen == FS_MAIN)
+    {
+        if (JOY_NEW(DPAD_UP) && sCursor > 0) { sCursor--; PlaySE(SE_SELECT); DrawFrMain(); }
+        else if (JOY_NEW(DPAD_DOWN) && sCursor < max) { sCursor++; PlaySE(SE_SELECT); DrawFrMain(); }
+        else if (JOY_NEW(B_BUTTON)) { PlaySE(SE_SELECT); SetMainCallback2(CB2_InitMainMenu); }
+        else if (JOY_NEW(A_BUTTON))
+        {
+            PlaySE(SE_SELECT);
+            if (sCursor == 0) { sScreen = FS_SETUP; sCursor = 0; DrawFrSetup(); }
+            else if (sCursor == 1) { sScreen = FS_RECORDS; DrawFrRecords(); }
+            else SetMainCallback2(CB2_InitMainMenu);
+        }
+    }
+    else if (sScreen == FS_RECORDS)
+    {
+        if (JOY_NEW(A_BUTTON | B_BUTTON)) { PlaySE(SE_SELECT); sScreen = FS_MAIN; sCursor = 1; DrawFrMain(); }
+    }
+    else if (sScreen == FS_SETUP)
+    {
+        s8 d = 0;
+        if (JOY_NEW(DPAD_UP) && sCursor > 0) { sCursor--; PlaySE(SE_SELECT); DrawFrSetup(); }
+        else if (JOY_NEW(DPAD_DOWN) && sCursor < 4) { sCursor++; PlaySE(SE_SELECT); DrawFrSetup(); }
+        else if (JOY_NEW(B_BUTTON)) { PlaySE(SE_SELECT); sScreen = FS_MAIN; sCursor = 0; DrawFrMain(); }
+        else if (JOY_NEW(DPAD_LEFT)) d = -1;
+        else if (JOY_NEW(DPAD_RIGHT)) d = 1;
+        else if (JOY_NEW(A_BUTTON))
+        {
+            PlaySE(SE_SELECT);
+            if (sCursor == 4) { FrBeginDraft(); return; }
+            d = 1;
+        }
+        if (d != 0 && sCursor < 4)
+        {
+            s8 v;
+            PlaySE(SE_SELECT);
+            if (sCursor == 0) { sRun.fSize ^= 1; }
+            else if (sCursor == 1) { v = sRun.fDiff + d; sRun.fDiff = v < 0 ? 2 : (v > 2 ? 0 : v); }
+            else if (sCursor == 2) { v = sRun.fSpeed + d; sRun.fSpeed = v < 0 ? 2 : (v > 2 ? 0 : v); }
+            else { v = sRun.fFac + d; sRun.fFac = v < 0 ? 4 : (v > 4 ? 0 : v); }
+            DrawFrSetup();
+        }
+    }
+    else if (sScreen == FS_DRAFT)
+    {
+        if (JOY_NEW(DPAD_UP) && sCursor > 0) { sCursor--; PlaySE(SE_SELECT); DrawFrDraft(); }
+        else if (JOY_NEW(DPAD_DOWN) && sCursor + 1 < sRun.nStarters) { sCursor++; PlaySE(SE_SELECT); DrawFrDraft(); }
+        else if (JOY_NEW(B_BUTTON))
+        {
+            PlaySE(SE_SELECT);
+            if (sRun.nPick > 0) { sRun.nPick--; }
+            else { sScreen = FS_SETUP; sCursor = 4; DrawFrSetup(); return; }
+            FrMakeOffers(4, FR_BST_LO, FR_BST_HI);
+            sCursor = 0;
+            DrawFrDraft();
+        }
+        else if (JOY_NEW(A_BUTTON))
+        {
+            PlaySE(SE_SELECT);
+            sRun.pick[sRun.nPick++] = sRun.starterSpecies[sCursor];
+            if (sRun.nPick >= (sRun.fSize ? 6 : 3))
+            {
+                FrStartRun();
+                return;
+            }
+            FrMakeOffers(4, FR_BST_LO, FR_BST_HI);
+            sCursor = 0;
+            DrawFrDraft();
+        }
+    }
+}
+
+void CB2_RtRogueStart(void)
+{
+    Meta_Load();
+    Rg_Open();
+    memset(&sRun, 0, sizeof(sRun));
+    sRun.fSize = 1;
+    sRun.fDiff = 1;
+    sRun.fSpeed = 1;
+    sScreen = FS_MAIN;
+    sCursor = 0;
+    DrawFrMain();
+    SetMainCallback2(CB2_FrMenu);
+}
+
+// ---------------------------------------------------------------------------
+// building the teams
+// ---------------------------------------------------------------------------
+// the four strongest, varied attacks the species learns by level 50
+static void FrSetBestMoves(struct Pokemon *mon)
+{
+    u16 species = GetMonData(mon, MON_DATA_SPECIES);
+    u16 list[48];
+    u16 score[48];
+    u8 n = 0, i, k, picked = 0;
+    u16 chosen[MAX_MON_MOVES] = {0};
+    u8 types[MAX_MON_MOVES] = {0};
+    for (i = 0; gLevelUpLearnsets[species][i] != LEVEL_UP_END && n < 48; i++)
+    {
+        u16 e = gLevelUpLearnsets[species][i];
+        u8 lv = (e & LEVEL_UP_MOVE_LV) >> 9;
+        u16 mv = e & LEVEL_UP_MOVE_ID, pw, ef;
+        if (lv > FR_LEVEL)
+            break;
+        for (k = 0; k < n; k++)
+            if (list[k] == mv)
+                break;
+        if (k < n)
+            continue;
+        ef = gBattleMoves[mv].effect;
+        pw = gBattleMoves[mv].power;
+        if (pw <= 1 && ef != EFFECT_RETURN)
+            continue;
+        if (ef == EFFECT_EXPLOSION || ef == EFFECT_DREAM_EATER || ef == EFFECT_BIDE || ef == EFFECT_OHKO || ef == EFFECT_COUNTER
+         || ef == EFFECT_MIRROR_COAT || ef == EFFECT_FOCUS_PUNCH || ef == EFFECT_SNORE || ef == EFFECT_SPIT_UP || ef == EFFECT_ENDEAVOR
+         || ef == EFFECT_FALSE_SWIPE || ef == EFFECT_LEVEL_DAMAGE || ef == EFFECT_PSYWAVE || ef == EFFECT_FLAIL || ef == EFFECT_FAKE_OUT
+         || ef == EFFECT_SUPER_FANG || ef == EFFECT_NIGHTMARE)
+            continue;
+        if (ef == EFFECT_RETURN)
+            pw = 90;
+        pw = pw * (gBattleMoves[mv].accuracy ? gBattleMoves[mv].accuracy : 100) / 100;
+        if (gBattleMoves[mv].type == gSpeciesInfo[species].types[0] || gBattleMoves[mv].type == gSpeciesInfo[species].types[1])
+            pw = pw * 3 / 2;
+        if (ef == EFFECT_SOLAR_BEAM || ef == EFFECT_SKY_ATTACK || ef == EFFECT_RAZOR_WIND || ef == EFFECT_SKULL_BASH || ef == EFFECT_SEMI_INVULNERABLE)
+            pw = pw / 2;
+        if (ef == EFFECT_RECHARGE || ef == EFFECT_OVERHEAT || ef == EFFECT_SUPERPOWER)
+            pw = pw * 3 / 4;
+        list[n] = mv;
+        score[n] = pw;
+        n++;
+    }
+    if (n < 2)
+    {
+        RelearnMoves(mon);
+        return;
+    }
+    for (picked = 0; picked < MAX_MON_MOVES; picked++)
+    {
+        s32 best = -1, bi = -1;
+        for (i = 0; i < n; i++)
+        {
+            s32 sc = score[i];
+            if (sc == 0)
+                continue;
+            for (k = 0; k < picked; k++)
+                if (types[k] == gBattleMoves[list[i]].type)
+                    sc = sc * 6 / 10;
+            if (sc > best) { best = sc; bi = i; }
+        }
+        if (bi < 0)
+            break;
+        chosen[picked] = list[bi];
+        types[picked] = gBattleMoves[list[bi]].type;
+        score[bi] = 0;
+    }
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        u8 pp = chosen[i] ? gBattleMoves[chosen[i]].pp : 0;
+        SetMonMoveSlot(mon, chosen[i], i);
+        SetMonData(mon, MON_DATA_PP1 + i, &pp);
+    }
+}
+
+static void FrFinishMon(struct Pokemon *mon, u16 sp, u8 iv, bool8 item, bool8 build)
+{
+    CreateMon(mon, sp, FR_LEVEL, iv, FALSE, 0, OT_ID_PLAYER_ID, 0);
+    FrSetBestMoves(mon);
+    if (item)
+    {
+        u16 it = sItemPool[Random() % ARRAY_COUNT(sItemPool)];
+        SetMonData(mon, MON_DATA_HELD_ITEM, &it);
+    }
+    if (build)
+    {
+        RtBuild_Set(mon, 0, (1 + Random() % (RUNE_COUNT - 1)) | ((1 + Random() % (SPELL_COUNT - 1)) << 4));
+        RtBuild_Set(mon, 1, (1 + Random() % (RUNE_COUNT - 1)) | ((1 + Random() % (SPELL_COUNT - 1)) << 4));
+        RtBuild_SetSel(mon, 0);
+    }
+}
+
+static void FrBuildPlayerParty(void)
+{
+    u8 i, n = sRun.fSize ? 6 : 3;
+    ZeroPlayerPartyMons();
+    for (i = 0; i < n; i++)
+    {
+        struct Pokemon mon;
+        FrFinishMon(&mon, sRun.pick[i], 31, TRUE, FALSE);
+        GiveMonToPlayer(&mon);
+    }
+    for (i = 0; i < n; i++)
+    {
+        RtBuild_Set(&gPlayerParty[i], 0, (1 + Random() % (RUNE_COUNT - 1)) | ((1 + Random() % (SPELL_COUNT - 1)) << 4));
+        RtBuild_Set(&gPlayerParty[i], 1, (1 + Random() % (RUNE_COUNT - 1)) | ((1 + Random() % (SPELL_COUNT - 1)) << 4));
+        RtBuild_SetSel(&gPlayerParty[i], 0);
+    }
+}
+
+static bool8 FrBossRound(u8 round)
+{
+    return round % FR_SET_LEN == 0;
+}
+
+static void FrBuildEnemyParty(u8 round)
+{
+    u8 n = sRun.fSize ? 6 : 3, i, d = sRun.fDiff;
+    u16 lo, hi, ex[PARTY_SIZE];
+    static const u8 sIv[3] = {10, 20, 31};
+    ZeroEnemyPartyMons();
+    if (d == 0) { lo = 380 + round * 5; hi = 455 + round * 6; }
+    else if (d == 1) { lo = 430 + round * 4; hi = 505 + round * 5; }
+    else { lo = 470 + round * 4; hi = 540 + round * 3; }
+    if (FrBossRound(round)) { lo += 30; hi += 40; }
+    if (hi > 600) hi = 600;
+    if (lo > hi - 20) lo = hi - 20;
+    gRogueBoss = FrBossRound(round);
+    for (i = 0; i < n; i++)
+    {
+        ex[i] = FrPickSpecies(lo, hi, ex, i, FALSE, TYPE_NONE);
+        FrFinishMon(&gEnemyParty[i], ex[i], sIv[d], d == 2 || (d == 1 && Random() % 2), d > 0);
+        gRogueChalBuild[i] = (d > 0) ? ((1 + Random() % (RUNE_COUNT - 1)) | ((1 + Random() % (SPELL_COUNT - 1)) << 4)) : 0;
+    }
+}
+
+u8 RtRogue_FrontierAiSkill(void)
+{
+    u8 r = sRun.floor ? sRun.floor : 1, d = sRun.fDiff;
+    u8 sk = d == 0 ? 2 + r / 4 : (d == 1 ? 5 + r / 7 : 8 + r / 12);
+    return sk > 9 ? 9 : sk;
+}
+
+// ---------------------------------------------------------------------------
+// between the battles
+// ---------------------------------------------------------------------------
+static void CB2_FrBreak(void);
+static void FrOpenBreak(void);
+
+static void FrBackToField(void)
+{
+    sRun.state = RS_WAIT;
+    sRun.timer = 30;
+    SetMainCallback2(CB2_ReturnToField);
+    gFieldCallback = FieldCB_ReturnToFieldNoScriptCheckMusic;
+}
+
+static void FrAfterBuilds(void)
+{
+    FrOpenBreak();
+}
+
+static u8 FrBreakRows(u8 *rows)
+{
+    u8 n = 0;
+    rows[n++] = 0; // continue
+    if (FrBossRound(sRun.floor - 1) && !(sRun.sub & 1) && sRun.floor > 1)
+        rows[n++] = 1; // recruit (set clear only)
+    rows[n++] = 2; // builds
+    rows[n++] = 3; // retire
+    return n;
+}
+
+static void DrawFrBreak(void)
+{
+    u8 rows[4], n = FrBreakRows(rows), i, b[4];
+    static const u8 *const sNames[4] = {sText_Continue, sText_Recruit, sText_Builds, sText_Retire};
+    Rg_Clear();
+    if (sScreen == BK_MAIN)
+    {
+        bool8 set = FrBossRound(sRun.floor - 1);
+        Rg_Text(12, 6, sColGold, set ? sText_SetCleared : sText_Round);
+        if (!set)
+        {
+            Rg_Number(b, sRun.floor - 1, 2);
+            Rg_Text(70, 6, sColWhite, b);
+            Rg_Text(92, 6, sColGreen, sText_Cleared);
+        }
+        for (i = 0; i < n; i++)
+            Rg_Text(16, 34 + i * 16, sCursor == i ? sColWhite : sColGray, sNames[rows[i]]);
+        Rg_Arrow(34 + sCursor * 16);
+        Rg_TextS(12, 112, sColBlue, FrBossRound(sRun.floor) ? sText_NextBoss : sText_NextFoe);
+        Rg_TextS(12, 124, sColGray, sText_Round);
+        Rg_Number(b, sRun.floor, 2);
+        Rg_TextS(46, 124, sColWhite, b);
+        Rg_TextS(60, 124, sColGray, sText_Of);
+        Rg_Number(b, FR_MAX_ROUND, 2);
+        Rg_TextS(80, 124, sColWhite, b);
+    }
+    else if (sScreen == BK_OFFER)
+    {
+        Rg_Text(12, 4, sColGold, sText_PickNew);
+        FrDrawOfferRows(3, 24);
+    }
+    else
+    {
+        u8 name[POKEMON_NAME_LENGTH + 1];
+        Rg_Text(12, 4, sColGold, sText_Replace);
+        for (i = 0; i < PartyCount(); i++)
+        {
+            BeMonName(i, name);
+            Rg_Text(16, 24 + i * 16, sCursor == i ? sColWhite : sColGray, name);
+        }
+        Rg_Arrow(24 + sCursor * 16);
+    }
+    Rg_Present();
+}
+
+static void FrOpenBreak(void)
+{
+    Rg_Open();
+    sScreen = BK_MAIN;
+    sCursor = 0;
+    DrawFrBreak();
+    SetMainCallback2(CB2_FrBreak);
+}
+
+static void FrEndRun(bool8 won);
+
+static void CB2_FrBreak(void)
+{
+    u8 rows[4], n = FrBreakRows(rows);
+    AnimateSprites();
+    BuildOamBuffer();
+    RunTextPrinters();
+    UpdatePaletteFade();
+    if (sScreen == BK_MAIN)
+    {
+        if (JOY_NEW(DPAD_UP) && sCursor > 0) { sCursor--; PlaySE(SE_SELECT); DrawFrBreak(); }
+        else if (JOY_NEW(DPAD_DOWN) && sCursor + 1 < n) { sCursor++; PlaySE(SE_SELECT); DrawFrBreak(); }
+        else if (JOY_NEW(A_BUTTON))
+        {
+            PlaySE(SE_SELECT);
+            switch (rows[sCursor])
+            {
+            case 0: FrBackToField(); break;
+            case 1:
+                sRun.nPick = 0;
+                {
+                    u16 ex[PARTY_SIZE];
+                    u8 i;
+                    for (i = 0; i < PartyCount(); i++)
+                        ex[i] = GetMonData(&gPlayerParty[i], MON_DATA_SPECIES);
+                    for (i = 0; i < PartyCount(); i++)
+                        sRun.pick[i] = ex[i];
+                    sRun.nPick = PartyCount();
+                    if (sRun.nPick > 5) sRun.nPick = 5;
+                }
+                FrMakeOffers(3, FR_BST_LO + 20, FR_BST_HI + 30);
+                sScreen = BK_OFFER; sCursor = 0; DrawFrBreak();
+                break;
+            case 2:
+                gMain.savedCallback = FrAfterBuilds;
+                gMain.state = 0;
+                SetMainCallback2(CB2_RtBuildEditor);
+                break;
+            case 3: FrEndRun(FALSE); break;
+            }
+        }
+    }
+    else if (sScreen == BK_OFFER)
+    {
+        if (JOY_NEW(DPAD_UP) && sCursor > 0) { sCursor--; PlaySE(SE_SELECT); DrawFrBreak(); }
+        else if (JOY_NEW(DPAD_DOWN) && sCursor + 1 < 3) { sCursor++; PlaySE(SE_SELECT); DrawFrBreak(); }
+        else if (JOY_NEW(B_BUTTON)) { PlaySE(SE_SELECT); sScreen = BK_MAIN; sCursor = 0; DrawFrBreak(); }
+        else if (JOY_NEW(A_BUTTON))
+        {
+            sRun.offers[0] = sCursor;
+            PlaySE(SE_SELECT);
+            sScreen = BK_REPL; sCursor = 0; DrawFrBreak();
+        }
+    }
+    else
+    {
+        u8 pc = PartyCount();
+        if (JOY_NEW(DPAD_UP) && sCursor > 0) { sCursor--; PlaySE(SE_SELECT); DrawFrBreak(); }
+        else if (JOY_NEW(DPAD_DOWN) && sCursor + 1 < pc) { sCursor++; PlaySE(SE_SELECT); DrawFrBreak(); }
+        else if (JOY_NEW(B_BUTTON)) { PlaySE(SE_SELECT); sScreen = BK_OFFER; sCursor = sRun.offers[0]; DrawFrBreak(); }
+        else if (JOY_NEW(A_BUTTON))
+        {
+            struct Pokemon mon;
+            PlaySE(SE_SELECT);
+            FrFinishMon(&mon, sRun.starterSpecies[sRun.offers[0]], 31, TRUE, FALSE);
+            RtBuild_Set(&mon, 0, (1 + Random() % (RUNE_COUNT - 1)) | ((1 + Random() % (SPELL_COUNT - 1)) << 4));
+            RtBuild_Set(&mon, 1, (1 + Random() % (RUNE_COUNT - 1)) | ((1 + Random() % (SPELL_COUNT - 1)) << 4));
+            RtBuild_SetSel(&mon, 0);
+            gPlayerParty[sCursor] = mon;
+            sRun.sub |= 1;
+            sScreen = BK_MAIN; sCursor = 0; DrawFrBreak();
+        }
+    }
+}
+
+static void FrEndRun(bool8 won)
+{
+    u8 buf[6], cleared = won ? FR_MAX_ROUND : (sRun.floor > 0 ? sRun.floor - 1 : 0);
+    static const u8 sText_Streak2[] = _("Rounds cleared:");
+    Meta_Load();
+    if (cleared > sMeta.up[sRun.fDiff])
+        sMeta.up[sRun.fDiff] = cleared;
+    if (cleared > sMeta.best)
+        sMeta.best = cleared;
+    if (won)
+        sMeta.victories++;
+    Meta_Save();
+    sRun.state = RS_DONE;
+    Rg_Open();
+    Rg_Clear();
+    Rg_Text(64, 24, won ? sColGold : sColRed, won ? sText_RunWon : sText_RunOver);
+    Rg_Text(40, 60, sColWhite, sText_Streak2);
+    Rg_Number(buf, cleared, 2);
+    Rg_Text(170, 60, sColGreen, buf);
+    Rg_Text(40, 78, sColWhite, sText_Difficulty);
+    Rg_Text(170, 78, sColGold, sDiffName[sRun.fDiff]);
+    Rg_Text(84, 126, sColGray, sText_PressA);
+    Rg_Present();
+    PlayBGM(won ? MUS_LEVEL_UP : MUS_DUMMY);
+    SetMainCallback2(CB2_RogueOver);
+}
+
+// called by the field hook
+static bool8 FrontierFieldInput(void)
+{
+    switch (sRun.state)
+    {
+    case RS_INIT:
+        FrBuildPlayerParty();
+        StringCopy(gSaveBlock2Ptr->playerName, sSavedName);
+        FlagSet(FLAG_SYS_POKEMON_GET);
+        FlagSet(FLAG_SYS_B_DASH);
+        RtSave_Get();
+        sRun.state = RS_WARP;
+        return FALSE;
+    case RS_WARP:
+        SetWarpDestination(sFac[sRun.fFac].group, sFac[sRun.fFac].num, WARP_ID_NONE, sFac[sRun.fFac].x, sFac[sRun.fFac].y);
+        DoWarp();
+        sRun.state = RS_WAIT;
+        sRun.timer = 0;
+        return FALSE;
+    case RS_WAIT:
+        if (++sRun.timer < 90 || gPaletteFade.active)
+            return FALSE;
+        {
+            extern void RtDebug_StartTrainerBattle(u16 trainerId);
+            FrBuildEnemyParty(sRun.floor);
+            gRogueBattleEntered = FALSE;
+            sRun.state = RS_FIGHT;
+            RtDebug_StartTrainerBattle(TRAINER_ALLEN);
+        }
+        return FALSE;
+    case RS_FIGHT:
+        if (!gRogueBattleEntered)
+            return FALSE;
+        if (gBattleOutcome == B_OUTCOME_WON)
+        {
+            HealPlayerParty();
+            sRun.floor++;
+            if (FrBossRound(sRun.floor - 1))
+                sRun.sub &= ~1;
+            if (sRun.floor > FR_MAX_ROUND)
+            {
+                FrEndRun(TRUE);
+                return FALSE;
+            }
+            sRun.state = RS_DONE;
+            FrOpenBreak();
+            return FALSE;
+        }
+        FrEndRun(FALSE);
+        return FALSE;
+    }
+    return FALSE;
+}
+
+// ---------------------------------------------------------------------------
 // the field hook: runs and challenges are driven from here
 // ---------------------------------------------------------------------------
 static void ChooseMap(bool8 boss)
@@ -1332,6 +2034,8 @@ bool8 RtRogue_FieldInput(void)
 {
     if (gRogueMode == RG_OFF)
         return FALSE;
+    if (gRogueMode == RG_FRONTIER)
+        return FrontierFieldInput();
     switch (sRun.state)
     {
     case RS_INIT:
@@ -1479,6 +2183,8 @@ void RtRogue_DebugChallenge(void)
 u8 RtRogue_AiSkill(void)
 {
     u8 sk;
+    if (gRogueMode == RG_FRONTIER)
+        return RtRogue_FrontierAiSkill();
     if (gRogueMode == RG_CHALLENGE)
         return 8;
     sk = 3 + sRun.floor / 3;

@@ -234,6 +234,13 @@ static u8 FindNextUsable(u8 side, u8 from, u8 to)
 
 static void GetOpponentName(u8 *dst, u16 trainerId)
 {
+    if (gRogueMode == 3)
+    {
+        static const u8 sBossName[] = _("FACILITY HEAD");
+        static const u8 sFoeName[] = _("CHALLENGER");
+        StringCopy(dst, gRogueBoss ? sBossName : sFoeName);
+        return;
+    }
     if (gRogueMode == 2)
     {
         static const u8 sChalName[] = _("CHALLENGER");
@@ -546,7 +553,10 @@ EWRAM_DATA u32 gRtDebugStat = 0;
 u8 RtBattleSpeedPct(void)
 {
     static const u8 sPct[] = {80, 60, 70, 90, 100};
-    u8 code = gSaveBlock2Ptr->optionsRtBattleSpeed;
+    u8 code;
+    if (gRogueMode == 3)
+        return gRogueSpeedPct;
+    code = gSaveBlock2Ptr->optionsRtBattleSpeed;
     return sPct[code < ARRAY_COUNT(sPct) ? code : 0];
 } // debug harness: result of a statistics command
 static EWRAM_DATA u16 sFrameStartLine = 0;

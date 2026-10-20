@@ -406,7 +406,7 @@ static const struct WindowTemplate sNewGameBirchSpeechTextWindows[] =
 static const u16 sMainMenuBgPal[] = INCGFX_U16("graphics/interface/main_menu_bg.pal", ".gbapal");
 static const u16 sMainMenuTextPal[] = INCGFX_U16("graphics/interface/main_menu_text.pal", ".gbapal");
 
-static const u8 sText_MenuRogue[] = _("ROGUELIKE");
+static const u8 sText_MenuRogue[] = _("FRONTIER");
 static const u8 sText_MenuChallenge[] = _("CHALLENGE");
 extern void CB2_RtRogueStart(void);
 extern void CB2_RtChallengeStart(void);

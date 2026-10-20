@@ -406,7 +406,7 @@ void RtBuild_Load(struct RtActor *a, struct Pokemon *mon)
         struct RtBuildEntry *e = FindEntry(mon, FALSE);
         v = e ? e->p[e->sel & 1] : 0;
     }
-    else if (gRogueMode == 2 && a->side == RT_SIDE_ENEMY && mon >= gEnemyParty && mon < gEnemyParty + PARTY_SIZE)
+    else if (gRogueMode >= 2 && a->side == RT_SIDE_ENEMY && mon >= gEnemyParty && mon < gEnemyParty + PARTY_SIZE)
         v = gRogueChalBuild[mon - gEnemyParty];
     else
         v = AutoBuild(a);
@@ -826,7 +826,7 @@ void RtExt_SetupObjective(void)
                           | BATTLE_TYPE_LINK | BATTLE_TYPE_FRONTIER | BATTLE_TYPE_DOUBLE | BATTLE_TYPE_REGI | BATTLE_TYPE_KYOGRE_GROUDON
                           | BATTLE_TYPE_RAYQUAZA | BATTLE_TYPE_GROUDON | BATTLE_TYPE_KYOGRE | BATTLE_TYPE_WALLY_TUTORIAL))
         return;
-    if (gRogueMode == 2)
+    if (gRogueMode >= 2)
         return;
     b = BiomeOfMap();
     if (gRogueMode == 1 && gRogueBoss && b == BLS_NONE)
