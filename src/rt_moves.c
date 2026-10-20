@@ -3802,6 +3802,19 @@ void RtMove_UpdateCast(struct RtActor *a)
                 SteerChannel(a, 4);
                 if (a->act.subTimer)
                     a->act.subTimer--;
+                // AUTO AIM (and the AI): after a bounce the ball curves back towards the nearest foe
+                else if (a->side != RT_SIDE_PLAYER || gSaveBlock2Ptr->optionsRtAutoAim)
+                {
+                    struct RtActor *t = Rt_NearestFoe(a);
+                    if (t)
+                    {
+                        u8 want = RtAtan2(FROM_FX(t->x - a->x), FROM_FX(t->y - a->y));
+                        s8 diff = (s8)(want - a->act.angle);
+                        if (diff > 6) diff = 6;
+                        if (diff < -6) diff = -6;
+                        a->act.angle += diff;
+                    }
+                }
                 a->x += RtCos(a->act.angle) * sp / 16;
                 a->y += RtSin(a->act.angle) * sp / 16;
                 if (RtArena_CircleBlocked(FROM_FX(a->x), FROM_FX(a->y), a->radius / 2))
