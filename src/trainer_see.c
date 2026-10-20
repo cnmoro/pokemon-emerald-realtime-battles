@@ -194,11 +194,6 @@ bool8 CheckForTrainersWantingBattle(void)
 
     gNoOfApproachingTrainers = 0;
     gApproachingTrainerId = 0;
-    {
-        extern u8 gRogueMode;
-        if (gRogueMode)
-            return FALSE;
-    }
 
     for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
     {

@@ -119,12 +119,6 @@ bool8 RtDebug_FieldInput(void)
         CalculatePlayerPartyCount();
         return FALSE;
     }
-    if (cmd == 40)
-    {
-        extern void RtRogue_DebugChallenge(void);
-        RtRogue_DebugChallenge();
-        return TRUE;
-    }
     if (cmd == 28)
     {
         // warp to map gRtDebugSpecies (MAP_* constant: num | group << 8) at (gRtDebugTrainer >> 8, gRtDebugTrainer & 0xFF)

@@ -272,9 +272,8 @@ void RunScriptImmediately(const u8 *ptr)
 u8 *MapHeaderGetScriptTable(u8 tag)
 {
     const u8 *mapScripts = gMapHeader.mapScripts;
-    extern u8 gRogueMode;
 
-    if (!mapScripts || gRogueMode == 3)
+    if (!mapScripts)
         return NULL;
 
     while (1)

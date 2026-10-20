@@ -1007,7 +1007,6 @@ enum
     MENU_PARTY_FORCED,
     MENU_LEARN,
     MENU_MESSAGE,
-    MENU_BUILD,
 };
 
 #define MENU_ROWS 5
@@ -1099,32 +1098,10 @@ static void DrawMenu(void)
     {
     case MENU_MAIN:
         {
-            static const u8 sText_Build[] = _("Build");
-            static const u8 *const sOpts[] = {sText_Resume, sText_Bag, sText_Pokemon, sText_Build, sText_Run};
-            for (i = 0; i < 5; i++)
+            static const u8 *const sOpts[] = {sText_Resume, sText_Bag, sText_Pokemon, sText_Run};
+            for (i = 0; i < 4; i++)
                 AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 16, 3 + i * 13, sColMenu, TEXT_SKIP_DRAW, sOpts[i]);
             AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 6, 3 + gRt->menuCursor * 13, sColMenuArrow, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
-        }
-        break;
-    case MENU_BUILD:
-        {
-            static const u8 sLbl[4][8] = {_("1 Rune"), _("1 Spell"), _("2 Rune"), _("2 Spell")};
-            static const u8 sText_Active[] = _("Active");
-            struct Pokemon *mon = &gPlayerParty[gRt->menuScroll];
-            GetMonData(mon, MON_DATA_NICKNAME, gStringVar1);
-            StringGet_Nickname(gStringVar1);
-            AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 4, 1, sColMenuGray, TEXT_SKIP_DRAW, gStringVar1);
-            for (i = 0; i < 4; i++)
-            {
-                u8 v = RtBuild_Get(mon, i / 2);
-                const u8 *val = (i & 1) ? RtBuild_SpellName(v >> 4) : RtBuild_RuneName(v & 15);
-                AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 12, 13 + i * 12, sColMenu, TEXT_SKIP_DRAW, sLbl[i]);
-                AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 58, 13 + i * 12, sColMenu, TEXT_SKIP_DRAW, val);
-            }
-            AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 12, 13 + 4 * 12, sColMenu, TEXT_SKIP_DRAW, sText_Active);
-            ConvertIntToDecimalStringN(gStringVar2, RtBuild_GetSel(mon) + 1, STR_CONV_MODE_LEFT_ALIGN, 1);
-            AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 58, 13 + 4 * 12, sColMenu, TEXT_SKIP_DRAW, gStringVar2);
-            AddTextPrinterParameterized3(WIN_MENU, FONT_SMALL, 4, 13 + gRt->menuCursor * 12, sColMenuArrow, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
         }
         break;
     case MENU_BAG:
@@ -1665,73 +1642,14 @@ static bool8 LearnApply(u8 choice)
     return FALSE;
 }
 
-// returns TRUE when the menu closes
-static bool8 BuildMenuInput(void)
-{
-    struct Pokemon *mon;
-    s32 d = 0, n;
-    if (gMain.newKeys & B_BUTTON)
-    {
-        PlaySE(SE_SELECT);
-        gRt->menuKind = MENU_MAIN;
-        gRt->menuCursor = 0;
-        DrawMenu();
-        return FALSE;
-    }
-    if (gMain.newKeys & DPAD_UP)
-        gRt->menuCursor = gRt->menuCursor ? gRt->menuCursor - 1 : 4;
-    else if (gMain.newKeys & DPAD_DOWN)
-        gRt->menuCursor = gRt->menuCursor < 4 ? gRt->menuCursor + 1 : 0;
-    else if (gMain.newKeys & (DPAD_LEFT | L_BUTTON | R_BUTTON | DPAD_RIGHT | A_BUTTON))
-    {
-        if (gMain.newKeys & (L_BUTTON | R_BUTTON))
-        {
-            // next / previous party member
-            d = (gMain.newKeys & L_BUTTON) ? PARTY_SIZE - 1 : 1;
-            for (n = 0; n < PARTY_SIZE; n++)
-            {
-                gRt->menuScroll = (gRt->menuScroll + d) % PARTY_SIZE;
-                if (GetMonData(&gPlayerParty[gRt->menuScroll], MON_DATA_SPECIES_OR_EGG) != SPECIES_NONE
-                 && GetMonData(&gPlayerParty[gRt->menuScroll], MON_DATA_SPECIES_OR_EGG) != SPECIES_EGG)
-                    break;
-            }
-        }
-        else
-        {
-            u8 v;
-            d = (gMain.newKeys & DPAD_LEFT) ? -1 : 1;
-            mon = &gPlayerParty[gRt->menuScroll];
-            if (gRt->menuCursor == 4)
-                RtBuild_SetSel(mon, RtBuild_GetSel(mon) ^ 1);
-            else
-            {
-                u8 pr = gRt->menuCursor / 2;
-                v = RtBuild_Get(mon, pr);
-                if (gRt->menuCursor & 1)
-                    v = (v & 15) | ((((v >> 4) + d + SPELL_COUNT) % SPELL_COUNT) << 4);
-                else
-                    v = (v & 0xF0) | (((v & 15) + d + RUNE_COUNT) % RUNE_COUNT);
-                RtBuild_Set(mon, pr, v);
-            }
-        }
-    }
-    else
-        return FALSE;
-    PlaySE(SE_SELECT);
-    DrawMenu();
-    return FALSE;
-}
-
 bool8 RtUi_UpdateMenu(void)
 {
     u8 max;
     if (gRt->menuKind == MENU_MESSAGE)
         return TRUE;
-    if (gRt->menuKind == MENU_BUILD)
-        return BuildMenuInput();
     switch (gRt->menuKind)
     {
-    case MENU_MAIN: max = 5; break;
+    case MENU_MAIN: max = 4; break;
     case MENU_BAG: max = gRt->menuCount; break;
     default: max = PARTY_SIZE; break;
     }
@@ -1790,11 +1708,6 @@ bool8 RtUi_UpdateMenu(void)
                 RtUi_ShowMessageBox(sText_ChooseMon);
                 break;
             case 3:
-                gRt->menuKind = MENU_BUILD;
-                gRt->menuCursor = 0;
-                gRt->menuScroll = Rt_PlayerActor()->partyIdx;
-                break;
-            case 4:
                 CloseMenu();
                 Rt_TryRun();
                 return TRUE;

@@ -2812,7 +2812,6 @@ bool8 RtMove_TryStart(struct RtActor *a, u8 slot, u8 angle)
         static const u8 sCdPct[4] = {160, 130, 110, 100}; // foes recharge slower on easier settings
         a->cd[slot] = (u32)a->cd[slot] * sCdPct[FoeLevel(a)] / 100;
     }
-    a->cd[slot] = (u32)a->cd[slot] * RtExt_CdPct(a) / 100;
     if (FoeHasPressure(a))
         a->cd[slot] += a->cdMax[slot] / 2;
     if (a->holdEffect == HOLD_EFFECT_QUICK_CLAW && (Random() % 100) < a->holdParam)

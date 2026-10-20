@@ -600,10 +600,7 @@ struct RtActorX
     u16 buffTimer;     // objective buff frames left
     u8 buffKind;
     u8 superKind;      // Deoxys forme: 1 attack, 2 defense, 3 speed
-    u8 build;          // active build preset (0/1)
     u8 kiFlash;        // HUD: frames to flash the ki bar
-    u8 rune, spell;    // active build (RUNE_* / SPELL_*)
-    u16 spellCd;       // frames until the summoner spell is ready
     u16 oldGfx;        // gfx index before a form change
     u8 oldType[2];     // types before a form change
 };
@@ -908,29 +905,10 @@ void RtKi_OnDamage(struct RtActor *a, s32 amount, u8 src);
 void RtKi_Tick(struct RtActor *a);
 bool8 RtKi_CanCast(struct RtActor *a, u16 move);
 u16 RtKi_DashCost(void);
-// builds: runes and summoner spells
-enum { RUNE_NONE, RUNE_FURY, RUNE_VAMP, RUNE_THORNS, RUNE_GUARD, RUNE_SWIFT, RUNE_FOCUS, RUNE_KI, RUNE_COUNT };
-enum { SPELL_NONE, SPELL_BARRIER, SPELL_HEAL, SPELL_PURIFY, SPELL_BLINK, SPELL_FRENZY, SPELL_SURGE, SPELL_COUNT };
-struct RtBuildEntry { u16 key; u8 sel; u8 p[2]; };           // p[]: rune | spell << 4
-struct RtSave { u16 magic; u8 ver; u8 pad; struct RtBuildEntry builds[8]; u8 nextSlot; u8 meta[64]; };
-extern u8 gRogueMode, gRogueBattleEntered, gRogueBoss, gRogueChalBuild[PARTY_SIZE], gRogueSpeedPct;
-u16 RtRogue_StatMul(struct RtActor *a, u8 stat);
-u16 RtRogue_HpPct(void);
-u16 RtRogue_KiStart(void);
-u16 RtRogue_KiPct(void);
-u16 RtRogue_CdPct(void);
-bool8 RtRogue_FieldInput(void);
+struct RtSave { u16 magic; u8 ver; u8 pad; u8 meta[64]; };
 struct RtSave *RtSave_Get(void);
-void RtBuild_Load(struct RtActor *a, struct Pokemon *mon);
-u8 RtBuild_Get(struct Pokemon *mon, u8 preset);
-void RtBuild_Set(struct Pokemon *mon, u8 preset, u8 val);
-u8 RtBuild_GetSel(struct Pokemon *mon);
-void RtBuild_SetSel(struct Pokemon *mon, u8 sel);
-const u8 *RtBuild_RuneName(u8 r);
-const u8 *RtBuild_SpellName(u8 sp);
 bool8 RtExt_StartPoll(void);
 bool8 RtExt_TryEvolve(struct RtActor *a, struct Pokemon *mon);
-bool8 RtExt_CastSpell(struct RtActor *a);
 u16 RtKi_RuneGainPct(struct RtActor *a);
 enum { RTT_NONE, RTT_WATER, RTT_SAND, RTT_GRASS, RTT_ICE };
 u8 RtExt_TerrainAt(struct RtActor *a);
@@ -946,7 +924,6 @@ u8 RtExt_BuffLeft(void);
 bool8 RtArena_HitCells(s32 fx, s32 fy, s32 r, u8 dmg);
 void RtExt_OnHit(struct RtActor *victim, s32 *amount, u8 src);
 u16 RtExt_StatMul(struct RtActor *a, u8 stat);
-u16 RtExt_CdPct(struct RtActor *a);
 bool8 RtExt_TrySuper(struct RtActor *a);
 void RtExt_PlayerInput(struct RtActor *a, u16 held, u16 pressed);
 bool8 RtStruggle_Involves(u8 actorId);

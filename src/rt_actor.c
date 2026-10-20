@@ -267,7 +267,6 @@ void RtActor_InitFromMon(struct RtActor *a, struct Pokemon *mon, u8 side, u8 par
     a->shiny = IsMonShiny(mon);
     RtKi_InitActor(a);
     a->level = GetMonData(mon, MON_DATA_LEVEL);
-    RtBuild_Load(a, mon);
     a->vramSlot = slot;
     a->palSlot = slot;
     a->level = GetMonData(mon, MON_DATA_LEVEL);

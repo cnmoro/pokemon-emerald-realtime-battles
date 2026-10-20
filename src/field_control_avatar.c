@@ -141,12 +141,6 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     gSelectedObjectEvent = 0;
 
     {
-        extern u8 gRogueMode;
-        extern bool8 RtRogue_FieldInput(void);
-        if (gRogueMode && RtRogue_FieldInput())
-            return TRUE;
-    }
-    {
         extern const u8 gRtDebugEnabled;
         extern bool8 RtDebug_FieldInput(void);
         if (gRtDebugEnabled && RtDebug_FieldInput())

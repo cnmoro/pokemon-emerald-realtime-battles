@@ -1,5 +1,4 @@
 #include "global.h"
-extern u8 gRogueMode;
 #include "battle.h"
 #include "battle_setup.h"
 #include "battle_transition.h"
@@ -605,7 +604,7 @@ static void CB2_EndWildBattle(void)
     CpuFill16(0, (void *)(BG_PLTT), BG_PLTT_SIZE);
     ResetOamRange(0, 128);
 
-    if (IsPlayerDefeated(gBattleOutcome) == TRUE && CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE && !InBattlePike() && !gRogueMode)
+    if (IsPlayerDefeated(gBattleOutcome) == TRUE && CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE && !InBattlePike())
     {
         SetMainCallback2(CB2_WhiteOut);
     }
@@ -1329,7 +1328,7 @@ static void CB2_RtDebugEndTrainer(void)
 {
     CpuFill16(0, (void *)(BG_PLTT), BG_PLTT_SIZE);
     ResetOamRange(0, 128);
-    if (IsPlayerDefeated(gBattleOutcome) == TRUE && !gRogueMode)
+    if (IsPlayerDefeated(gBattleOutcome) == TRUE)
     {
         SetMainCallback2(CB2_WhiteOut);
     }

@@ -62,8 +62,7 @@ enum
     MENU_ACTION_PLAYER_LINK,
     MENU_ACTION_REST_FRONTIER,
     MENU_ACTION_RETIRE_FRONTIER,
-    MENU_ACTION_PYRAMID_BAG,
-    MENU_ACTION_BUILD
+    MENU_ACTION_PYRAMID_BAG
 };
 
 // Save status
@@ -99,9 +98,6 @@ static bool8 StartMenuPokeNavCallback(void);
 static bool8 StartMenuPlayerNameCallback(void);
 static bool8 StartMenuSaveCallback(void);
 static bool8 StartMenuOptionCallback(void);
-static bool8 StartMenuBuildCallback(void);
-extern void CB2_RtBuildEditor(void);
-static const u8 sText_MenuBuild[] = _("BUILD");
 static bool8 StartMenuExitCallback(void);
 static bool8 StartMenuSafariZoneRetireCallback(void);
 static bool8 StartMenuLinkModePlayerNameCallback(void);
@@ -197,8 +193,7 @@ static const struct MenuAction sStartMenuItems[] =
     [MENU_ACTION_PLAYER_LINK]     = {gText_MenuPlayer,  {.u8_void = StartMenuLinkModePlayerNameCallback}},
     [MENU_ACTION_REST_FRONTIER]   = {gText_MenuRest,    {.u8_void = StartMenuSaveCallback}},
     [MENU_ACTION_RETIRE_FRONTIER] = {gText_MenuRetire,  {.u8_void = StartMenuBattlePyramidRetireCallback}},
-    [MENU_ACTION_PYRAMID_BAG]     = {gText_MenuBag,     {.u8_void = StartMenuBattlePyramidBagCallback}},
-    [MENU_ACTION_BUILD]           = {sText_MenuBuild,   {.u8_void = StartMenuBuildCallback}}
+    [MENU_ACTION_PYRAMID_BAG]     = {gText_MenuBag,     {.u8_void = StartMenuBattlePyramidBagCallback}}
 };
 
 static const struct BgTemplate sBgTemplates_LinkBattleSave[] =
@@ -326,7 +321,6 @@ static void BuildNormalStartMenu(void)
     if (FlagGet(FLAG_SYS_POKEMON_GET) == TRUE)
     {
         AddStartMenuAction(MENU_ACTION_POKEMON);
-        AddStartMenuAction(MENU_ACTION_BUILD);
     }
 
     AddStartMenuAction(MENU_ACTION_BAG);
@@ -747,20 +741,6 @@ static bool8 StartMenuOptionCallback(void)
         return TRUE;
     }
 
-    return FALSE;
-}
-
-static bool8 StartMenuBuildCallback(void)
-{
-    if (!gPaletteFade.active)
-    {
-        PlayRainStoppingSoundEffect();
-        RemoveExtraStartMenuWindows();
-        CleanupOverworldWindowsAndTilemaps();
-        gMain.savedCallback = CB2_ReturnToFieldWithOpenMenu;
-        SetMainCallback2(CB2_RtBuildEditor);
-        return TRUE;
-    }
     return FALSE;
 }
 

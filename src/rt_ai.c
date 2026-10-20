@@ -63,12 +63,6 @@ void RtAi_Init(struct RtActor *a)
         if (gRtDebugEnabled && gRtDebugAiSkill && a->side == RT_SIDE_ENEMY)
             skill = gRtDebugAiSkill;
     }
-    {
-        extern u8 gRogueMode;
-        extern u8 RtRogue_AiSkill(void);
-        if (gRogueMode && a->side == RT_SIDE_ENEMY)
-            skill = RtRogue_AiSkill();
-    }
     // difficulty (OPTIONS menu): easy/hard shift how sharp the opponents are
     if (a->side == RT_SIDE_ENEMY)
     {

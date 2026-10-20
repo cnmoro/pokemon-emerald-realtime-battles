@@ -1552,11 +1552,6 @@ void CB2_NewGame(void)
         if (gRtDebugEnabled)
             gFieldCallback = NULL;
     }
-    {
-        extern u8 gRogueMode;
-        if (gRogueMode)
-            gFieldCallback = NULL;
-    }
     gFieldCallback2 = NULL;
     DoMapLoadLoop(&gMain.state);
     SetFieldVBlankCallback();
