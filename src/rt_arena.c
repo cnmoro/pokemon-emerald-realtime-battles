@@ -1,5 +1,6 @@
 // Real-time battle arena: built from the tileset of the map the battle started on.
 #include "global.h"
+extern const struct Tileset gTileset_General;
 #include "rt_internal.h"
 #include "battle.h"
 #include "bg.h"
@@ -1087,6 +1088,13 @@ void RtArena_Build(void)
             gRt->solid[y][x] = (comp[y * ARENA_MW + x] ? 0 : RT_SOLID_WALK) | ((g & GF_SHOT) ? RT_SOLID_SHOT : 0);
         }
     }
+    // General tileset: metatile 0x002 is grass with a brown seam along its top (it sits under fences and
+    // buildings in the overworld); with what stood above it gone it shows as a stray line: plain grass
+    if (gMapHeader.mapLayout->primaryTileset == &gTileset_General)
+        for (y = 0; y < ARENA_MH; y++)
+            for (x = 0; x < ARENA_MW; x++)
+                if (gRt->arenaMeta[y][x] == 0x002)
+                    gRt->arenaMeta[y][x] = 0x001;
     // ledges are one-way barriers in the overworld; in battle they would only confuse, so they are
     // painted over with the ground around them
     {

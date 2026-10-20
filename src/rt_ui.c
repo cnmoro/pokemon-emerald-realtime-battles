@@ -237,8 +237,10 @@ static void DrawHpBar(u16 tileBase, u16 shown, u16 max, u8 widthPx)
 // ---------------------------------------------------------------------------
 // Init / HUD text
 // ---------------------------------------------------------------------------
+static EWRAM_DATA bool8 sExpOn = FALSE;
 void RtUi_Init(void)
 {
+    sExpOn = FALSE;
     InitWindows(sRtWindows);
     DeactivateAllTextPrinters();
     LoadPalette(sHudPal, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
@@ -649,6 +651,8 @@ static void RtUi_MovesStep(void)
 // ---------------------------------------------------------------------------
 void RtUi_Toast(const u8 *str, u16 frames)
 {
+    if (sExpOn)
+        return; // the EXP panel is up: it would cut its top row
     FillWindowPixelBuffer(WIN_TOAST, PIXEL_FILL(0)); // transparent, like the rest of the HUD
     {
         s32 w = GetStringWidth(FONT_SMALL, str, 0);
@@ -681,6 +685,9 @@ void RtUi_HideToast(void)
         return;
     gRt->toast.active = FALSE;
     ClearWindowTilemap(WIN_TOAST);
+    // the toast row overlaps the top of the EXP panel: put the panel back over it
+    if (sExpOn)
+        PutWindowTilemap(WIN_EXP);
     CopyWindowToVram(WIN_TOAST, COPYWIN_MAP);
 }
 
@@ -2286,6 +2293,7 @@ static void DrawExpPanel(u16 t)
     }
     PutWindowTilemap(WIN_EXP);
     CopyWindowToVram(WIN_EXP, COPYWIN_FULL);
+    sExpOn = TRUE;
 }
 
 bool8 RtUi_ExpPanelStart(void)
@@ -2347,6 +2355,7 @@ bool8 RtUi_ExpPanelUpdate(void)
     {
         m4aSongNumStop(SE_EXP);
         ClearWindowTilemap(WIN_EXP);
+        sExpOn = FALSE;
         CopyWindowToVram(WIN_EXP, COPYWIN_MAP);
         return TRUE;
     }
