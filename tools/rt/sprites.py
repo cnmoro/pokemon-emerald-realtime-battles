@@ -115,11 +115,51 @@ def make_frame(fr,fw,fh,cidx,dur):
     if not b: return dict(x=0,y=0,shape=(8,8,0,0),tiles=bytes(32),dur=dur)
     x0,y0,x1,y1=b
     w=x1-x0;h=y1-y0
-    if w>64:
-        mid=(x0+x1)//2; x0=mid-32; x1=x0+64; w=64
-    if h>64:
-        # keep bottom (feet) part plus most of body
-        y0=y1-64; h=64
+    aff=0
+    dbox=None
+    if w>64 or h>64:
+        # bigger than the largest sprite (64x64): store a reduced copy and let the engine scale it back up with
+        # an affine (double size) sprite, so that nothing is cut off. aff = scale (Q4, 16 = 1x) - 16.
+        q=-(-16*max(w,h)//64)
+        q=min(q,31)
+        aff=q-16
+        dbox=(x0-cx,y0-cy,x1-cx,y1-cy)
+        dw=max(1,min(64,int(round(w*16/q)))); dh=max(1,min(64,int(round(h*16/q))))
+        # box filter on premultiplied colour, then snap every pixel to the palette of the species
+        src=fr.crop((x0,y0,x1,y1)).convert('RGBa')
+        sub=src.resize((dw,dh),Image.Resampling.BOX).convert('RGBA')
+        keys=list(cidx.keys()); snap={}
+        spx=sub.load()
+        for yy2 in range(dh):
+            for xx2 in range(dw):
+                p2=spx[xx2,yy2]
+                if p2[3]<=127: spx[xx2,yy2]=(0,0,0,0); continue
+                k=(p2[0]>>3,p2[1]>>3,p2[2]>>3)
+                if k not in cidx:
+                    if k not in snap:
+                        snap[k]=min(keys,key=lambda c:(c[0]-k[0])**2*3+(c[1]-k[1])**2*4+(c[2]-k[2])**2*2)
+                    c=snap[k]; spx[xx2,yy2]=(c[0]<<3,c[1]<<3,c[2]<<3,255)
+        bx=(x0+x1)/2.0; by=(y0+y1)/2.0
+        fr2=Image.new('RGBA',(dw,dh),(0,0,0,0)); fr2.paste(sub,(0,0))
+        sw,sh,shp,sz=pick_shape(dw,dh)
+        # the stored picture sits in the middle of its shape; the displayed centre is bx,by
+        ox=0-(sw-dw)//2; oy=0-(sh-dh)//2
+        px=fr2.load()
+        tiles=bytearray()
+        for ty in range(sh//8):
+            for tx in range(sw//8):
+                for yy in range(8):
+                    for xx in range(0,8,2):
+                        v=[]
+                        for q2 in range(2):
+                            X=ox+tx*8+xx+q2; Y=oy+ty*8+yy
+                            if 0<=X<dw and 0<=Y<dh:
+                                p=px[X,Y]
+                                v.append(cidx[(p[0]>>3,p[1]>>3,p[2]>>3)] if p[3]>127 else 0)
+                            else: v.append(0)
+                        tiles.append(v[0]|(v[1]<<4))
+        # x,y: top-left of the (unscaled) shape box whose centre is the displayed centre
+        return dict(x=int(round(bx-sw/2.0))-cx,y=int(round(by-sh/2.0))-cy,shape=(sw,sh,shp,sz),tiles=bytes(tiles),dur=dur,aff=aff,dbox=dbox)
     sw,sh,shp,sz=pick_shape(w,h)
     # center the bbox inside shape
     ox=x0-(sw-w)//2; oy=y0-(sh-h)//2

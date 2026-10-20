@@ -523,7 +523,7 @@ void RtActor_LoadGfxIfNeeded(struct RtActor *a)
     }
     f = &gRtFrames[idx];
     LZ77UnCompWram((const u32 *)((const u8 *)gRtSpriteGfx + f->offset), gRt->gfxBuf[a->vramSlot]);
-    shape = f->shapeSize >> 2;
+    shape = (f->shapeSize >> 2) & 3;
     size = f->shapeSize & 3;
     gRt->gfxPendingSize[a->vramSlot] = sTiles[shape][size] * TILE_SIZE_4BPP;
     gRt->gfxPending[a->vramSlot] = TRUE;
@@ -1403,7 +1403,7 @@ void RtActor_DrawGhost(struct RtActor *a, s32 dx, s32 dy)
     sy = FROM_FX(a->y) - gRt->camY + dy;
     f = &gRtFrames[a->curFrame];
     FrameIndex(a, &hf);
-    shape = f->shapeSize >> 2;
+    shape = (f->shapeSize >> 2) & 3;
     size = f->shapeSize & 3;
     w = sShapeW[shape][size];
     h = sShapeH[shape][size];
@@ -1414,6 +1414,20 @@ void RtActor_DrawGhost(struct RtActor *a, s32 dx, s32 dy)
     oam = (u16 *)RtOam_Next(4);
     if (!oam)
         return;
+    if (f->shapeSize >> 4)
+    {
+        // oversized frame (stored reduced): draw it enlarged with an affine sprite
+        u8 m = RtFx_AllocAffine(0, 16 + (f->shapeSize >> 4), hf);
+        if (m != 0xFF)
+        {
+            s32 cxs = hf ? (sx - (f->x + w / 2)) : (sx + f->x + w / 2);
+            s32 cys = sy - a->z + f->y + h / 2;
+            oam[0] = ((cys - h) & 0xFF) | (3 << 8) | (shape << 14) | (1 << 10);
+            oam[1] = ((cxs - w) & 0x1FF) | (m << 9) | (size << 14);
+            oam[2] = (a->vramSlot * 64) | (2 << 10) | (a->palSlot << 12);
+            return;
+        }
+    }
     oam[0] = (y & 0xFF) | (shape << 14) | (1 << 10);
     oam[1] = (x & 0x1FF) | (size << 14) | (hf ? (1 << 12) : 0);
     oam[2] = (a->vramSlot * 64) | (2 << 10) | (a->palSlot << 12);
@@ -1439,7 +1453,7 @@ void RtActor_Draw(struct RtActor *a)
         bool8 blink = (a->state == AST_DASH) || (a->iframes > 14 && (gRt->frame & 2));
         f = &gRtFrames[a->curFrame];
         FrameIndex(a, &hf);
-        shape = f->shapeSize >> 2;
+        shape = (f->shapeSize >> 2) & 3;
         size = f->shapeSize & 3;
         w = sShapeW[shape][size];
         h = sShapeH[shape][size];
@@ -1450,8 +1464,21 @@ void RtActor_Draw(struct RtActor *a)
                 y += (50 - a->stateTimer) / 4;
             if (!(x + w < 0 || x > DISPLAY_WIDTH || y + h < 0 || y > DISPLAY_HEIGHT) && !(blink && (gRt->frame & 1)))
             {
+                u8 m = 0xFF;
                 o = RtOam_Next(2);
-                if (o)
+                if (o && (f->shapeSize >> 4))
+                    m = RtFx_AllocAffine(0, 16 + (f->shapeSize >> 4), hf);
+                if (o && m != 0xFF)
+                {
+                    // oversized frame (stored reduced): enlarge it with an affine, double-size sprite
+                    s32 cxs = hf ? (sx - (f->x + w / 2)) : (sx + f->x + w / 2);
+                    s32 cys = y + h / 2;
+                    oam = (u16 *)o;
+                    oam[0] = ((cys - h) & 0xFF) | (3 << 8) | (shape << 14) | (a->state == AST_DASH ? (1 << 10) : 0);
+                    oam[1] = ((cxs - w) & 0x1FF) | (m << 9) | (size << 14);
+                    oam[2] = (a->vramSlot * 64) | (2 << 10) | (a->palSlot << 12);
+                }
+                else if (o)
                 {
                     oam = (u16 *)o;
                     oam[0] = (y & 0xFF) | (shape << 14) | (a->state == AST_DASH ? (1 << 10) : 0);
