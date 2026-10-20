@@ -1,4 +1,5 @@
 #include "global.h"
+#include "world_tiles.h"
 #include "berry.h"
 #include "bike.h"
 #include "field_camera.h"
@@ -93,6 +94,7 @@ void GetCameraOffsetWithPan(s16 *x, s16 *y)
 
 void DrawWholeMapView(void)
 {
+    WorldTiles_BeginFullRedraw();
     DrawWholeMapViewInternal(gSaveBlock1Ptr->pos.x, gSaveBlock1Ptr->pos.y, gMapHeader.mapLayout);
     sFieldCameraOffset.copyBGToVRAM = TRUE;
 }
@@ -218,7 +220,10 @@ void DrawDoorMetatileAt(int x, int y, u16 *tiles)
 
     if (offset >= 0)
     {
-        DrawMetatile(METATILE_LAYER_TYPE_COVERED, tiles, offset);
+        u16 tmp[NUM_TILES_PER_METATILE];
+
+        WorldTiles_Translate(tiles, tmp, WorldTiles_SetIdxAt(x + 0, y + 0));
+        DrawMetatile(METATILE_LAYER_TYPE_COVERED, tmp, offset);
         sFieldCameraOffset.copyBGToVRAM = TRUE;
     }
 }
@@ -227,6 +232,8 @@ static void DrawMetatileAt(const struct MapLayout *mapLayout, u16 offset, int x,
 {
     u16 metatileId = MapGridGetMetatileIdAt(x, y);
     const u16 *metatiles;
+    u16 tmp[NUM_TILES_PER_METATILE];
+    u8 si = WorldTiles_SetIdxAt(x, y);
 
     if (metatileId > NUM_METATILES_TOTAL)
         metatileId = 0;
@@ -236,10 +243,15 @@ static void DrawMetatileAt(const struct MapLayout *mapLayout, u16 offset, int x,
     }
     else
     {
-        metatiles = mapLayout->secondaryTileset->metatiles;
+        const struct Tileset *ts = WorldTiles_TilesetAt(x, y);
+
+        if (ts == NULL || ts->isSecondary != TRUE)
+            ts = mapLayout->secondaryTileset;
+        metatiles = ts->metatiles;
         metatileId -= NUM_METATILES_IN_PRIMARY;
     }
-    DrawMetatile(MapGridGetMetatileLayerTypeAt(x, y), metatiles + metatileId * NUM_TILES_PER_METATILE, offset);
+    WorldTiles_Translate(metatiles + metatileId * NUM_TILES_PER_METATILE, tmp, si);
+    DrawMetatile(MapGridGetMetatileLayerTypeAt(x, y), tmp, offset);
 }
 
 static void DrawMetatile(s32 metatileLayerType, const u16 *tiles, u16 offset)
@@ -418,6 +430,8 @@ void CameraUpdate(void)
         SetBerryTreesSeen();
         AddCameraTileOffset(&sFieldCameraOffset, deltaX * 2, deltaY * 2);
         RedrawMapSlicesForCameraUpdate(&sFieldCameraOffset, deltaX * 2, deltaY * 2);
+        if (WorldTiles_TakeRedraw())
+            DrawWholeMapView();
     }
 
     AddCameraPixelOffset(&sFieldCameraOffset, movementSpeedX, movementSpeedY);

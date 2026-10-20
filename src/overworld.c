@@ -1,4 +1,5 @@
 #include "global.h"
+#include "world_tiles.h"
 #include "overworld.h"
 #include "party_menu.h"
 #include "constants/moves.h"
@@ -527,6 +528,7 @@ static void InitMapView(void)
     ResetFieldCamera();
     CopyMapTilesetsToVram(gMapHeader.mapLayout);
     LoadMapTilesetPalettes(gMapHeader.mapLayout);
+    WorldTiles_ResetIdentity();
     DrawWholeMapView();
     InitTilesetAnimations();
 }
@@ -808,8 +810,7 @@ void LoadMapFromCameraTransition(u8 mapGroup, u8 mapNum)
     Overworld_ClearSavedMusic();
     RunOnTransitionMapScript();
     InitMap();
-    CopySecondaryTilesetToVramUsingHeap(gMapHeader.mapLayout);
-    LoadSecondaryTilesetPalette(gMapHeader.mapLayout);
+    WorldTiles_Cross();
 
     for (paletteIndex = NUM_PALS_IN_PRIMARY; paletteIndex < NUM_PALS_TOTAL; paletteIndex++)
         ApplyWeatherColorMapToPal(paletteIndex);
@@ -1478,6 +1479,7 @@ static void OverworldBasic(void)
     UpdatePaletteFade();
     UpdateTilesetAnimations();
     DoScheduledBgTilemapCopiesToVram();
+    WorldTiles_FrameEnd();
 }
 
 // This CB2 is used when starting
@@ -1875,6 +1877,7 @@ static bool32 LoadMapInStepsLink(u8 *state)
         }
         break;
     case 9:
+        WorldTiles_ResetIdentity();
         DrawWholeMapView();
         (*state)++;
         break;
@@ -1950,6 +1953,7 @@ static bool32 LoadMapInStepsLocal(u8 *state, bool32 a2)
         }
         break;
     case 9:
+        WorldTiles_ResetIdentity();
         DrawWholeMapView();
         (*state)++;
         break;
@@ -2047,6 +2051,7 @@ static bool32 ReturnToFieldLink(u8 *state)
         }
         break;
     case 8:
+        WorldTiles_ResetIdentity();
         DrawWholeMapView();
         (*state)++;
         break;

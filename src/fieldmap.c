@@ -1,4 +1,5 @@
 #include "global.h"
+#include "world_tiles.h"
 #include "battle_pyramid.h"
 #include "bg.h"
 #include "fieldmap.h"
@@ -124,6 +125,7 @@ static void InitBackupMapLayoutConnections(const struct MapHeader *mapHeader)
     const struct MapConnection *connection;
     const struct MapHeader *cMap;
 
+    WorldTiles_ClearRects();
     if (!mapHeader->connections)
         return;
 
@@ -164,6 +166,7 @@ static void FillConnection(s32 x, s32 y, const struct MapHeader *connectedMapHea
     s32 mapWidth;
 
     mapWidth = connectedMapHeader->mapLayout->width;
+    WorldTiles_AddRect(x, y, width, height, connectedMapHeader->mapLayout->secondaryTileset);
     src = &connectedMapHeader->mapLayout->map[mapWidth * y2 + x2];
     dest = &gBackupMapLayout.map[gBackupMapLayout.width * y + x];
 
@@ -344,14 +347,28 @@ s32 MapGridGetMetatileIdAt(s32 x, s32 y)
     return UNPACK_METATILE(block);
 }
 
+static u16 GetMetatileAttributesAt(s32 x, s32 y)
+{
+    u16 id = MapGridGetMetatileIdAt(x, y);
+
+    if (id >= NUM_METATILES_IN_PRIMARY && id < NUM_METATILES_TOTAL)
+    {
+        const struct Tileset *ts = WorldTiles_TilesetAt(x, y);
+
+        if (ts != NULL && ts->isSecondary == TRUE)
+            return ts->metatileAttributes[id - NUM_METATILES_IN_PRIMARY];
+    }
+    return GetMetatileAttributesById(id);
+}
+
 s32 MapGridGetMetatileBehaviorAt(s32 x, s32 y)
 {
-    return UNPACK_BEHAVIOR(GetMetatileAttributesById(MapGridGetMetatileIdAt(x, y)));
+    return UNPACK_BEHAVIOR(GetMetatileAttributesAt(x, y));
 }
 
 u8 MapGridGetMetatileLayerTypeAt(s32 x, s32 y)
 {
-    return UNPACK_LAYER_TYPE(GetMetatileAttributesById(MapGridGetMetatileIdAt(x, y)));
+    return UNPACK_LAYER_TYPE(GetMetatileAttributesAt(x, y));
 }
 
 void MapGridSetMetatileIdAt(s32 x, s32 y, u16 metatile)
@@ -860,12 +877,12 @@ void CopyPrimaryTilesetToVram(struct MapLayout const *mapLayout)
 
 void CopySecondaryTilesetToVram(struct MapLayout const *mapLayout)
 {
-    CopyTilesetToVram(mapLayout->secondaryTileset, NUM_TILES_TOTAL - NUM_TILES_IN_PRIMARY, NUM_TILES_IN_PRIMARY);
+    WorldTiles_LoadSecondaryDirect(mapLayout->secondaryTileset);
 }
 
 void CopySecondaryTilesetToVramUsingHeap(struct MapLayout const *mapLayout)
 {
-    CopyTilesetToVramUsingHeap(mapLayout->secondaryTileset, NUM_TILES_TOTAL - NUM_TILES_IN_PRIMARY, NUM_TILES_IN_PRIMARY);
+    WorldTiles_LoadSecondaryDirect(mapLayout->secondaryTileset);
 }
 
 static void LoadPrimaryTilesetPalette(struct MapLayout const *mapLayout)
@@ -883,7 +900,7 @@ void CopyMapTilesetsToVram(struct MapLayout const *mapLayout)
     if (mapLayout)
     {
         CopyTilesetToVramUsingHeap(mapLayout->primaryTileset, NUM_TILES_IN_PRIMARY, 0);
-        CopyTilesetToVramUsingHeap(mapLayout->secondaryTileset, NUM_TILES_TOTAL - NUM_TILES_IN_PRIMARY, NUM_TILES_IN_PRIMARY);
+        WorldTiles_LoadSecondaryDirect(mapLayout->secondaryTileset);
     }
 }
 

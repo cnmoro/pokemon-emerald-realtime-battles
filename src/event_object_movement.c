@@ -1642,6 +1642,58 @@ u8 CreateVirtualObject(u8 graphicsId, u8 virtualObjId, s16 x, s16 y, u8 elevatio
     return spriteId;
 }
 
+// Open world: NPCs of connected maps that are inside the view (the connection strip) are spawned
+// early, with their coordinates translated into the current map's frame, so they do not pop in
+// when the camera crosses the border.
+static void TrySpawnNeighborObjectEvents(s16 cameraX, s16 cameraY)
+{
+    const struct MapConnections *conns = gMapHeader.connections;
+    s16 left = gSaveBlock1Ptr->pos.x - 2;
+    s16 right = gSaveBlock1Ptr->pos.x + MAP_OFFSET_W + 2;
+    s16 top = gSaveBlock1Ptr->pos.y;
+    s16 bottom = gSaveBlock1Ptr->pos.y + MAP_OFFSET_H + 2;
+    s32 c, i;
+
+    if (conns == NULL || conns->connections == NULL || gMapHeader.mapLayout == NULL)
+        return;
+    if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InTrainerHill())
+        return;
+    for (c = 0; c < conns->count; c++)
+    {
+        const struct MapConnection *conn = &conns->connections[c];
+        const struct MapHeader *nh;
+        s32 dx = 0, dy = 0;
+
+        if (conn->direction < CONNECTION_SOUTH || conn->direction > CONNECTION_EAST)
+            continue;
+        nh = Overworld_GetMapHeaderByGroupAndId(conn->mapGroup, conn->mapNum);
+        if (nh == NULL || nh->events == NULL || nh->mapLayout == NULL)
+            continue;
+        switch (conn->direction)
+        {
+        case CONNECTION_SOUTH: dx = conn->offset; dy = gMapHeader.mapLayout->height; break;
+        case CONNECTION_NORTH: dx = conn->offset; dy = -nh->mapLayout->height; break;
+        case CONNECTION_WEST:  dx = -nh->mapLayout->width; dy = conn->offset; break;
+        case CONNECTION_EAST:  dx = gMapHeader.mapLayout->width; dy = conn->offset; break;
+        }
+        for (i = 0; i < nh->events->objectEventCount; i++)
+        {
+            const struct ObjectEventTemplate *t = &nh->events->objectEvents[i];
+            s16 npcX = t->x + dx + MAP_OFFSET;
+            s16 npcY = t->y + dy + MAP_OFFSET;
+
+            if (top <= npcY && bottom >= npcY && left <= npcX && right >= npcX && !FlagGet(t->flagId))
+            {
+                struct ObjectEventTemplate tmp = *t;
+
+                tmp.x = t->x + dx;
+                tmp.y = t->y + dy;
+                TrySpawnObjectEventTemplate(&tmp, conn->mapNum, conn->mapGroup, cameraX, cameraY);
+            }
+        }
+    }
+}
+
 void TrySpawnObjectEvents(s16 cameraX, s16 cameraY)
 {
     u8 i;
@@ -1671,6 +1723,7 @@ void TrySpawnObjectEvents(s16 cameraX, s16 cameraY)
                 && !FlagGet(template->flagId))
                 TrySpawnObjectEventTemplate(template, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup, cameraX, cameraY);
         }
+        TrySpawnNeighborObjectEvents(cameraX, cameraY);
     }
 }
 
