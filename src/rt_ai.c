@@ -24,6 +24,11 @@ static EWRAM_DATA u16 sTrainerItemCd = 0;
 
 static const u8 sText_TrainerUsed[] = _("{STR_VAR_1} used {STR_VAR_2}!");
 
+static u8 RtAi_Range(u16 move)
+{
+    return RtMove_GetRange(move) * RtMod_RangePct() / 100;
+}
+
 void RtAi_Init(struct RtActor *a)
 {
     u8 skill;
@@ -79,6 +84,35 @@ void RtAi_Init(struct RtActor *a)
         }
     }
     a->aiSkill = skill;
+    // trainer styles: the class decides, otherwise the trainer's id (always the same for one trainer)
+    {
+        u8 style = AI_STYLE_BALANCED;
+        if (gRt->isTrainer && a->side == RT_SIDE_ENEMY && !(gBattleTypeFlags & BATTLE_TYPE_LINK) && gTrainerBattleOpponent_A != TRAINER_SECRET_BASE)
+        {
+            u8 cls = gTrainers[gTrainerBattleOpponent_A].trainerClass;
+            switch (cls)
+            {
+            case TRAINER_CLASS_HIKER: case TRAINER_CLASS_BLACK_BELT: case TRAINER_CLASS_BATTLE_GIRL:
+            case TRAINER_CLASS_KINDLER: case TRAINER_CLASS_GUITARIST:
+                style = AI_STYLE_AGGRESSIVE; break;
+            case TRAINER_CLASS_BIRD_KEEPER: case TRAINER_CLASS_PSYCHIC: case TRAINER_CLASS_EXPERT:
+                style = AI_STYLE_KITER; break;
+            case TRAINER_CLASS_NINJA_BOY: case TRAINER_CLASS_HEX_MANIAC:
+                style = AI_STYLE_TRICKSTER; break;
+            default:
+                style = (gTrainerBattleOpponent_A * 7 + 3) % 4; break;
+            }
+        }
+        gRt->ax[a->id].aiStyle = style;
+        if (style != AI_STYLE_BALANCED && gRt->frame < 30 && a->id == 2)
+        {
+            static const u8 sAgg[] = _("The foe fights AGGRESSIVELY!");
+            static const u8 sKite[] = _("The foe keeps its DISTANCE!");
+            static const u8 sTrick[] = _("The foe fights with TRICKS!");
+            static const u8 *const sTxt[] = {NULL, sAgg, sKite, sTrick};
+            RtUi_Toast(sTxt[style], 110);
+        }
+    }
     a->aiThinkCd = 30 + Random() % 30;
     a->aiStrafe = (Random() & 1) ? 1 : -1;
     a->aiTarget = 0xFF;
@@ -212,7 +246,7 @@ static u16 ScoreMove(struct RtActor *a, struct RtActor *t, u8 slot, s32 dist)
     u16 move = a->moves[slot];
     const struct BattleMove *bm = &gBattleMoves[move];
     s32 score = 0;
-    u8 range = RtMove_GetRange(move);
+    u8 range = RtAi_Range(move);
     if (!RtActor_MoveSlotUsable(a, slot))
         return 0;
     // wild POKeMON don't escape (Teleport, or Roar/Whirlwind ending the battle) in the first 8 seconds,
@@ -383,11 +417,16 @@ static u8 PreferredRange(struct RtActor *a, struct RtActor *t)
         if (s > best)
         {
             best = s;
-            bestRange = RtMove_GetRange(m);
+            bestRange = RtAi_Range(m);
         }
     }
     if (bestRange > 150)
         bestRange = 150;
+    switch (gRt->ax[a->id].aiStyle)
+    {
+    case AI_STYLE_AGGRESSIVE: return bestRange / 3 < 18 ? 18 : bestRange / 3;
+    case AI_STYLE_KITER: return bestRange * 5 / 6 > 120 ? 120 : bestRange * 5 / 6;
+    }
     return bestRange * 2 / 3;
 }
 
@@ -521,7 +560,7 @@ void RtAi_Update(struct RtActor *a)
         if (gRtDebugEnabled && gRtDebugTestMove)
         {
             // move test mode: the enemy is a training dummy, the player walks into range and casts
-            u8 range = RtMove_GetRange(a->moves[0]);
+            u8 range = RtAi_Range(a->moves[0]);
             if (range > 90)
                 range = 90;
             if (gRtMoveDefs[a->moves[0]].pattern == RTP_MELEE)
@@ -600,7 +639,14 @@ void RtAi_Update(struct RtActor *a)
         for (i = 0; i < MAX_MON_MOVES; i++)
         {
             u16 s = ScoreMove(a, t, i, dist);
+            u16 mv = a->moves[i];
             s = s * (80 + Random() % 40) / 100;
+            switch (gRt->ax[a->id].aiStyle)
+            {
+            case AI_STYLE_AGGRESSIVE: if (mv && RtAi_Range(mv) < 50) s = s * 13 / 10; break;
+            case AI_STYLE_KITER: if (mv && RtAi_Range(mv) >= 60) s = s * 13 / 10; break;
+            case AI_STYLE_TRICKSTER: if (mv && gBattleMoves[mv].power == 0) s = s * 16 / 10; break;
+            }
             if (s > best)
             {
                 best = s;
@@ -611,7 +657,7 @@ void RtAi_Update(struct RtActor *a)
         if (bestSlot != 0xFF && best > 8)
         {
             u16 move = a->moves[bestSlot];
-            u8 range = RtMove_GetRange(move);
+            u8 range = RtAi_Range(move);
             u8 pat = gRtMoveDefs[move].pattern;
             if (dist <= range + 10 || pat == RTP_SELF || pat == RTP_FIELD)
             {
@@ -624,6 +670,8 @@ void RtAi_Update(struct RtActor *a)
                     static const u8 sPace[3] = {72, 100, 50}; // medium, easy, hard (option order)
                     u8 dif = gSaveBlock2Ptr->optionsRtDifficulty;
                     a->aiThinkCd = sPace[dif < 3 ? dif : 1] + Random() % 16;
+                    if (gRt->ax[a->id].aiStyle == AI_STYLE_AGGRESSIVE)
+                        a->aiThinkCd = a->aiThinkCd * 3 / 4;
                 }
                 return;
             }
@@ -634,7 +682,8 @@ void RtAi_Update(struct RtActor *a)
     {
         u8 want = PreferredRange(a, t);
         u8 mang;
-        if ((Random() % 128) == 0)
+        u8 style = gRt->ax[a->id].aiStyle;
+        if ((Random() % (style == AI_STYLE_TRICKSTER ? 32 : 128)) == 0)
             a->aiStrafe = -a->aiStrafe;
         bool8 noLine = ((gRt->frame + a->id) & 3) == 0 ? !RtArena_ShotClear(FROM_FX(a->x), FROM_FX(a->y) - 8, FROM_FX(t->x), FROM_FX(t->y) - 8) : a->aiNoLine;
         a->aiNoLine = noLine;
@@ -650,6 +699,16 @@ void RtAi_Update(struct RtActor *a)
             mang = ang + 128 - a->aiStrafe * 20;
         else
             mang = ang + a->aiStrafe * 64;
+        // kiters dash away when the foe gets close; tricksters dash sideways now and then
+        if (style == AI_STYLE_KITER && dist < want - 24 && (Random() % 24) == 0)
+            a->inDash = TRUE;
+        else if (style == AI_STYLE_TRICKSTER && (Random() % 90) == 0)
+        {
+            mang = ang + a->aiStrafe * 64;
+            a->inDash = TRUE;
+        }
+        else if (style == AI_STYLE_AGGRESSIVE && dist > want + 40 && (Random() % 40) == 0)
+            a->inDash = TRUE;
         SteerAround(a, &mang);
         mx = RtCos(mang);
         my = RtSin(mang);

@@ -2822,6 +2822,7 @@ bool8 RtMove_TryStart(struct RtActor *a, u8 slot, u8 angle)
         RtUi_ToastFmt(sText_QuickClaw, 60);
         RtFx_Burst(FX_PLUS8, FXP_GOLD, a->x, a->y - TO_FX(a->height / 2), 4, 1, 24);
     }
+    a->cd[slot] = (u32)a->cd[slot] * RtExt_CdPct(a) / 100;
     RtKi_Spend(a, RtKi_MoveCost(move));
     if (a->holdEffect == HOLD_EFFECT_CHOICE_BAND && !a->choiceMove)
         a->choiceMove = move;

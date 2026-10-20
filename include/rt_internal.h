@@ -606,6 +606,9 @@ struct RtActorX
     u16 stamina;       // dash stamina (0..RT_STAMINA_MAX)
     u8 staminaWait;    // frames before stamina refills after a dash
     u8 pulse;          // frames of the 'hit' pulse (sprite grows and shrinks back)
+    u8 talents;        // TALENT_* bits active for this battle (Lv 20 / 40 / 60 picks)
+    u8 aiStyle;        // AI_STYLE_*
+    u8 dashBuff;       // MOMENTUM talent: frames of the post-dash damage bonus
     u16 oldGfx;        // gfx index before a form change
     u8 oldType[2];     // types before a form change
 };
@@ -773,6 +776,10 @@ struct RtBattle
     s16 wx0, wy0;                      // metatile origin of the streamed BG window
     u8 fieldW, fieldH;                 // battle field size in metatiles (0: default)
     u8 objective;                      // 1..8: guardian battle of a biome
+    u8 arenaMod;                       // ARENA_MOD_*
+    u8 windAng;                        // ARENA_MOD_WIND: direction
+    u16 modTimer;
+    s32 modX, modY;                    // ARENA_MOD_ERUPTION: next eruption point
     u8 objBuffShown;
     
     struct RtStruggle str;
@@ -911,6 +918,17 @@ void RtKi_Tick(struct RtActor *a);
 bool8 RtKi_CanCast(struct RtActor *a, u16 move);
 u16 RtKi_DashCost(void);
 bool8 RtStamina_Spend(struct RtActor *a);
+// talents: one of two per tier, picked in the SUMMARY (SKILLS page); stored in the unused ribbon bits
+enum { TALENT_LIGHT_STEP, TALENT_THICK_HIDE, TALENT_PREDATOR, TALENT_QUICK_MIND, TALENT_MOMENTUM, TALENT_LAST_STAND };
+void RtTalent_Init(struct RtActor *a, struct Pokemon *mon);
+bool8 RtTalent_Has(struct RtActor *a, u8 talent);
+u16 RtExt_CdPct(struct RtActor *a);
+// arena modifiers (random per battle)
+enum { ARENA_MOD_NONE, ARENA_MOD_ERUPTION, ARENA_MOD_FOG, ARENA_MOD_WIND, ARENA_MOD_COUNT };
+void RtMod_Setup(void);
+void RtMod_Tick(void);
+u16 RtMod_RangePct(void);
+enum { AI_STYLE_BALANCED, AI_STYLE_AGGRESSIVE, AI_STYLE_KITER, AI_STYLE_TRICKSTER };
 struct RtSave { u16 magic; u8 ver; u8 pad; u8 meta[64]; };
 struct RtSave *RtSave_Get(void);
 bool8 RtExt_StartPoll(void);

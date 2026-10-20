@@ -344,6 +344,7 @@ static void CB2_RtSetup(void)
         gBattleEnvironment = BattleSetup_GetEnvironmentId();
         RtBattle_PrepareParties();
         RtExt_SetupObjective();
+        RtMod_Setup();
         RtArena_Build();
         gMain.state++;
         break;
@@ -1062,6 +1063,7 @@ static void Rt_UpdateFight(void)
     RtProps_Update();
     RtMove_TickFuture();
     RtMove_DoFieldTick();
+    RtMod_Tick();
     RtAi_TrainerItems();
     Rt_CheckBattleOver();
 

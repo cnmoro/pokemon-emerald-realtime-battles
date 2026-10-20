@@ -51,7 +51,6 @@ EventScript_BufferBerriesPocket::
 
 EventScript_ObtainedItem::
 	message gText_ObtainedTheItem
-	waitfanfare
 	waitmessage
 	waitbuttonpress
 	setvar VAR_RESULT, TRUE
@@ -84,7 +83,6 @@ EventScript_ObtainDecorationMessage::
 EventScript_ObtainedDecor::
 	playfanfare MUS_OBTAIN_ITEM
 	message gText_ObtainedTheDecor
-	waitfanfare
 	msgbox gText_TheDecorWasTransferredToThePC, MSGBOX_DEFAULT
 	setvar VAR_RESULT, TRUE
 	return
@@ -116,7 +114,6 @@ EventScript_PickUpItem::
 	copyvar VAR_0x8008, VAR_RESULT
 	call_if_eq VAR_0x8008, TRUE, EventScript_FoundTMHM
 	call_if_eq VAR_0x8008, FALSE, EventScript_FoundItem
-	waitfanfare
 	waitmessage
 	bufferitemnameplural STR_VAR_2, VAR_0x8004, VAR_0x8005
 	pyramid_getlocation
@@ -177,7 +174,6 @@ EventScript_FoundHiddenItem::
 
 EventScript_PutHiddenItemInPocket::
 	waitmessage
-	waitfanfare
 	bufferitemnameplural STR_VAR_2, VAR_0x8004, 1
 	copyvar VAR_0x8004, VAR_0x8008
 	waitmessage

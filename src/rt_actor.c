@@ -267,6 +267,7 @@ void RtActor_InitFromMon(struct RtActor *a, struct Pokemon *mon, u8 side, u8 par
     a->shiny = IsMonShiny(mon);
     RtKi_InitActor(a);
     a->level = GetMonData(mon, MON_DATA_LEVEL);
+    RtTalent_Init(a, mon);
     a->vramSlot = slot;
     a->palSlot = slot;
     a->level = GetMonData(mon, MON_DATA_LEVEL);
@@ -1449,7 +1450,9 @@ void RtActor_Draw(struct RtActor *a)
     sy = FROM_FX(a->y) - gRt->camY;
 
     // sprite
-    if (!a->hidden && a->curFrame != 0xFFFF && !(a->invuln == 2 || a->invuln == 3))
+    if (!a->hidden && a->curFrame != 0xFFFF && !(a->invuln == 2 || a->invuln == 3)
+     && !(gRt->arenaMod == ARENA_MOD_FOG && a->side != RT_SIDE_PLAYER && Rt_PlayerActor()->active
+          && RtDist(a->x - Rt_PlayerActor()->x, a->y - Rt_PlayerActor()->y) > TO_FX(88)))
     {
         bool8 blink = (a->state == AST_DASH) || (a->iframes > 14 && (gRt->frame & 2));
         f = &gRtFrames[a->curFrame];
