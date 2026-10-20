@@ -530,7 +530,9 @@ struct SaveBlock2
              //u16 padding2;
     /*0x18*/ struct Pokedex pokedex;
     /*0x90*/ u8 optionsRtBattleSpeed; // real-time battle pace: 0 = 80 % (default), 1 = 60, 2 = 70, 3 = 90, 4 = 100 %
-    /*0x91*/ u8 filler_91[0x7];
+    /*0x91*/ u8 optionsRtLevelCap;  // 1: party levels capped by the next Gym / League stage
+    /*0x92*/ u8 optionsRtAutoHeal;  // 1: the party is fully healed after every battle
+    /*0x93*/ u8 filler_93[0x5];
     /*0x98*/ struct Time localTimeOffset;
     /*0xA0*/ struct Time lastBerryTreeUpdate;
     /*0xA8*/ u32 gcnLinkFlags; // Read by Pokémon Colosseum/XD

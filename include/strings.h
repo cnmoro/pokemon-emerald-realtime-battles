@@ -323,6 +323,8 @@ extern const u8 gText_RtExpShare5[];
 extern const u8 gText_RtExpShareAll[];
 extern const u8 gText_RtExpBonus[];
 extern const u8 gText_RtBattleSpeed[];
+extern const u8 gText_RtLevelCap[];
+extern const u8 gText_RtAutoHeal[];
 extern const u8 gText_RtDifficultyEasy[];
 extern const u8 gText_RtDifficultyMedium[];
 extern const u8 gText_RtDifficultyHard[];

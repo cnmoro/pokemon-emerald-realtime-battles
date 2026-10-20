@@ -272,6 +272,7 @@ static void PrintHeldItemName(void);
 static void PrintSkillsPageText(void);
 static void PrintRibbonCount(void);
 static void BufferLeftColumnStats(void);
+static u8 AddWindowFromTemplateList(const struct WindowTemplate *template, u8 templateId);
 static void PrintLeftColumnStats(void);
 static void BufferRightColumnStats(void);
 static void PrintRightColumnStats(void);
@@ -747,6 +748,9 @@ static const u8 sMemoNatureTextColor[] = _("{COLOR LIGHT_RED}{SHADOW GREEN}");
 static const u8 sMemoMiscTextColor[] = _("{COLOR WHITE}{SHADOW DARK_GRAY}"); // This is also affected by palettes, apparently
 static const u8 sStatsLeftColumnLayout[] = _("{DYNAMIC 0}/{DYNAMIC 1}\n{DYNAMIC 2}\n{DYNAMIC 3}");
 static const u8 sStatsRightColumnLayout[] = _("{DYNAMIC 0}\n{DYNAMIC 1}\n{DYNAMIC 2}");
+static const u8 sStatsLeftColumnLayoutAlt[] = _("{DYNAMIC 0}{DYNAMIC 1}\n{DYNAMIC 2}\n{DYNAMIC 3}");
+// SKILLS page: A cycles the numbers between the stats, the IVs and the EVs
+static EWRAM_DATA u8 sStatMode = 0;
 static const u8 sMovesPPLayout[] = _("{PP}{DYNAMIC 0}/{DYNAMIC 1}");
 
 #define TAG_MOVE_SELECTOR 30000
@@ -1551,7 +1555,25 @@ static void Task_HandleInput(u8 taskId)
         }
         else if (JOY_NEW(A_BUTTON))
         {
-            if (sMonSummaryScreen->currPageIndex != PSS_PAGE_SKILLS)
+            if (sMonSummaryScreen->currPageIndex == PSS_PAGE_SKILLS && !sMonSummaryScreen->summary.isEgg)
+            {
+                u8 w;
+                sStatMode = (sStatMode + 1) % 3;
+                PlaySE(SE_SELECT);
+                w = AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_LEFT);
+                FillWindowPixelBuffer(w, PIXEL_FILL(0));
+                BufferLeftColumnStats();
+                PrintLeftColumnStats();
+                PutWindowTilemap(w);
+                CopyWindowToVram(w, COPYWIN_FULL);
+                w = AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_RIGHT);
+                FillWindowPixelBuffer(w, PIXEL_FILL(0));
+                BufferRightColumnStats();
+                PrintRightColumnStats();
+                PutWindowTilemap(w);
+                CopyWindowToVram(w, COPYWIN_FULL);
+            }
+            else if (sMonSummaryScreen->currPageIndex != PSS_PAGE_SKILLS)
             {
                 if (sMonSummaryScreen->currPageIndex == PSS_PAGE_INFO)
                 {
@@ -3395,6 +3417,28 @@ static void BufferLeftColumnStats(void)
     u8 *attackString = Alloc(8);
     u8 *defenseString = Alloc(8);
 
+    if (sStatMode)
+    {
+        static const u8 sIv[] = _("IV ");
+        static const u8 sEv[] = _("EV ");
+        struct Pokemon *mon = &sMonSummaryScreen->currentMon;
+        u8 b = sStatMode == 1 ? MON_DATA_HP_IV : MON_DATA_HP_EV;
+        StringCopy(currentHPString, sStatMode == 1 ? sIv : sEv);
+        ConvertIntToDecimalStringN(maxHPString, GetMonData(mon, b), STR_CONV_MODE_RIGHT_ALIGN, 3);
+        ConvertIntToDecimalStringN(attackString, GetMonData(mon, b + 1), STR_CONV_MODE_RIGHT_ALIGN, 7);
+        ConvertIntToDecimalStringN(defenseString, GetMonData(mon, b + 2), STR_CONV_MODE_RIGHT_ALIGN, 7);
+        DynamicPlaceholderTextUtil_Reset();
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, currentHPString);
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, maxHPString);
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(2, attackString);
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(3, defenseString);
+        DynamicPlaceholderTextUtil_ExpandPlaceholders(gStringVar4, sStatsLeftColumnLayoutAlt);
+        Free(currentHPString);
+        Free(maxHPString);
+        Free(attackString);
+        Free(defenseString);
+        return;
+    }
     ConvertIntToDecimalStringN(currentHPString, sMonSummaryScreen->summary.currentHP, STR_CONV_MODE_RIGHT_ALIGN, 3);
     ConvertIntToDecimalStringN(maxHPString, sMonSummaryScreen->summary.maxHP, STR_CONV_MODE_RIGHT_ALIGN, 3);
     ConvertIntToDecimalStringN(attackString, sMonSummaryScreen->summary.atk, STR_CONV_MODE_RIGHT_ALIGN, 7);
@@ -3420,9 +3464,21 @@ static void PrintLeftColumnStats(void)
 
 static void BufferRightColumnStats(void)
 {
+    if (sStatMode)
+    {
+        // order of the IV / EV data: HP, ATK, DEF, SPEED, SPATK, SPDEF
+        struct Pokemon *mon = &sMonSummaryScreen->currentMon;
+        u8 b = sStatMode == 1 ? MON_DATA_HP_IV : MON_DATA_HP_EV;
+        ConvertIntToDecimalStringN(gStringVar1, GetMonData(mon, b + 4), STR_CONV_MODE_RIGHT_ALIGN, 3);
+        ConvertIntToDecimalStringN(gStringVar2, GetMonData(mon, b + 5), STR_CONV_MODE_RIGHT_ALIGN, 3);
+        ConvertIntToDecimalStringN(gStringVar3, GetMonData(mon, b + 3), STR_CONV_MODE_RIGHT_ALIGN, 3);
+    }
+    else
+    {
     ConvertIntToDecimalStringN(gStringVar1, sMonSummaryScreen->summary.spatk, STR_CONV_MODE_RIGHT_ALIGN, 3);
     ConvertIntToDecimalStringN(gStringVar2, sMonSummaryScreen->summary.spdef, STR_CONV_MODE_RIGHT_ALIGN, 3);
     ConvertIntToDecimalStringN(gStringVar3, sMonSummaryScreen->summary.speed, STR_CONV_MODE_RIGHT_ALIGN, 3);
+    }
 
     DynamicPlaceholderTextUtil_Reset();
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, gStringVar1);

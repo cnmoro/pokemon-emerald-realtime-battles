@@ -116,9 +116,6 @@ BerryTree_EventScript_PickBerry::
 	waitmessage
 	waitfanfare
 	waitbuttonpress
-	message BerryTree_Text_PutAwayBerry
-	waitmessage
-	waitbuttonpress
 	release
 	end
 

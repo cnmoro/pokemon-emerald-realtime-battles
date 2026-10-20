@@ -1,5 +1,7 @@
 // Real-time arena battle: main flow, setup, rewards and exit.
 #include "global.h"
+#include "level_cap.h"
+#include "script_pokemon_util.h"
 #include "rt_internal.h"
 #include "rt_vfx.h"
 #include "battle.h"
@@ -1436,7 +1438,7 @@ static void Rt_GiveExpToMon(u8 partyIdx, u32 exp, u16 defeatedSpecies)
         return;
     MonGainEVs(mon, defeatedSpecies);
     level = GetMonData(mon, MON_DATA_LEVEL);
-    if (level >= MAX_LEVEL)
+    if (level >= GetLevelCap())
         return;
     if (GetMonData(mon, MON_DATA_HELD_ITEM) == ITEM_LUCKY_EGG)
         exp = exp * 150 / 100;
@@ -1460,8 +1462,8 @@ static void Rt_GiveExpToMon(u8 partyIdx, u32 exp, u16 defeatedSpecies)
     RtUi_ToastFmt(sText_GainedExp, 70);
 
     cur = GetMonData(mon, MON_DATA_EXP) + exp;
-    if (cur > gExperienceTables[gSpeciesInfo[species].growthRate][MAX_LEVEL])
-        cur = gExperienceTables[gSpeciesInfo[species].growthRate][MAX_LEVEL];
+    if (cur > gExperienceTables[gSpeciesInfo[species].growthRate][GetLevelCap()])
+        cur = gExperienceTables[gSpeciesInfo[species].growthRate][GetLevelCap()];
     SetMonData(mon, MON_DATA_EXP, &cur);
     oldLevel = level;
     next = gExperienceTables[gSpeciesInfo[species].growthRate][level + 1];
@@ -2180,6 +2182,10 @@ static void Rt_FinalReturn(void)
         if (gBattleOutcome == B_OUTCOME_WON || gBattleOutcome == B_OUTCOME_CAUGHT)
             SetRoamerInactive();
     }
+    // AUTO HEAL option: like a POKeMON CENTER after every battle that was not lost
+    if (gSaveBlock2Ptr->optionsRtAutoHeal && gBattleOutcome != B_OUTCOME_LOST && gBattleOutcome != B_OUTCOME_DREW
+     && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_FRONTIER)))
+        HealPlayerParty();
     m4aSongNumStop(SE_LOW_HEALTH);
     Rt_StopLoopSE();
     SetMainCallback2(gMain.savedCallback);

@@ -52,7 +52,8 @@ EventScript_BufferBerriesPocket::
 EventScript_ObtainedItem::
 	message gText_ObtainedTheItem
 	waitfanfare
-	msgbox gText_PutItemInPocket, MSGBOX_DEFAULT
+	waitmessage
+	waitbuttonpress
 	setvar VAR_RESULT, TRUE
 	return
 
@@ -120,7 +121,8 @@ EventScript_PickUpItem::
 	bufferitemnameplural STR_VAR_2, VAR_0x8004, VAR_0x8005
 	pyramid_getlocation
 	goto_if_eq VAR_RESULT, PYRAMID_LOCATION_FLOOR, EventScript_PutBattlePyramidItemInBag
-	msgbox gText_PutItemInPocket, MSGBOX_DEFAULT
+	waitmessage
+	waitbuttonpress
 	return
 
 EventScript_PutBattlePyramidItemInBag::
@@ -178,7 +180,8 @@ EventScript_PutHiddenItemInPocket::
 	waitfanfare
 	bufferitemnameplural STR_VAR_2, VAR_0x8004, 1
 	copyvar VAR_0x8004, VAR_0x8008
-	msgbox gText_PutItemInPocket, MSGBOX_DEFAULT
+	waitmessage
+	waitbuttonpress
 	special TryPutTreasureInvestigatorsOnAir
 	special SetHiddenItemFlag
 	releaseall
