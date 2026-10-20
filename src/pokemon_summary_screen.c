@@ -770,6 +770,11 @@ static void CloseTalents(void)
         ClearWindowTilemap(sTalentWin);
         RemoveWindow(sTalentWin);
         sTalentWin = 0xFF;
+        // the talent window covered the stat labels: put them back
+        PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT);
+        PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT);
+        PutWindowTilemap(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_LEFT));
+        PutWindowTilemap(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_RIGHT));
         ScheduleBgCopyTilemapToVram(0);
     }
     if (sStatMode == 3)
@@ -1594,13 +1599,7 @@ static void Task_HandleInput(u8 taskId)
                     DrawTalents();
                     return;
                 }
-                if (sTalentWin != 0xFF)
-                {
-                    ClearWindowTilemap(sTalentWin);
-                    RemoveWindow(sTalentWin);
-                    sTalentWin = 0xFF;
-                    ScheduleBgCopyTilemapToVram(0);
-                }
+                CloseTalents();
                 w = AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_LEFT);
                 FillWindowPixelBuffer(w, PIXEL_FILL(0));
                 BufferLeftColumnStats();
