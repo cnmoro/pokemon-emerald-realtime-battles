@@ -350,7 +350,9 @@ struct SaveBlock2
               u8 optionsRtAutoAim:1;
               u8 filler_91_7:1;
     /*0x092*/ u8 optionsRtDifficulty:2;
-              u8 filler_92_2:6;
+              u8 optionsRtLevelCap:1;  // 1: party levels capped by the next Gym Leader / the League
+              u8 optionsRtAutoHeal:1;  // 1: the party is fully healed after every battle not lost
+              u8 filler_92_4:4;
     /*0x093*/ u8 filler_93[0x5];
 #else
     /*0x013*/ u8 optionsButtonMode:2;  // OPTIONS_BUTTON_MODE_[NORMAL/LR/L_EQUALS_A]

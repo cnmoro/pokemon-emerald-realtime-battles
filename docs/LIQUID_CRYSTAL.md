@@ -17,7 +17,14 @@ O **Pokémon Liquid Crystal** (beta 3.3) é um hack binário do FireRed 1.0 (BPR
 - Captura mais fácil, POKé BALL infinita, painel de EXP, Leftovers e itens em tempo real, Snore/Sleep Talk, equilíbrio corpo a corpo × distância, velocidade da batalha — tudo como no FireRed.
 - O sistema de dia/noite do Liquid Crystal é pausado durante a batalha (senão os sprites e o HUD ficariam escurecidos) e volta ao sair.
 
-Não fazem parte desta versão (o Liquid Crystal tem os seus próprios): a redistribuição da Pokédex, os lendários do mod e as evoluções sem troca e as lojas de itens de evolução do FireRed.
+- Menu **OPTION** também com **LEVEL CAP** e **AUTO HEAL** (a lista rola). Com o LEVEL CAP, o nível máximo é o do Pokémon mais forte do líder mais fácil ainda não vencido, com os times do próprio Liquid Crystal: Falkner 17, Bugsy 22, Whitney 25, Morty 29, Chuck 38, Jasmine 41, Pryce 42, Clair 44; depois das 8 insígnias de Johto, 61 (Lance); depois do Hall da Fama, Kanto em qualquer ordem (Sabrina 54, Surge 55, Erika 56, Janine 58, Misty 63, Brock/Blaine/Blue 65) e sem limite com as 16. No limite o Pokémon não ganha EXP nas batalhas e o RARE CANDY não tem efeito. O AUTO HEAL cura a equipe no fim de toda batalha que não foi perdida.
+- Shiny 1/64; TMs reutilizáveis; a fanfarra de item toca até o fim sem prender o jogador e sem a mensagem extra de "guardou na bolsa".
+- **Goldenrod Dept. Store (4F, balcão das vitaminas):** vende todas as pedras de evolução (Fire, Water, Thunder, Leaf, Moon, Sun). O Liquid Crystal não tem evoluções por troca (todas já são por nível ou pedra).
+- Tela de resumo, página SKILLS: **A** alterna entre atributos, IVs, EVs e **talentos** (Lv 20/40/60, um de dois por nível; SELECT escolhe o nível, START troca). Os talentos ficam em bits de fitas sem uso.
+- Batalha: barra de stamina do dash, HUD mínimo transparente com o campo em tela cheia, buffer de comandos, cooldown global de 18 quadros, pulso de impacto, sprites grandes (Onix, Steelix, Lugia, Ho-Oh…) desenhados ampliados em vez de cortados, estilos de IA dos treinadores e modificadores de arena raros (12%): erupções em Cinnabar, neblina no tempo nublado / Ilex Forest / Lake of Rage / Tin Tower, vento no mar.
+- O dia/noite continua o do próprio Liquid Crystal (pelo relógio do cartucho); o relógio acelerado do FireRed não é usado aqui.
+
+Não fazem parte desta versão (o Liquid Crystal tem os seus próprios): a redistribuição da Pokédex, os lendários do mod e as evoluções sem troca do FireRed.
 
 ## Como gerar a ROM
 
@@ -40,6 +47,6 @@ A ROM resultante tem ~20,6 MB (o motor e os sprites ocupam ~4,7 MB depois dos 16
 | `src/rt_lc_glue.c` | `CB2_InitBattle` com o desvio para o motor, `InitHeap` (reserva os 4 KB), hooks de debug com trampolim |
 | `src/rt_lc_summary.c` | As duas funções da tela de resumo que mostram o cooldown |
 
-Desvios aplicados pelo `patch.py` (início de cada função substituído por `ldr r3,=destino; bx r3`): `CB2_InitBattle`, `InitHeap`, `CB2_OptionsMenuFromStartMenu`, `BufferMonMoveI`, `PokeSum_PrintMoveName`; a tabela de opções do menu da equipe ganha MOVES (cópia no blob com uma entrada a mais), com `SetPartyMonFieldSelectionActions` e `ToggleFieldMoveDescriptionWindow` passando pelo blob, e o Move Relearner volta para a equipe quando aberto dali; e o script `EventScript_PkmnCenterNurse` é reescrito (cura direta). Com `--debug`, o modo de testes é ligado e `ProcessPlayerFieldInput` passa pelos comandos de debug (lista de mapas em `src/data/rt/debug_warps_lc.h`, gerada por `tools/lc/gen_debug_warps_lc.py` direto da ROM).
+Desvios aplicados pelo `patch.py` (início de cada função substituído por `ldr r3,=destino; bx r3`): `CB2_InitBattle`, `InitHeap`, `CB2_OptionsMenuFromStartMenu`, `BufferMonMoveI`, `PokeSum_PrintMoveName`, `ItemUseCB_RareCandy`, `Task_InputHandler_Info` e `BufferMonSkills` (com trampolim); os testes de shiny (`< 8` vira `>> 10 == 0`), a remoção do TM em `Task_LearnedMove`, os scripts de item e a loja da Goldenrod são editados direto na ROM; a tabela de opções do menu da equipe ganha MOVES (cópia no blob com uma entrada a mais), com `SetPartyMonFieldSelectionActions` e `ToggleFieldMoveDescriptionWindow` passando pelo blob, e o Move Relearner volta para a equipe quando aberto dali; e o script `EventScript_PkmnCenterNurse` é reescrito (cura direta). Com `--debug`, o modo de testes é ligado e `ProcessPlayerFieldInput` passa pelos comandos de debug (lista de mapas em `src/data/rt/debug_warps_lc.h`, gerada por `tools/lc/gen_debug_warps_lc.py` direto da ROM).
 
 As opções novas ficam nos bytes `0x90–0x92` do SaveBlock2 (sem uso no FireRed e no Liquid Crystal), porque o Liquid Crystal reescreve o byte `0x13` inteiro.

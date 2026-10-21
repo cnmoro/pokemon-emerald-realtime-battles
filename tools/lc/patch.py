@@ -128,6 +128,53 @@ def main():
         raise SystemExit('expected 1 CB2_ReturnToField literal in MoveRelearnerStateMachine, found %d' % len(lits))
     struct.pack_into('<I', rom, lits[0], syms['RtLc_RelearnerExit'] | 1)
 
+    # LEVEL CAP: RARE CANDY has no effect at the cap
+    hook_with_trampoline(rom, v['ItemUseCB_RareCandy'], syms['RtLc_ItemUseCB_RareCandy'], 8,
+                         tramps + 32 * 6, bytes.fromhex('f0b54746 80b48846'))
+    # SUMMARY, SKILLS page: A cycles stats / IVs / EVs / talents
+    hook_with_trampoline(rom, v['Task_InputHandler_Info'], syms['RtLc_Task_InputHandler_Info'], 8,
+                         tramps + 32 * 4, bytes.fromhex('f0b54746 80b481b0'))
+    hook_with_trampoline(rom, v['BufferMonSkills'], syms['RtLc_BufferMonSkills'], 12,
+                         tramps + 32 * 5, bytes.fromhex('f0b55746 4e464546 e0b485b0'))
+
+    # shiny odds 1/64: every "shiny value < 8" test becomes "shiny value >> 10 == 0" (value < 1024)
+    def shiny(at, reg, branch_from, branch_to):
+        o = at & 0x1FFFFFF
+        cmp = 0x2807 | (reg << 8)
+        ins, br = struct.unpack_from('<HH', rom, o)
+        if ins != cmp or (br >> 8) != branch_from:
+            raise SystemExit('unexpected shiny test at %08x: %04x %04x' % (at, ins, br))
+        struct.pack_into('<HH', rom, o, 0x0800 | (10 << 6) | (reg << 3) | reg, (branch_to << 8) | (br & 0xFF))
+    shiny(0x0803DB5E, 1, 0xD9, 0xD0)   # CreateBoxMon, OT_ID_RANDOM_NO_SHINY: retry while shiny (bls -> beq)
+    shiny(0x08044120, 0, 0xD9, 0xD0)   # GetMonSpritePalFromSpeciesAndPersonality (bls -> beq)
+    shiny(0x08044196, 0, 0xD9, 0xD0)   # GetMonSpritePalStructFromOtIdPersonality (bls -> beq)
+    shiny(0x080444B0, 2, 0xD8, 0xD1)   # IsShinyOtIdPersonality (bhi -> bne)
+
+    # reusable TMs: Task_LearnedMove never takes the TM from the bag (bhi over RemoveBagItem -> b)
+    o = 0x08125C7A & 0x1FFFFFF
+    if rom[o:o + 2] != bytes.fromhex('03d8'):
+        raise SystemExit('unexpected code in Task_LearnedMove')
+    rom[o:o + 2] = bytes.fromhex('03e0')
+
+    # items: the fanfare plays to its end without holding the player, and no "put the item in the pocket"
+    # message (waitfanfare waitmessage msgbox -> waitmessage waitbuttonpress)
+    for at, tail in ((0x081A674E, 0), (0x081A6816, 0), (0x081A689B, 0), (0x081A6908, 0), (0x081A8D6E, 3)):
+        o = at & 0x1FFFFFF
+        n = 10 + tail
+        if rom[o:o + 2] != b'\x32\x66' or rom[o + 2 + tail:o + 4 + tail] != b'\x0f\x00' or rom[o + n - 2:o + n] != b'\x09\x04':
+            raise SystemExit('unexpected item script at %08x: %s' % (at, rom[o:o + n].hex()))
+        rom[o:o + n] = b'\x66\x6d' + b'\x00' * (n - 2)
+
+    # Goldenrod Dept. Store: the vitamins counter also sells every evolution stone
+    vit = struct.pack('<I', 0x08816AC2)
+    n = 0
+    for i in range(0, 0x1000000 - 5):
+        if rom[i] == 0x86 and rom[i + 1:i + 5] == vit:
+            rom[i + 1:i + 5] = struct.pack('<I', syms['RtLc_MartVitaminsAndStones'])
+            n += 1
+    if n != 2:
+        raise SystemExit('expected 2 pokemart scripts with the Goldenrod vitamins, found %d' % n)
+
     if debug:
         rom[syms['gRtDebugEnabled'] & 0x1FFFFFF] = 1
         # debug commands polled from the overworld input handler (push {r4-r7,lr}; mov r7,r8; push {r7}; sub sp,#8)

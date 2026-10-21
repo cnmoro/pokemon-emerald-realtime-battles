@@ -1,5 +1,7 @@
 // Real-time arena battle: main flow, setup, rewards and exit.
 #include "global.h"
+#include "level_cap.h"
+#include "script_pokemon_util.h"
 #include "rt_internal.h"
 #include "rt_vfx.h"
 #include "help_system.h"
@@ -373,6 +375,7 @@ static void CB2_RtSetup(void)
         gRt->enemyParty = gEnemyParty;
         gBattleEnvironment = BattleSetup_GetEnvironmentId();
         RtBattle_PrepareParties();
+        RtMod_Setup();
         RtArena_Build();
         gMain.state++;
         break;
@@ -837,9 +840,9 @@ static void CB2_RtMain(void)
         // frame load: when a frame ran long, cosmetic particle spawns are thinned out for a while
         extern u8 gRtFxHeavy;
         u16 end = RtFrameLinesUsed();
-        bool8 over = end < sFrameStartLine || end > 200;
+        bool8 over = end < sFrameStartLine || end > 180;
         if (over)
-            gRtFxHeavy = 20;
+            gRtFxHeavy = 40;
         else if (gRtFxHeavy)
             gRtFxHeavy--;
     }
@@ -1089,6 +1092,7 @@ static void Rt_UpdateFight(void)
     RtProps_Update();
     RtMove_TickFuture();
     RtMove_DoFieldTick();
+    RtMod_Tick();
     RtAi_TrainerItems();
     Rt_CheckBattleOver();
 
@@ -1254,6 +1258,52 @@ static void Rt_HandlePlayerInput(struct RtActor *a)
 
     if (pressed & SELECT_BUTTON)
         a->inDash = TRUE;
+
+    // input buffer: a move or dash pressed while the POKeMON is still busy (end of the last move, hit
+    // stun, a dash) comes out as soon as it is free again, instead of being dropped
+    {
+        static EWRAM_DATA s8 sBufSlot = -1;
+        static EWRAM_DATA u8 sBufAng = 0, sBufT = 0, sDashT = 0;
+        bool8 busy = a->state != AST_NORMAL || a->gcd || a->flinch || a->recharge;
+        bool8 dashBusy;
+        if (a->inSlot >= 0)
+        {
+            if (busy)
+            {
+                sBufSlot = a->inSlot;
+                sBufAng = a->inAim;
+                sBufT = 18;
+                a->inSlot = -1;
+            }
+            else
+                sBufT = 0;
+        }
+        else if (sBufT)
+        {
+            sBufT--;
+            if (!busy && sBufSlot >= 0)
+            {
+                a->inSlot = sBufSlot;
+                a->inAim = sBufAng;
+                sBufT = 0;
+            }
+        }
+        dashBusy = a->state != AST_NORMAL || a->flinch || a->recharge;
+        if (a->inDash && (dashBusy || a->dashCd))
+        {
+            sDashT = 10;
+            a->inDash = FALSE;
+        }
+        else if (sDashT)
+        {
+            sDashT--;
+            if (!dashBusy && !a->dashCd)
+            {
+                a->inDash = TRUE;
+                sDashT = 0;
+            }
+        }
+    }
 
     a->inMoveX = mx;
     a->inMoveY = my;
@@ -1455,7 +1505,7 @@ static void Rt_GiveExpToMon(u8 partyIdx, u32 exp, u16 defeatedSpecies)
         return;
     MonGainEVs(mon, defeatedSpecies);
     level = GetMonData(mon, MON_DATA_LEVEL);
-    if (level >= MAX_LEVEL)
+    if (level >= GetLevelCap())
         return;
     if (GetMonData(mon, MON_DATA_HELD_ITEM) == ITEM_LUCKY_EGG)
         exp = exp * 150 / 100;
@@ -1479,8 +1529,8 @@ static void Rt_GiveExpToMon(u8 partyIdx, u32 exp, u16 defeatedSpecies)
     RtUi_ToastFmt(sText_GainedExp, 70);
 
     cur = GetMonData(mon, MON_DATA_EXP) + exp;
-    if (cur > gExperienceTables[gSpeciesInfo[species].growthRate][MAX_LEVEL])
-        cur = gExperienceTables[gSpeciesInfo[species].growthRate][MAX_LEVEL];
+    if (cur > gExperienceTables[gSpeciesInfo[species].growthRate][GetLevelCap()])
+        cur = gExperienceTables[gSpeciesInfo[species].growthRate][GetLevelCap()];
     SetMonData(mon, MON_DATA_EXP, &cur);
     oldLevel = level;
     next = gExperienceTables[gSpeciesInfo[species].growthRate][level + 1];
@@ -2200,6 +2250,10 @@ static void Rt_FinalReturn(void)
         if (gBattleOutcome == B_OUTCOME_WON || gBattleOutcome == B_OUTCOME_CAUGHT)
             SetRoamerInactive();
     }
+    // AUTO HEAL option: like a POKeMON CENTER after every battle that was not lost
+    if (gSaveBlock2Ptr->optionsRtAutoHeal && gBattleOutcome != B_OUTCOME_LOST && gBattleOutcome != B_OUTCOME_DREW
+     && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_TRAINER_TOWER | BATTLE_TYPE_POKEDUDE)))
+        HealPlayerParty();
     m4aSongNumStop(SE_LOW_HEALTH);
     Rt_StopLoopSE();
     SetMainCallback2(gMain.savedCallback);
@@ -2213,6 +2267,7 @@ static void Rt_FreeAll(void)
     FreeBattleResources();
     if (gRt)
     {
+        RtFx_LineStop(); // the HBlank DMA reads the BLDY lines from gRt
         Free(gRt);
         gRt = NULL;
     }

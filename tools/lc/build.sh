@@ -6,7 +6,7 @@ B=build/lc; mkdir -p $B
 CC1=$(arm-none-eabi-gcc --print-prog-name=cc1)
 CPPFLAGS="-iquote include -Wno-trigraphs -DFIRERED -DREVISION=0 -DENGLISH -DMODERN=1 -DRT_LC=1"
 CFLAGS="${EXTRA_CFLAGS} -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast -mlong-calls"
-SRCS="${SRCS:-src/rt_lc_glue.c src/rt_main.c src/rt_arena.c src/rt_actor.c src/rt_moves.c src/rt_fx.c src/rt_ai.c src/rt_ui.c src/rt_props.c src/rt_vfx.c src/rt_data.c src/rt_debug.c src/option_menu.c src/rt_lc_summary.c src/rt_lc_text.c}"
+SRCS="${SRCS:-src/rt_lc_glue.c src/rt_main.c src/rt_arena.c src/rt_actor.c src/rt_moves.c src/rt_fx.c src/rt_ai.c src/rt_ui.c src/rt_props.c src/rt_vfx.c src/rt_data.c src/rt_debug.c src/option_menu.c src/rt_lc_summary.c src/rt_lc_text.c src/rt_talent.c}"
 OBJS=""
 # headers (and the generated data headers) changed since the last build -> recompile everything
 NEWEST_H=$(ls -t include/*.h src/data/rt/*.h | head -1)

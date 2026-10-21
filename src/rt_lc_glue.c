@@ -500,3 +500,82 @@ bool8 RtLc_IsWildLevelAllowedByRepel(u8 wildLevel)
     }
     return FALSE;
 }
+
+// --- LEVEL CAP option -------------------------------------------------------------------------------
+// The cap is the level of the strongest POKeMON of the easiest Gym Leader not beaten yet (Liquid Crystal's
+// own teams, read from its trainer table): Johto first, then the League (Lance), then Kanto in any order.
+#include "level_cap.h"
+#include "strings.h"
+#include "task.h"
+#include "menu.h"
+struct RtLcCapStage { u16 flag; u8 level; };
+static const struct RtLcCapStage sRtLcJohtoCaps[] = {
+    {0x820, 17}, // Falkner: Pidgeotto
+    {0x821, 22}, // Bugsy: Scyther
+    {0x822, 25}, // Whitney: Miltank
+    {0x823, 29}, // Morty: Gengar
+    {0x824, 38}, // Chuck: Poliwrath
+    {0x825, 41}, // Jasmine: Steelix
+    {0x826, 42}, // Pryce
+    {0x827, 44}, // Clair: Kingdra
+};
+static const struct RtLcCapStage sRtLcKantoCaps[] = {
+    {0x158A, 54}, // Sabrina
+    {0x156F, 55}, // Lt. Surge
+    {0x188E, 56}, // Erika
+    {0x160D, 58}, // Janine
+    {0x1642, 63}, // Misty
+    {0x167B, 65}, // Brock
+    {0x1681, 65}, // Blaine
+    {0x1685, 65}, // Blue
+};
+#define RTLC_CAP_LEAGUE 61 // Lance
+#define RTLC_FLAG_GAME_CLEAR 0x82C
+
+static u8 RtLc_LowestOpenStage(const struct RtLcCapStage *st, u8 n)
+{
+    u8 i, best = 0;
+    for (i = 0; i < n; i++)
+        if (!FlagGet(st[i].flag) && (best == 0 || st[i].level < best))
+            best = st[i].level;
+    return best;
+}
+
+u8 GetLevelCap(void)
+{
+    u8 cap;
+    if (!gSaveBlock2Ptr->optionsRtLevelCap)
+        return MAX_LEVEL;
+    cap = RtLc_LowestOpenStage(sRtLcJohtoCaps, ARRAY_COUNT(sRtLcJohtoCaps));
+    if (cap)
+        return cap;
+    if (!FlagGet(RTLC_FLAG_GAME_CLEAR))
+        return RTLC_CAP_LEAGUE;
+    cap = RtLc_LowestOpenStage(sRtLcKantoCaps, ARRAY_COUNT(sRtLcKantoCaps));
+    return cap ? cap : MAX_LEVEL;
+}
+
+// RARE CANDY: no effect at the cap (the original handles everything else)
+enum { TRAMP_RARE_CANDY = 6 };
+void RtLc_ItemUseCB_RareCandy(u8 taskId, TaskFunc func)
+{
+    struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
+    if (GetMonData(mon, MON_DATA_LEVEL) >= GetLevelCap() && GetMonData(mon, MON_DATA_LEVEL) < MAX_LEVEL)
+    {
+        PlaySE(SE_SELECT);
+        gPartyMenuUseExitCallback = FALSE;
+        DisplayPartyMenuMessage(gText_WontHaveEffect, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = func;
+        return;
+    }
+    TRAMP(TRAMP_RARE_CANDY, void (*)(u8, TaskFunc))(taskId, func);
+}
+
+// Goldenrod Dept. Store (the vitamins counter): every evolution stone, so a Growlithe or an Eevee can evolve
+// long before Kanto (Liquid Crystal has no trade evolutions: they all happen by level or by stone already)
+const u16 RtLc_MartVitaminsAndStones[] = {
+    ITEM_PROTEIN, ITEM_IRON, ITEM_CARBOS, ITEM_CALCIUM, ITEM_HP_UP,
+    ITEM_FIRE_STONE, ITEM_WATER_STONE, ITEM_THUNDER_STONE, ITEM_LEAF_STONE, ITEM_MOON_STONE, ITEM_SUN_STONE,
+    ITEM_NONE
+};

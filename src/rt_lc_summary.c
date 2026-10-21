@@ -268,3 +268,179 @@ void RtLc_PokeSum_PrintMoveName(u8 i)
         80 - GetStringWidth(FONT_NORMAL, sMonSummaryScreen->summary.moveCurPpStrBufs[i], 0), GetMovePpPrinterYpos(i),
         sPrintMoveTextColors[colorIdx], TEXT_SKIP_DRAW, sMonSummaryScreen->summary.moveCurPpStrBufs[i]);
 }
+
+// --- SKILLS page: A cycles the numbers between the stats, the IVs, the EVs and the talents -----------------
+// (Task_InputHandler_Info and BufferMonSkills run through these wrappers; the originals stay in the ROM and
+// are reached through trampolines)
+#include "rt_internal.h"
+#include "window.h"
+#include "text.h"
+#include "string_util.h"
+#include "sound.h"
+
+extern const u8 RtLc_Trampolines[8][32];
+#define TRAMP(i, type) ((type)((u32)RtLc_Trampolines[i] + 1))
+enum { TRAMP_SUMMARY_INPUT = 4, TRAMP_BUFFER_SKILLS = 5 };
+
+void Task_PokeSum_FlipPages(u8 taskId);
+void Task_PokeSum_SwitchDisplayedPokemon(u8 taskId);
+void PokeSum_PrintRightPaneText(void);
+void BufferMonSkills(void);
+extern u8 sLastViewedMonIndex;
+
+static EWRAM_DATA u8 sStatMode = 0;
+static EWRAM_DATA u8 sTalentWin = 0;  // window id + 1 (0: none), so a fresh EWRAM zero means closed
+static EWRAM_DATA u8 sTalentCur = 0;
+// BG0 tiles 0x1E4..0x23F are free (the BG3 map starts at tile 0x240): a 16x5 window, white like the menus
+static const struct WindowTemplate sTalentWinTemplate = { .bg = 0, .tilemapLeft = 14, .tilemapTop = 7, .width = 16, .height = 5, .paletteNum = 7, .baseBlock = 0x1E4 };
+static const u8 sTalentNames[6][12] = {
+    _("Light Step"), _("Thick Hide"), _("Predator"), _("Quick Mind"), _("Momentum"), _("Last Stand")
+};
+static const u8 sTalentDesc[6][28] = {
+    _("dash costs 25% less"), _("takes 8% less damage"), _("KO heals 10% HP"),
+    _("moves recharge 10% faster"), _("+10% dmg after a dash"), _("+20% dmg below 1/3 HP")
+};
+
+static void RedrawSkillNumbers(void)
+{
+    BufferMonSkills();
+    PokeSum_PrintRightPaneText();
+    CopyWindowToVram(sMonSummaryScreen->windowIds[POKESUM_WIN_RIGHT_PANE], COPYWIN_FULL);
+}
+
+static void RemoveTalentWindow(void)
+{
+    if (sTalentWin)
+    {
+        ClearWindowTilemap(sTalentWin - 1);
+        RemoveWindow(sTalentWin - 1);
+        sTalentWin = 0;
+        ScheduleBgCopyTilemapToVram(0);
+    }
+}
+
+static void DrawTalents(void)
+{
+    static const u8 sTierLv[3] = {20, 40, 60};
+    static const u8 sColOn[] = {1, 2, 3}, sColOff[] = {1, 3, 1}, sColDesc[] = {1, 8, 3}, sColArrow[] = {1, 4, 3};
+    static const u8 sArrow[] = {CHAR_RIGHT_ARROW, EOS};
+    struct Pokemon *mon = &sMonSummaryScreen->currentMon;
+    u8 bits = GetMonData(mon, MON_DATA_UNUSED_RIBBONS), i, w;
+    u8 lv = GetMonData(mon, MON_DATA_LEVEL);
+    if (!sTalentWin)
+        sTalentWin = AddWindow(&sTalentWinTemplate) + 1;
+    w = sTalentWin - 1;
+    FillWindowPixelBuffer(w, PIXEL_FILL(1));
+    for (i = 0; i < 3; i++)
+    {
+        u8 pick = (bits >> i) & 1, *str, y = i * 10;
+        bool8 open = lv >= sTierLv[i];
+        str = ConvertIntToDecimalStringN(gStringVar1, sTierLv[i], STR_CONV_MODE_LEFT_ALIGN, 2);
+        *str = EOS;
+        if (i == sTalentCur)
+            AddTextPrinterParameterized3(w, FONT_SMALL, 0, y, sColArrow, TEXT_SKIP_DRAW, sArrow);
+        AddTextPrinterParameterized3(w, FONT_SMALL, 7, y, sColOn, TEXT_SKIP_DRAW, gStringVar1);
+        AddTextPrinterParameterized3(w, FONT_SMALL, 20, y, open ? sColOn : sColOff, TEXT_SKIP_DRAW, sTalentNames[i * 2 + pick]);
+        AddTextPrinterParameterized3(w, FONT_SMALL, 72, y, sColOff, TEXT_SKIP_DRAW, sTalentNames[i * 2 + (pick ^ 1)]);
+    }
+    AddTextPrinterParameterized3(w, FONT_SMALL, 2, 30, sColDesc, TEXT_SKIP_DRAW, sTalentDesc[sTalentCur * 2 + ((bits >> sTalentCur) & 1)]);
+    PutWindowTilemap(w);
+    CopyWindowToVram(w, COPYWIN_FULL);
+    ScheduleBgCopyTilemapToVram(0);
+}
+
+void RtLc_Task_InputHandler_Info(u8 taskId)
+{
+    struct PokemonSummaryScreenData *s = sMonSummaryScreen;
+    if (s->state3270 == PSS_STATE3270_FADEIN)
+    {
+        // a new summary screen: stats first
+        sStatMode = 0;
+        sTalentWin = 0;
+    }
+    else if (s->state3270 == PSS_STATE3270_HANDLEINPUT && !FuncIsActiveTask(Task_PokeSum_SwitchDisplayedPokemon)
+          && !FuncIsActiveTask(Task_PokeSum_FlipPages) && !s->flippingPages)
+    {
+        if (sTalentWin && (JOY_NEW(DPAD_ANY | B_BUTTON | L_BUTTON | R_BUTTON)))
+        {
+            // leaving the talents: the original handler then flips the page / switches POKeMON / exits
+            RemoveTalentWindow();
+            sStatMode = 0;
+            if (JOY_NEW(DPAD_UP | DPAD_DOWN | B_BUTTON))
+                ; // the stats are redrawn by the POKeMON switch, nothing to redraw on exit
+            else
+                RedrawSkillNumbers();
+        }
+        else if (s->curPageIndex == PSS_PAGE_SKILLS && !s->isEgg)
+        {
+            if (JOY_NEW(A_BUTTON))
+            {
+                sStatMode = (sStatMode + 1) % 4;
+                PlaySE(SE_SELECT);
+                if (sStatMode == 3)
+                {
+                    sTalentCur = 0;
+                    DrawTalents();
+                }
+                else
+                {
+                    RemoveTalentWindow();
+                    RedrawSkillNumbers();
+                }
+                return;
+            }
+            if (sStatMode == 3 && JOY_NEW(SELECT_BUTTON))
+            {
+                sTalentCur = (sTalentCur + 1) % 3;
+                PlaySE(SE_SELECT);
+                DrawTalents();
+                return;
+            }
+            if (sStatMode == 3 && JOY_NEW(START_BUTTON))
+            {
+                static const u8 sTierLv[3] = {20, 40, 60};
+                struct Pokemon *mon = &s->currentMon;
+                if (GetMonData(mon, MON_DATA_LEVEL) >= sTierLv[sTalentCur] && !s->isBoxMon && !s->isEnemyParty
+                 && s->monList.mons == gPlayerParty)
+                {
+                    u8 bits = GetMonData(mon, MON_DATA_UNUSED_RIBBONS) ^ (1 << sTalentCur);
+                    SetMonData(mon, MON_DATA_UNUSED_RIBBONS, &bits);
+                    if (sLastViewedMonIndex < PARTY_SIZE)
+                        SetMonData(&gPlayerParty[sLastViewedMonIndex], MON_DATA_UNUSED_RIBBONS, &bits);
+                    PlaySE(SE_SUCCESS);
+                }
+                else
+                {
+                    PlaySE(SE_FAILURE);
+                }
+                DrawTalents();
+                return;
+            }
+        }
+    }
+    TRAMP(TRAMP_SUMMARY_INPUT, void (*)(u8))(taskId);
+}
+
+void RtLc_BufferMonSkills(void)
+{
+    TRAMP(TRAMP_BUFFER_SKILLS, void (*)(void))();
+    if (sStatMode == 1 || sStatMode == 2)
+    {
+        // IVs / EVs instead of the stats; data order: HP, ATK, DEF, SPEED, SPATK, SPDEF
+        static const u8 sIv[] = _("IV ");
+        static const u8 sEv[] = _("EV ");
+        static const u8 sOrder[] = {PSS_STAT_ATK, PSS_STAT_DEF, PSS_STAT_SPE, PSS_STAT_SPA, PSS_STAT_SPD};
+        struct Pokemon *mon = &sMonSummaryScreen->currentMon;
+        u8 b = sStatMode == 1 ? MON_DATA_HP_IV : MON_DATA_HP_EV, k, *str;
+        str = StringCopy(sMonSummaryScreen->summary.curHpStrBuf, sStatMode == 1 ? sIv : sEv);
+        ConvertIntToDecimalStringN(str, GetMonData(mon, b), STR_CONV_MODE_LEFT_ALIGN, 3);
+        sMonSkillsPrinterXpos->curHpStr = 63 - StringLength(sMonSummaryScreen->summary.curHpStrBuf) * 6;
+        for (k = 0; k < 5; k++)
+            ConvertIntToDecimalStringN(sMonSummaryScreen->summary.statValueStrBufs[sOrder[k]], GetMonData(mon, b + 1 + k), STR_CONV_MODE_LEFT_ALIGN, 3);
+        sMonSkillsPrinterXpos->atkStr = 27 - StringLength(sMonSummaryScreen->summary.statValueStrBufs[PSS_STAT_ATK]) * 6;
+        sMonSkillsPrinterXpos->defStr = 27 - StringLength(sMonSummaryScreen->summary.statValueStrBufs[PSS_STAT_DEF]) * 6;
+        sMonSkillsPrinterXpos->spAStr = 27 - StringLength(sMonSummaryScreen->summary.statValueStrBufs[PSS_STAT_SPA]) * 6;
+        sMonSkillsPrinterXpos->spDStr = 27 - StringLength(sMonSummaryScreen->summary.statValueStrBufs[PSS_STAT_SPD]) * 6;
+        sMonSkillsPrinterXpos->speStr = 27 - StringLength(sMonSummaryScreen->summary.statValueStrBufs[PSS_STAT_SPE]) * 6;
+    }
+}
