@@ -9,10 +9,8 @@ EventScript_ItemfinderDigUpUnderfootItem::
 
 EventScript_DigUpItemPutInPocket::
 	message Text_DugUpItemFromGround
-	waitfanfare
 	waitmessage
-	delay 60
-	msgbox Text_PutItemAway
+	waitbuttonpress
 	special SetHiddenItemFlag
 	releaseall
 	end

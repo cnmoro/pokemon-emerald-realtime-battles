@@ -544,7 +544,7 @@ void RtFx_Flash(u8 color, u8 frames)
 // whole-screen flashes and dramatic darkening of the arena. Windows are not used, so
 // semi-transparent sprites (glows, shadows) are alpha blended everywhere.
 // ---------------------------------------------------------------------------
-static EWRAM_DATA u16 sLineBldy[2][DISPLAY_HEIGHT + 2] = {0};
+#define sLineBldy (gRt->lineBldy) // heap (gRt): EWRAM is full
 static EWRAM_DATA u8 sLineFront = 0;
 static EWRAM_DATA s16 sLineHofs[3] = {0};
 
@@ -991,7 +991,7 @@ void RtFx_DrawAll(void)
         if (p->life == 0)
             continue;
         // out of frame time: drop the remaining (cosmetic) particles this frame
-        if ((i & 7) == 7 && RtFrameLinesUsed() > 185 && !(p->flags & PF_HUD))
+        if ((i & 3) == 3 && RtFrameLinesUsed() > 172 && !(p->flags & PF_HUD))
             break;
         if ((p->flags & PF_FLICKER) && p->life < 10 && (p->life & 1))
             continue;

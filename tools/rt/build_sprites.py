@@ -62,9 +62,10 @@ for dex in range(1,387):
         for di in range(5):
             for f in dirs[min(di,len(dirs)-1)]:
                 sw,sh,shp,sz=f['shape']
-                fr.append('{%d,%d,%d,%d,%d}'%(offs[blobs[f['tiles']]],max(-128,min(127,f['x'])),max(-128,min(127,f['y'])),(shp<<2)|sz,min(255,f['dur'])))
+                fr.append('{%d,%d,%d,%d,%d}'%(offs[blobs[f['tiles']]],max(-128,min(127,f['x'])),max(-128,min(127,f['y'])),(shp<<2)|sz|(f.get('aff',0)<<4),min(255,f['dur'])))
     # metrics from walk down frame 0: real pixel bbox
     def bbox(f):
+        if f.get('dbox'): return f['dbox']
         sw,sh=f['shape'][:2]; t=f['tiles']; tw=sw//8
         xs=[];ys=[]
         for ty in range(sh//8):

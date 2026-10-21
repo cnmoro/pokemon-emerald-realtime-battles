@@ -1,4 +1,5 @@
 #include "global.h"
+#include "day_night.h"
 #include "gflib.h"
 #include "util.h"
 #include "decompress.h"
@@ -101,7 +102,7 @@ void TransferPlttBuffer(void)
 {
     if (!gPaletteFade.bufferTransferDisabled)
     {
-        void *src = gPlttBufferFaded;
+        const void *src = DayNight_GetTransferBuffer();
         void *dest = (void *)PLTT;
         DmaCopy16(3, src, dest, PLTT_SIZE);
         sPlttBufferTransferPending = FALSE;

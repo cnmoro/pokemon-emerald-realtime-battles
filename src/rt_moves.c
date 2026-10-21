@@ -2606,6 +2606,7 @@ bool8 RtMove_TryStart(struct RtActor *a, u8 slot, u8 angle)
         RtUi_ToastFmt(sText_QuickClaw, 60);
         RtFx_Burst(FX_PLUS8, FXP_GOLD, a->x, a->y - TO_FX(a->height / 2), 4, 1, 24);
     }
+    a->cd[slot] = (u32)a->cd[slot] * RtExt_CdPct(a) / 100;
     if (a->holdEffect == HOLD_EFFECT_CHOICE_BAND && !a->choiceMove)
         a->choiceMove = move;
     if (a->ability == ABILITY_TRUANT)
@@ -2796,7 +2797,7 @@ static void BeginMove(struct RtActor *a, u16 move, u8 angle, u8 slot)
 }
 
 // shared pause after any move before the next one can start (all moves, both sides)
-#define RT_MOVE_GCD 24
+#define RT_MOVE_GCD 18
 
 static void FinishCast(struct RtActor *a, u16 recovery)
 {
@@ -3579,6 +3580,19 @@ void RtMove_UpdateCast(struct RtActor *a)
                 SteerChannel(a, 4);
                 if (a->act.subTimer)
                     a->act.subTimer--;
+                // AUTO AIM (and the AI): after a bounce the ball curves back towards the nearest foe
+                else if (a->side != RT_SIDE_PLAYER || gSaveBlock2Ptr->optionsRtAutoAim)
+                {
+                    struct RtActor *t = Rt_NearestFoe(a);
+                    if (t)
+                    {
+                        u8 want = RtAtan2(FROM_FX(t->x - a->x), FROM_FX(t->y - a->y));
+                        s8 diff = (s8)(want - a->act.angle);
+                        if (diff > 6) diff = 6;
+                        if (diff < -6) diff = -6;
+                        a->act.angle += diff;
+                    }
+                }
                 a->x += RtCos(a->act.angle) * sp / 16;
                 a->y += RtSin(a->act.angle) * sp / 16;
                 if (RtArena_CircleBlocked(FROM_FX(a->x), FROM_FX(a->y), a->radius / 2))

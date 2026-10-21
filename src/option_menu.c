@@ -23,6 +23,8 @@ enum
     MENUITEM_EXPSHARE,
     MENUITEM_EXPBONUS,
     MENUITEM_BATTLESPEED,
+    MENUITEM_LEVELCAP,
+    MENUITEM_AUTOHEAL,
     MENUITEM_SOUND,
     MENUITEM_BUTTONMODE,
     MENUITEM_FRAMETYPE,
@@ -45,6 +47,7 @@ struct OptionMenu
     /*0x10*/ u8 loadState;
     /*0x11*/ u8 state;
     /*0x12*/ u8 loadPaletteState;
+    u8 scroll;              // first visible row (the list scrolls: 12 options + CANCEL, 10 rows shown)
 };
 
 static EWRAM_DATA struct OptionMenu *sOptionMenuPtr = NULL;
@@ -134,12 +137,13 @@ static const struct BgTemplate sOptionMenuBgTemplates[] =
 };
 
 static const u16 sOptionMenuPalette[] = INCBIN_U16("graphics/misc/option_menu.gbapal");
-static const u16 sOptionMenuItemCounts[MENUITEM_COUNT] = {4, 3, 2, 6, 8, 5, 2, 3, 10, 0};
+static const u16 sOptionMenuItemCounts[MENUITEM_COUNT] = {4, 3, 2, 6, 8, 5, 2, 2, 2, 3, 10, 0};
 
 // real-time mod rows are 12 px apart (10 rows); text is drawn on a transparent background so a
 // row's glyph cell never paints over its neighbours' shadows
 #define OPTION_ROW_H 12
 #define OPTION_WIN_Y (3 * 8)
+#define OPTION_VISIBLE 10
 static const u8 sOptionNameColor[] = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY};
 
 static const u8 sText_RtDifficulty[] = _("DIFFICULTY");
@@ -147,6 +151,8 @@ static const u8 sText_RtAutoAim[] = _("AUTO AIM");
 static const u8 sText_RtExpShare[] = _("EXP SHARE");
 static const u8 sText_RtExpBonus[] = _("EXP BONUS");
 static const u8 sText_RtBattleSpeed[] = _("BATTLE SPEED");
+static const u8 sText_RtLevelCap[] = _("LEVEL CAP");
+static const u8 sText_RtAutoHeal[] = _("AUTO HEAL");
 static const u8 sText_Easy[] = _("EASY");
 static const u8 sText_Medium[] = _("MEDIUM");
 static const u8 sText_Hard[] = _("HARD");
@@ -189,6 +195,8 @@ static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
     [MENUITEM_EXPSHARE]    = sText_RtExpShare,
     [MENUITEM_EXPBONUS]    = sText_RtExpBonus,
     [MENUITEM_BATTLESPEED] = sText_RtBattleSpeed,
+    [MENUITEM_LEVELCAP]    = sText_RtLevelCap,
+    [MENUITEM_AUTOHEAL]    = sText_RtAutoHeal,
     [MENUITEM_SOUND]       = gText_Sound,
     [MENUITEM_BUTTONMODE]  = gText_ButtonMode,
     [MENUITEM_FRAMETYPE]   = gText_Frame,
@@ -264,6 +272,8 @@ void CB2_OptionsMenuFromStartMenu(void)
     sOptionMenuPtr->option[MENUITEM_EXPSHARE] = gSaveBlock2Ptr->optionsRtExpShare;
     sOptionMenuPtr->option[MENUITEM_EXPBONUS] = gSaveBlock2Ptr->optionsRtExpBonus;
     sOptionMenuPtr->option[MENUITEM_BATTLESPEED] = sSpeedSaveToMenu[gSaveBlock2Ptr->optionsRtBattleSpeed < 5 ? gSaveBlock2Ptr->optionsRtBattleSpeed : 0];
+    sOptionMenuPtr->option[MENUITEM_LEVELCAP] = gSaveBlock2Ptr->optionsRtLevelCap & 1;
+    sOptionMenuPtr->option[MENUITEM_AUTOHEAL] = gSaveBlock2Ptr->optionsRtAutoHeal & 1;
     sOptionMenuPtr->option[MENUITEM_SOUND] = gSaveBlock2Ptr->optionsSound;
     sOptionMenuPtr->option[MENUITEM_BUTTONMODE] = gSaveBlock2Ptr->optionsButtonMode;
     sOptionMenuPtr->option[MENUITEM_FRAMETYPE] = gSaveBlock2Ptr->optionsWindowFrameType;
@@ -528,7 +538,9 @@ static void BufferOptionMenuString(u8 selection)
     
     memcpy(dst, sOptionMenuTextColor, 3);
     x = 0x76;
-    y = OPTION_ROW_H * selection + 1;
+    if (selection < sOptionMenuPtr->scroll || selection >= sOptionMenuPtr->scroll + OPTION_VISIBLE)
+        return;
+    y = OPTION_ROW_H * (selection - sOptionMenuPtr->scroll) + 1;
     FillWindowPixelRect(1, 1, x, y + 2, 0xD0 - x, OPTION_ROW_H);
 
     switch (selection)
@@ -550,6 +562,10 @@ static void BufferOptionMenuString(u8 selection)
         break;
     case MENUITEM_BATTLESPEED:
         AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sBattleSpeedOptions[sOptionMenuPtr->option[selection]]);
+        break;
+    case MENUITEM_LEVELCAP:
+    case MENUITEM_AUTOHEAL:
+        AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sAutoAimOptions[sOptionMenuPtr->option[selection]]);
         break;
     case MENUITEM_SOUND:
         AddTextPrinterParameterized3(1, FONT_NORMAL, x, y, dst, -1, sSoundOptions[sOptionMenuPtr->option[selection]]);
@@ -581,6 +597,8 @@ static void CloseAndSaveOptionMenu(u8 taskId)
     gSaveBlock2Ptr->optionsRtExpShare = sOptionMenuPtr->option[MENUITEM_EXPSHARE];
     gSaveBlock2Ptr->optionsRtExpBonus = sOptionMenuPtr->option[MENUITEM_EXPBONUS];
     gSaveBlock2Ptr->optionsRtBattleSpeed = sSpeedMenuToSave[sOptionMenuPtr->option[MENUITEM_BATTLESPEED]];
+    gSaveBlock2Ptr->optionsRtLevelCap = sOptionMenuPtr->option[MENUITEM_LEVELCAP];
+    gSaveBlock2Ptr->optionsRtAutoHeal = sOptionMenuPtr->option[MENUITEM_AUTOHEAL];
     gSaveBlock2Ptr->optionsSound = sOptionMenuPtr->option[MENUITEM_SOUND];
     gSaveBlock2Ptr->optionsButtonMode = sOptionMenuPtr->option[MENUITEM_BUTTONMODE];
     gSaveBlock2Ptr->optionsWindowFrameType = sOptionMenuPtr->option[MENUITEM_FRAMETYPE];
@@ -616,9 +634,9 @@ static void LoadOptionMenuItemNames(void)
     u8 i;
     
     FillWindowPixelBuffer(1, PIXEL_FILL(1));
-    for (i = 0; i < MENUITEM_COUNT; i++)
+    for (i = sOptionMenuPtr->scroll; i < MENUITEM_COUNT && i < sOptionMenuPtr->scroll + OPTION_VISIBLE; i++)
     {
-        AddTextPrinterParameterized3(WIN_OPTIONS, FONT_NORMAL, 8, OPTION_ROW_H * i + 1, sOptionNameColor, TEXT_SKIP_DRAW, sOptionMenuItemsNames[i]);
+        AddTextPrinterParameterized3(WIN_OPTIONS, FONT_NORMAL, 8, OPTION_ROW_H * (i - sOptionMenuPtr->scroll) + 1, sOptionNameColor, TEXT_SKIP_DRAW, sOptionMenuItemsNames[i]);
     }
 }
 
@@ -627,7 +645,19 @@ static void UpdateSettingSelectionDisplay(u16 selection)
     u16 maxLetterHeight, y;
     
     maxLetterHeight = OPTION_ROW_H;
-    y = selection * OPTION_ROW_H + OPTION_WIN_Y + 3;
+    // keep the cursor row on screen: scroll the list (and redraw it) when it leaves the window
+    if (selection < sOptionMenuPtr->scroll || selection >= sOptionMenuPtr->scroll + OPTION_VISIBLE)
+    {
+        u8 i;
+        if (selection < sOptionMenuPtr->scroll)
+            sOptionMenuPtr->scroll = selection;
+        else
+            sOptionMenuPtr->scroll = selection - OPTION_VISIBLE + 1;
+        LoadOptionMenuItemNames();
+        for (i = 0; i < MENUITEM_COUNT; i++)
+            BufferOptionMenuString(i);
+    }
+    y = (selection - sOptionMenuPtr->scroll) * OPTION_ROW_H + OPTION_WIN_Y + 3;
     SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(y, y + maxLetterHeight));
     SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(0x10, 0xE0));
 }

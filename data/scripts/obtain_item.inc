@@ -60,9 +60,8 @@ EventScript_BufferBerryPouch::
 
 EventScript_ObtainedItem::
 	message Text_ObtainedTheX
-	waitfanfare
 	waitmessage
-	msgbox Text_PutItemAway
+	waitbuttonpress
 	setvar VAR_RESULT, 1
 	return
 
@@ -93,7 +92,6 @@ EventScript_ObtainDecorMessage::
 EventScript_ObtainedDecor::
 	playfanfare MUS_OBTAIN_ITEM
 	message Text_ObtainedTheDecor
-	waitfanfare
 	waitmessage
 	msgbox Text_DecorTransferredToPC
 	setvar VAR_RESULT, TRUE
@@ -126,9 +124,8 @@ EventScript_PickUpItem::
 	copyvar VAR_0x8008, VAR_RESULT
 	call_if_eq VAR_0x8008, TRUE, EventScript_FoundTMHM
 	call_if_eq VAR_0x8008, FALSE, EventScript_FoundItem
-	waitfanfare
 	waitmessage
-	msgbox Text_PutItemAway
+	waitbuttonpress
 	return
 
 EventScript_FoundTMHM::
@@ -166,9 +163,8 @@ EventScript_TryPickUpHiddenItem::
 EventScript_PickedUpHiddenItem::
 	call_if_eq VAR_0x8006, 1, EventScript_FoundSingleItem
 	call_if_ne VAR_0x8006, 1, EventScript_FoundMultipleItems
-	waitfanfare
 	waitmessage
-	msgbox Text_PutItemAway
+	waitbuttonpress
 	special SetHiddenItemFlag
 	releaseall
 	end
@@ -203,9 +199,8 @@ EventScript_TryPickUpHiddenCoins::
 	bufferstdstring STR_VAR_2, STDSTRING_COINS
 	call EventScript_PlayFanfareObtainedItem
 	call EventScript_FoundCoins
-	waitfanfare
 	waitmessage
-	msgbox Text_PutCoinsAwayInCoinCase
+	waitbuttonpress
 	special SetHiddenItemFlag
 	releaseall
 	end

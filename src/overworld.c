@@ -1,4 +1,5 @@
 #include "global.h"
+#include "day_night.h"
 #include "party_menu.h"
 #include "constants/moves.h"
 #include "gflib.h"
@@ -137,7 +138,7 @@ static void SetDefaultFlashLevel(void);
 static void Overworld_TryMapConnectionMusicTransition(void);
 static void ChooseAmbientCrySpecies(void);
 
-static void CB2_Overworld(void);
+void CB2_Overworld(void);
 static void CB2_LoadMap2(void);
 static void CB2_LoadMapOnReturnToFieldCableClub(void);
 static void CB2_ReturnToFieldLocal(void);
@@ -1474,6 +1475,7 @@ static void OverworldBasic(void)
     UpdatePaletteFade();
     UpdateTilesetAnimations();
     DoScheduledBgTilemapCopiesToVram();
+    DayNight_FrameEnd();
 }
 
 // This CB2 is used when starting
@@ -1482,7 +1484,7 @@ void CB2_OverworldBasic(void)
     OverworldBasic();
 }
 
-static void CB2_Overworld(void)
+void CB2_Overworld(void)
 {
     bool32 fading = !!gPaletteFade.active;
     if (fading)
