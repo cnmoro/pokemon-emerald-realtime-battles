@@ -623,6 +623,9 @@ struct RtStruggle
     s32 px, py;        // clash point (Q8)
     u8 pressA, pressB; // presses this frame
     u8 mashA, mashB;   // smoothed mash rate (HUD)
+    u16 f0;            // where the beams first met, from A's mouth to B's (0..1024)
+    u16 f;             // where the clash point is now (0..1024), follows the balance
+    u8 orb;            // particle index + 1 of the energy ball at the clash point (0 = none)
 };
 
 struct RtBattle

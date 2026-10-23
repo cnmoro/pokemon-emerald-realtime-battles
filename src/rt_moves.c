@@ -1234,7 +1234,7 @@ static s32 DistToSegment(s32 px, s32 py, s32 ax, s32 ay, u8 angle, s32 len, s32 
 // Beam struggle: two opposing beams that meet lock together. Both users mash the move buttons to push the
 // clash back; the winner's beam swings onto the loser and hits harder, the loser is stunned.
 // ---------------------------------------------------------------------------
-#define STR_TIMEOUT 300
+#define STR_TIMEOUT 420
 static void Knockback(struct RtActor *atk, struct RtActor *t, s32 strength);
 static u32 MoveStrength(struct RtActor *a, u16 move);
 static void KillProj(struct RtProj *p);
@@ -1279,6 +1279,7 @@ static void StruggleStart(struct RtProj *p, struct RtProj *q, s32 sx, s32 sy)
     s->py = TO_FX(sy);
     a->len = RtDist(sx - FROM_FX(a->x), sy - FROM_FX(a->y));
     b->len = RtDist(sx - FROM_FX(b->x), sy - FROM_FX(b->y));
+    s->f0 = s->f = a->len + b->len ? (u32)a->len * 1024 / (a->len + b->len) : 512;
     RtFx_Flash(0, 4);
     RtFx_Shake(2, 12);
     gRt->pauseFrames = 6;
@@ -1295,6 +1296,9 @@ static void StruggleResolve(bool8 aWins, bool8 draw)
     struct RtProj *wp = aWins ? pa : pb, *lp = aWins ? pb : pa;
     struct RtActor *wo = aWins ? oa : ob, *lo = aWins ? ob : oa;
     s->on = FALSE;
+    if (s->orb && gRt->parts[s->orb - 1].shape == FX_ORB32)
+        gRt->parts[s->orb - 1].life = 1;
+    s->orb = 0;
     {
         extern const u8 gRtDebugEnabled;
         extern u32 gRtDebugStat;
@@ -1364,6 +1368,9 @@ static void StruggleTick(void)
      || oa->state != AST_CAST || ob->state != AST_CAST || !RtActor_IsAlive(oa) || !RtActor_IsAlive(ob))
     {
         s->on = FALSE; // one side was interrupted: the other beam simply goes on
+        if (s->orb && gRt->parts[s->orb - 1].shape == FX_ORB32)
+            gRt->parts[s->orb - 1].life = 1;
+        s->orb = 0;
         return;
     }
     s->timer++;
@@ -1386,8 +1393,63 @@ static void StruggleTick(void)
     s->pressA = s->pressB = 0;
     if (s->bal > RT_STR_MAX) s->bal = RT_STR_MAX;
     if (s->bal < -RT_STR_MAX) s->bal = -RT_STR_MAX;
-    // light show at the clash point
-    RtFx_Spawn(FX_ORB32, pa->pal, s->px, s->py, 2);
+    // the clash point is pushed along the line between both mouths toward whoever is losing: from where the
+    // beams met (balance 0) to the loser's mouth (balance +-MAX); it eases toward that spot every frame and
+    // both beams are re-aimed at it and stretch / shrink to reach it
+    {
+        s32 target, ax = pa->x, ay = pa->y, bx = pb->x, by = pb->y, tx, ty, step;
+        if (s->bal >= 0)
+            target = s->f0 + (1024 - s->f0) * s->bal / RT_STR_MAX;
+        else
+            target = s->f0 + (s32)s->f0 * s->bal / RT_STR_MAX;
+        if (target < 40) target = 40;
+        if (target > 984) target = 984;
+        step = (target - (s32)s->f) / 6;
+        if (step == 0 && target != s->f)
+            step = target > s->f ? 1 : -1;
+        s->f += step;
+        tx = ax + (bx - ax) / 1024 * s->f + ((bx - ax) % 1024) * s->f / 1024;
+        ty = ay + (by - ay) / 1024 * s->f + ((by - ay) % 1024) * s->f / 1024;
+        // the meeting point shudders with the effort
+        s->px = tx + TO_FX((s32)(Random() % 3) - 1);
+        s->py = ty + TO_FX((s32)(Random() % 3) - 1);
+        oa->act.angle = RtAtan2(FROM_FX(s->px - pa->x), FROM_FX(s->py - pa->y));
+        ob->act.angle = RtAtan2(FROM_FX(s->px - pb->x), FROM_FX(s->py - pb->y));
+        pa->angle = oa->act.angle;
+        pb->angle = ob->act.angle;
+        pa->len = RtDist(FROM_FX(s->px - pa->x), FROM_FX(s->py - pa->y));
+        pb->len = RtDist(FROM_FX(s->px - pb->x), FROM_FX(s->py - pb->y));
+        // a strong push throws sparks back along the losing beam
+        if (step > 6 || step < -6)
+        {
+            struct RtPart *sp = RtFx_Spawn(FX_SPARK8, step > 0 ? pa->pal : pb->pal, s->px, s->py, 14);
+            if (sp)
+            {
+                u8 dir = step > 0 ? oa->act.angle : ob->act.angle;
+                sp->vx = RtCos(dir) * 2;
+                sp->vy = RtSin(dir) * 2;
+            }
+        }
+    }
+    // light show at the clash point (the ball is drawn with the beam cores so the sprite budget never drops it)
+    {
+        // one ball for the whole clash: moved along every frame and kept alive
+        struct RtPart *orb = s->orb ? &gRt->parts[s->orb - 1] : NULL;
+        if (orb == NULL || orb->life == 0 || orb->shape != FX_ORB32)
+        {
+            orb = RtFx_Spawn(FX_ORB32, pa->pal, s->px, s->py, 8);
+            s->orb = orb ? orb - gRt->parts + 1 : 0;
+        }
+        if (orb)
+        {
+            orb->x = s->px;
+            orb->y = s->py;
+            orb->vx = orb->vy = 0;
+            orb->life = 8;
+            orb->prio = 5;
+            orb->flags |= PF_HUD; // not recycled by the sparks spawned after it
+        }
+    }
     if ((s->timer & 1) == 0)
         RtFx_Burst(FX_SPARK8, (s->timer & 2) ? pa->pal : pb->pal, s->px, s->py, 2, 3, 12);
     if ((s->timer & 7) == 0)
