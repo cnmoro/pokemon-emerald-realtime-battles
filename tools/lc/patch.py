@@ -155,6 +155,13 @@ def main():
     if rom[o:o + 2] != bytes.fromhex('03d8'):
         raise SystemExit('unexpected code in Task_LearnedMove')
     rom[o:o + 2] = bytes.fromhex('03e0')
+    # ... nor when the TM is taught from the TM CASE (CB2_UseItem) or over a forgotten move
+    # (CB2_UseTMHMAfterForgettingMove): same 'item < HM01 -> RemoveBagItem' test, branch always over it
+    for at, fn in ((0x08124EA6, 'CB2_UseItem'), (0x08124F72, 'CB2_UseTMHMAfterForgettingMove')):
+        o = at & 0x1FFFFFF
+        if rom[o:o + 2] != bytes.fromhex('03d8'):
+            raise SystemExit('unexpected code in ' + fn)
+        rom[o:o + 2] = bytes.fromhex('03e0')
 
     # items: the fanfare plays to its end without holding the player, and no "put the item in the pocket"
     # message (waitfanfare waitmessage msgbox -> waitmessage waitbuttonpress)
