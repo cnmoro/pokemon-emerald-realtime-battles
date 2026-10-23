@@ -1230,6 +1230,8 @@ static s32 DistToSegment(s32 px, s32 py, s32 ax, s32 ay, u8 angle, s32 len, s32 
 }
 
 
+#define TOSS_FRAMES 40
+
 // ---------------------------------------------------------------------------
 // Beam struggle: two opposing beams that meet lock together. Both users mash the move buttons to push the
 // clash back; the winner's beam swings onto the loser and hits harder, the loser is stunned.
@@ -1628,6 +1630,7 @@ static void UpdateArea(struct RtProj *p)
     s32 i;
     struct RtActor *o = &gRt->actors[p->owner];
     const struct RtMoveDef *d = Def(p->move);
+    bool8 landing = d->pattern == RTP_LEAP || d->pattern == RTP_BURROW;
     if (p->delay)
     {
         p->delay--;
@@ -1681,15 +1684,23 @@ static void UpdateArea(struct RtProj *p)
         if (t == o)
             continue;
         dx = FROM_FX(t->x - p->x);
-        dy = FROM_FX(t->y - p->y) * 2;
-        if (RtDist(dx, dy) <= p->radius + t->radius / 2)
+        dy = FROM_FX(t->y - p->y);
+        // a Fly / Bounce / Dig landing hits a round spot (with some slack): coming down "on" a POKeMON's body
+        // is a hit, even a little above or below its feet; other areas are flat ellipses
+        if (!landing)
+            dy *= 2;
+        if (RtDist(dx, dy) <= p->radius + t->radius / 2 + (landing ? 8 : 0))
         {
             p->hitMask |= 1 << t->id;
             TryHitActor(p, o, t);
         }
     }
     if (p->age >= (d->duration ? d->duration : 16) + 4)
+    {
+        if (landing && !(p->hitMask & ((1 << RT_MAX_ACTORS) - 1)) && RtActor_IsAlive(o))
+            RtFx_Word(p->x, p->y - TO_FX(24), FX_W_MISS); // came down on nobody: say so
         KillProj(p);
+    }
 }
 
 static void StrikeAt(struct RtProj *p)
@@ -2634,6 +2645,17 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
             RtActor_ChangeStage(t, STG_ATK, 1, t->id, TRUE);
         RtMove_CheckBerries(t);
     }
+    // Seismic Toss / Vital Throw: the foe is grabbed, carried up spinning, thrown far and slammed down
+    if ((move == MOVE_SEISMIC_TOSS || move == MOVE_VITAL_THROW) && RtActor_IsAlive(t) && t->state != AST_FAINT
+     && !t->invuln && gRt->ax[t->id].tossTimer == 0)
+    {
+        struct RtActorX *x = &gRt->ax[t->id];
+        x->tossTimer = TOSS_FRAMES;
+        x->tossBy = atk->id;
+        x->tossAng = RtAtan2(FROM_FX(t->x - atk->x), FROM_FX(t->y - atk->y));
+        t->vx = t->vy = 0;
+        RtVfx_TossGrab(atk, t);
+    }
     if (t->mstatus == MST_FRZ && type == TYPE_FIRE)
         RtActor_CureStatus(t);
     if (effect == EFFECT_FURY_CUTTER)
@@ -2644,6 +2666,65 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
     ContactAbilities(atk, t, move);
     // grudge / destiny bond are processed on faint
     return TRUE;
+}
+
+// the flight of a thrown POKeMON: 12 frames lifted spinning over the thrower, 18 frames of a long arc away from
+// it, the slam, then a moment on the ground
+void RtMove_TossTick(struct RtActor *t)
+{
+    struct RtActorX *x = &gRt->ax[t->id];
+    struct RtActor *a;
+    u8 tt = x->tossTimer;
+    if (tt == 0)
+        return;
+    x->tossTimer--;
+    a = &gRt->actors[x->tossBy < RT_MAX_ACTORS ? x->tossBy : 0];
+    t->vx = t->vy = 0;
+    if (t->state == AST_FAINT || t->state == AST_GONE)
+    {
+        t->z = 0;
+        x->tossTimer = 0;
+        return;
+    }
+    if (t->state != AST_STUN)
+    {
+        t->state = AST_HURT;
+        t->stateTimer = 8;
+    }
+    if (tt > TOSS_FRAMES - 12)
+    {
+        s32 k = TOSS_FRAMES + 1 - tt; // 1..12: up over the thrower's head, spinning
+        t->x += (a->x - t->x) / 3;
+        t->y += (a->y + TO_FX(2) - t->y) / 3;
+        t->z = k * 5;
+        RtActor_SetFacingFromAngle(t, (u8)(k * 40));
+    }
+    else if (tt > TOSS_FRAMES - 30)
+    {
+        s32 k = TOSS_FRAMES - 11 - tt; // 1..18: hurled away in a high arc
+        s32 nx = t->x + RtCos(x->tossAng) * 5, ny = t->y + RtSin(x->tossAng) * 5 / 2;
+        if (nx < TO_FX(gRt->playX0 + 10)) nx = TO_FX(gRt->playX0 + 10);
+        if (nx > TO_FX(gRt->playX1 - 10)) nx = TO_FX(gRt->playX1 - 10);
+        if (ny < TO_FX(gRt->playY0 + 10)) ny = TO_FX(gRt->playY0 + 10);
+        if (ny > TO_FX(gRt->playY1 - 6)) ny = TO_FX(gRt->playY1 - 6);
+        t->x = nx;
+        t->y = ny;
+        t->z = 60 + k * 2 - k * k * 62 / 324;
+        if (t->z < 0)
+            t->z = 0;
+        RtActor_SetFacingFromAngle(t, (u8)(k * 40));
+        RtVfx_TossTrail(t, x->tossAng);
+        if (k == 18)
+        {
+            t->z = 0;
+            RtVfx_TossSlam(t);
+            gRt->pauseFrames = 4;
+        }
+    }
+    else
+        t->z = 0;
+    if (x->tossTimer == 0)
+        t->z = 0;
 }
 
 void RtMove_OnActorHit(struct RtActor *atk, struct RtActor *def, u16 move, struct RtProj *p)
@@ -2885,6 +2966,7 @@ bool8 RtMove_TryStart(struct RtActor *a, u8 slot, u8 angle)
         RtFx_Burst(FX_PLUS8, FXP_GOLD, a->x, a->y - TO_FX(a->height / 2), 4, 1, 24);
     }
     a->cd[slot] = (u32)a->cd[slot] * RtExt_CdPct(a) / 100;
+    a->cd[slot] = (u32)a->cd[slot] * RtActor_SpeedCdPct(a) / 100;
     RtKi_Spend(a, RtKi_MoveCost(move));
     if (a->holdEffect == HOLD_EFFECT_CHOICE_BAND && !a->choiceMove)
         a->choiceMove = move;
@@ -3259,6 +3341,14 @@ static void SpawnBullet(struct RtActor *a, const struct RtMoveDef *d, u8 angle, 
     }
 }
 
+static bool8 FoeInGrabReach(struct RtActor *a)
+{
+    struct RtActor *t = Rt_NearestFoe(a);
+    if (t == NULL)
+        return FALSE;
+    return RtDist(FROM_FX(t->x - a->x), FROM_FX(t->y - a->y) * 2) <= a->radius + t->radius + 28;
+}
+
 static void ExecuteMove(struct RtActor *a)
 {
     const struct RtMoveDef *d = Def(a->act.move);
@@ -3267,8 +3357,9 @@ static void ExecuteMove(struct RtActor *a)
     struct RtProj *p;
     u8 i;
 
-    // telekinetic / throwing moves pick up a nearby arena prop and hurl it instead
-    if (RtProps_TryGrab(a, move))
+    // telekinetic / throwing moves pick up a nearby arena prop and hurl it instead (a grappler with its foe
+    // within reach grabs the foe itself)
+    if (!((move == MOVE_SEISMIC_TOSS || move == MOVE_VITAL_THROW) && FoeInGrabReach(a)) && RtProps_TryGrab(a, move))
     {
         if (d->anim != RTA_WALK)
             RtActor_SetAnim(a, RTA_CHARGE, FALSE);
@@ -3701,6 +3792,8 @@ void RtMove_UpdateCast(struct RtActor *a)
                 s32 dx = FROM_FX(a->act.tx - a->x), dy = FROM_FX(a->act.ty - a->y);
                 s32 dist = RtDist(dx, dy);
                 s32 sp = d->speed ? d->speed : 40;
+                if (t + 8 >= windup)
+                    sp *= 2; // the dive at the end homes in harder
                 if (dist > 2)
                 {
                     s32 step = sp * 256 / 16;
