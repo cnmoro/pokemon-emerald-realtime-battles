@@ -1209,6 +1209,210 @@ static s32 DistToSegment(s32 px, s32 py, s32 ax, s32 ay, u8 angle, s32 len, s32 
     return perp < 0 ? -perp : perp;
 }
 
+// ---------------------------------------------------------------------------
+// Beam struggle: two opposing beams that meet lock together. Both users mash the move buttons to push the
+// clash back; the winner's beam swings onto the loser and hits harder, the loser is stunned.
+// ---------------------------------------------------------------------------
+#define STR_TIMEOUT 300
+static void Knockback(struct RtActor *atk, struct RtActor *t, s32 strength);
+static u32 MoveStrength(struct RtActor *a, u16 move);
+static void KillProj(struct RtProj *p);
+static const u8 sText_Struggle[] = _("BEAM CLASH! Mash A/B/L/R!");
+
+bool8 RtStruggle_Involves(u8 id)
+{
+    return gRt->str.on && (gRt->str.ownA == id || gRt->str.ownB == id);
+}
+
+void RtStruggle_Press(u8 id)
+{
+    if (!gRt->str.on)
+        return;
+    if (gRt->str.ownA == id)
+        gRt->str.pressA++;
+    else if (gRt->str.ownB == id)
+        gRt->str.pressB++;
+}
+
+static bool8 StrProj(struct RtProj *p)
+{
+    return gRt->str.on && (p == &gRt->proj[gRt->str.projA] || p == &gRt->proj[gRt->str.projB]);
+}
+
+static void StruggleStart(struct RtProj *p, struct RtProj *q, s32 sx, s32 sy)
+{
+    struct RtStruggle *s = &gRt->str;
+    struct RtProj *a = p, *b = q;
+    if (p->side != RT_SIDE_PLAYER)
+    {
+        a = q;
+        b = p;
+    }
+    memset(s, 0, sizeof(*s));
+    s->on = TRUE;
+    s->projA = a - gRt->proj;
+    s->projB = b - gRt->proj;
+    s->ownA = a->owner;
+    s->ownB = b->owner;
+    s->px = TO_FX(sx);
+    s->py = TO_FX(sy);
+    a->len = RtDist(sx - FROM_FX(a->x), sy - FROM_FX(a->y));
+    b->len = RtDist(sx - FROM_FX(b->x), sy - FROM_FX(b->y));
+    RtFx_Flash(0, 4);
+    RtFx_Shake(2, 12);
+    gRt->pauseFrames = 6;
+    PlaySE(SE_M_THUNDERBOLT2);
+    if (gRt->actors[a->owner].side == RT_SIDE_PLAYER && gRt->actors[a->owner].id == gRt->playerLead)
+        RtUi_Toast(sText_Struggle, 90);
+}
+
+static void StruggleResolve(bool8 aWins, bool8 draw)
+{
+    struct RtStruggle *s = &gRt->str;
+    struct RtProj *pa = &gRt->proj[s->projA], *pb = &gRt->proj[s->projB];
+    struct RtActor *oa = &gRt->actors[s->ownA], *ob = &gRt->actors[s->ownB];
+    struct RtProj *wp = aWins ? pa : pb, *lp = aWins ? pb : pa;
+    struct RtActor *wo = aWins ? oa : ob, *lo = aWins ? ob : oa;
+    s->on = FALSE;
+    {
+        extern const u8 gRtDebugEnabled;
+        extern u32 gRtDebugStat;
+        if (gRtDebugEnabled)
+            gRtDebugStat = 0xB0000000 | (draw ? 0x200 : (aWins ? 0x100 : 0)) | (s->timer & 0xFF) | ((gRtDebugStat & 0xF0000) + 0x10000);
+    }
+    if (draw)
+    {
+        // both beams detonate
+        s32 k;
+        for (k = 0; k < 2; k++)
+        {
+            struct RtActor *o = k ? ob : oa, *e = k ? oa : ob;
+            RtActor_Damage(o, o->maxHp / 10 ? o->maxHp / 10 : 1, e->id, FALSE);
+            if (RtActor_IsAlive(o))
+            {
+                o->state = AST_STUN;
+                o->stateTimer = 30;
+                o->flash = 6;
+                RtActor_SetAnim(o, RTA_HURT, FALSE);
+                Knockback(e, o, 7);
+            }
+        }
+        KillProj(pa);
+        KillProj(pb);
+        RtFx_Impact(RTI_STAR, FXP_WHITE, s->px, s->py);
+        RtFx_Flash(0, 8);
+        RtFx_Shake(4, 18);
+        PlaySE(SE_M_EXPLOSION);
+        return;
+    }
+    KillProj(lp);
+    if (RtActor_IsAlive(lo))
+    {
+        lo->state = AST_STUN;
+        lo->stateTimer = 70;
+        lo->flash = 8;
+        RtActor_SetAnim(lo, RTA_HURT, FALSE);
+        Knockback(wo, lo, 9);
+    }
+    // the winner's beam sweeps onto the loser and hits harder
+    wo->act.angle = RtAtan2(FROM_FX(lo->x - wp->x), FROM_FX(lo->y - wp->y));
+    wo->act.aimBase = wo->act.angle;
+    wp->param |= 0x100;
+    wp->hitMask = 0;
+    RtFx_Impact(RTI_STAR, FXP_GOLD, s->px, s->py);
+    RtFx_Flash(0, 6);
+    RtFx_Shake(4, 16);
+    RtFx_Word(lo->x, lo->y - TO_FX(lo->height + 8), FX_W_SUPER);
+    PlaySE(SE_M_EXPLOSION);
+}
+
+static void StruggleTick(void)
+{
+    struct RtStruggle *s = &gRt->str;
+    struct RtProj *pa, *pb;
+    struct RtActor *oa, *ob;
+    s32 bias, k;
+    if (!s->on)
+        return;
+    pa = &gRt->proj[s->projA];
+    pb = &gRt->proj[s->projB];
+    oa = &gRt->actors[s->ownA];
+    ob = &gRt->actors[s->ownB];
+    if (pa->kind != PK_BEAM || pb->kind != PK_BEAM || pa->owner != s->ownA || pb->owner != s->ownB
+     || oa->state != AST_CAST || ob->state != AST_CAST || !RtActor_IsAlive(oa) || !RtActor_IsAlive(ob))
+    {
+        s->on = FALSE; // one side was interrupted: the other beam simply goes on
+        return;
+    }
+    s->timer++;
+    // the AI mashes at a rate that grows with its skill
+    for (k = 0; k < 2; k++)
+    {
+        struct RtActor *o = k ? ob : oa;
+        if (!(o->side == RT_SIDE_PLAYER && o->id == gRt->playerLead) && (Random() % 100) < 8 + o->aiSkill)
+        {
+            if (k)
+                s->pressB++;
+            else
+                s->pressA++;
+        }
+    }
+    bias = ((s32)MoveStrength(oa, pa->move) - (s32)MoveStrength(ob, pb->move)) * 2 / (s32)(MoveStrength(oa, pa->move) + MoveStrength(ob, pb->move) + 1);
+    s->bal += ((s32)s->pressA - (s32)s->pressB) * 34 + bias;
+    s->mashA = s->mashA * 7 / 8 + s->pressA * 6;
+    s->mashB = s->mashB * 7 / 8 + s->pressB * 6;
+    s->pressA = s->pressB = 0;
+    if (s->bal > RT_STR_MAX) s->bal = RT_STR_MAX;
+    if (s->bal < -RT_STR_MAX) s->bal = -RT_STR_MAX;
+    // light show at the clash point
+    RtFx_Spawn(FX_ORB32, pa->pal, s->px, s->py, 2);
+    if ((s->timer & 1) == 0)
+        RtFx_Burst(FX_SPARK8, (s->timer & 2) ? pa->pal : pb->pal, s->px, s->py, 2, 3, 12);
+    if ((s->timer & 7) == 0)
+        RtFx_Shake(1, 3);
+    if ((s->timer % 24) == 0)
+        PlaySE(SE_M_THUNDERBOLT2);
+    if (s->bal >= RT_STR_MAX)
+        StruggleResolve(TRUE, FALSE);
+    else if (s->bal <= -RT_STR_MAX)
+        StruggleResolve(FALSE, FALSE);
+    else if (s->timer >= STR_TIMEOUT)
+    {
+        if (s->bal > 120)
+            StruggleResolve(TRUE, FALSE);
+        else if (s->bal < -120)
+            StruggleResolve(FALSE, FALSE);
+        else
+            StruggleResolve(FALSE, TRUE);
+    }
+}
+
+// called by a beam that has grown: does it touch an opposing beam?
+static void StruggleCheck(struct RtProj *p)
+{
+    s32 i, k;
+    if (gRt->str.on || p->len < 16)
+        return;
+    for (i = 0; i < RT_MAX_PROJ; i++)
+    {
+        struct RtProj *q = &gRt->proj[i];
+        if (q->kind != PK_BEAM || q->side == p->side || q->len < 16 || !RtActor_IsAlive(&gRt->actors[q->owner]))
+            continue;
+        if (gRt->actors[q->owner].state != AST_CAST || gRt->actors[p->owner].state != AST_CAST)
+            continue;
+        for (k = 8; k <= p->len; k += 8)
+        {
+            s32 sx = FROM_FX(p->x) + RtCos(p->angle) * k / 256;
+            s32 sy = FROM_FX(p->y) + RtSin(p->angle) * k / 256;
+            if (DistToSegment(sx, sy, FROM_FX(q->x), FROM_FX(q->y), q->angle, q->len, NULL) <= p->radius + q->radius + 2)
+            {
+                StruggleStart(p, q, sx, sy);
+                return;
+            }
+        }
+    }
+}
+
 static void UpdateBeam(struct RtProj *p)
 {
     s32 i, max;
@@ -1222,6 +1426,8 @@ static void UpdateBeam(struct RtProj *p)
     p->angle = o->act.angle;
     p->x = o->x + RtCos(p->angle) * (o->radius / 2);
     p->y = o->y + RtSin(p->angle) * (o->radius / 2) / 2 - TO_FX(o->height / 2);
+    if (StrProj(p))
+        return; // locked in a beam struggle: length, age and life stay frozen
     p->age++;
     max = d->range * 2;
     // the tip advances p->vx (px/frame * 16) every frame
@@ -1244,6 +1450,9 @@ static void UpdateBeam(struct RtProj *p)
             }
         }
     }
+    StruggleCheck(p);
+    if (StrProj(p))
+        return;
     // sparkles along the beam and at its tip
     if (RtVfx_BeamTick(p))
         ;
@@ -1516,6 +1725,7 @@ static void UpdateStrike(struct RtProj *p)
 void RtProj_UpdateAll(void)
 {
     s32 i;
+    StruggleTick();
     for (i = 0; i < RT_MAX_PROJ; i++)
     {
         struct RtProj *p = &gRt->proj[i];
@@ -2246,6 +2456,8 @@ static bool8 TryHitActor(struct RtProj *p, struct RtActor *atk, struct RtActor *
             dmg = dmg * CONTACT_ARMOR / 100;
         if (dmg < 1)
             dmg = 1;
+        if (p->param & 0x100)
+            dmg = dmg * 3 / 2; // won a beam struggle
     }
     if (effect == RTEFF_FAKE_OUT && gRt->frame - atk->sentOutFrame > 240)
     {
@@ -3547,6 +3759,11 @@ void RtMove_UpdateCast(struct RtActor *a)
             }
             break;
         case RTP_BEAM:
+            if (RtStruggle_Involves(a->id))
+            {
+                a->act.timer--; // the cast waits while the beams are locked
+                break;
+            }
             // the player can nudge its beam (slowly, about 17 degrees each way); a foe's beam keeps the
             // direction it was fired in
             SteerChannelLimited(a, (a->side == RT_SIDE_PLAYER && (a->act.timer & 1)) ? 1 : 0, 12);

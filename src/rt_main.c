@@ -1156,6 +1156,17 @@ static void Rt_HandlePlayerInput(struct RtActor *a)
     a->inSlot = -1;
     a->inDash = FALSE;
 
+    if (RtStruggle_Involves(a->id))
+    {
+        // beam struggle: every move button press pushes the clash back
+        if (pressed & (A_BUTTON | B_BUTTON | L_BUTTON | R_BUTTON))
+            RtStruggle_Press(a->id);
+        a->aiming = 0;
+        a->aimHold = 0;
+        a->inMoveX = a->inMoveY = 0;
+        return;
+    }
+
     if (held & DPAD_LEFT) mx -= 256;
     if (held & DPAD_RIGHT) mx += 256;
     if (held & DPAD_UP) my -= 256;
