@@ -605,6 +605,7 @@ struct RtActorX
     u8 oldType[2];     // types before a form change
     u8 tossTimer;      // Seismic Toss / Vital Throw: frames of being carried and thrown (0 = none)
     u8 tossBy, tossAng;
+    u16 tossDmg;       // damage dealt when the thrown POKeMON hits the ground
     u16 stamina;       // dash stamina (0..RT_STAMINA_MAX)
     u8 staminaWait;    // frames before stamina refills after a dash
     u8 pulse;          // frames of the 'hit' pulse (sprite grows and shrinks back)

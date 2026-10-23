@@ -137,7 +137,8 @@
 #define FX_EYE16B 133
 #define FX_QMARK8 134
 #define FX_SURGE32 135
-#define FX_COUNT 136
+#define FX_SWELL32 136
+#define FX_COUNT 137
 #define FXP_NORMAL 0
 #define FXP_FIGHTING 1
 #define FXP_FLYING 2
