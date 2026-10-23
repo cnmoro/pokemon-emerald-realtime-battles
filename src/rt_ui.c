@@ -165,7 +165,9 @@ static EWRAM_DATA u8 sMoveHudState[MAX_MON_MOVES] = {0};
 #define UI_TILE_ENEMY_BAR1 272
 #define UI_TILE_CD0        280
 #define UI_TILE_ALLY_BAR   296
-#define UI_TILE_STAMINA    300 // 4 tiles: the dash stamina bar
+#define UI_TILE_KI         300 // 4 tiles: the ki bar (and the beam struggle balance bar while one is going)
+#define UI_TILE_STAMINA    304 // 4 tiles: the dash stamina bar
+static EWRAM_DATA u16 sKiDrawn = 0;
 static EWRAM_DATA u16 sStaDrawn = 0;
 
 static void SetPixel(u8 *tiles, u8 widthTiles, s32 x, s32 y, u8 c)
@@ -257,6 +259,7 @@ void RtUi_Init(void)
     memset(sMoveHudState, 0xFF, sizeof(sMoveHudState));
     memset(sCdBarDrawn, 0xFF, sizeof(sCdBarDrawn));
     sStaDrawn = 0xFFFF;
+    sKiDrawn = 0xFFFF;
     {
         extern void RtAi_ResetTrainerItems(void);
         RtAi_ResetTrainerItems();
@@ -862,31 +865,42 @@ void RtUi_DrawObjs(void)
         }
         PutObj(UI_TILE_PLAYER_BAR, 1, 1, HUD_P_BAR_X, HUD_BAR_Y, 4, 0);
         PutObj(UI_TILE_PLAYER_BAR + 4, 1, 1, HUD_P_BAR_X + 32, HUD_BAR_Y, 4, 0);
-        // dash stamina: a thin bar under the HP bar (the balance of a beam struggle while one is on)
-        if (gRt->str.on)
-        {
-            s32 b = gRt->str.bal + RT_STR_MAX; // 0..2*MAX, full = the player's side winning
-            u8 sf = b * 30 / (RT_STR_MAX * 2);
-            if (gRt->actors[gRt->str.ownA].side != RT_SIDE_PLAYER)
-                sf = 30 - sf;
-            if (sStaDrawn != (sf | 0x1000))
-            {
-                sStaDrawn = sf | 0x1000;
-                DrawBar(UI_TILE_STAMINA, 4, 30, sf, 5, 3);
-            }
-            PutObj(UI_TILE_STAMINA, 1, 1, HUD_P_BAR_X, HUD_BAR_Y + 7, 4, 0);
-        }
-        else if (!gRt->isSafari)
+        // ki bar under the HP bar (or the struggle balance while a beam struggle is on), dash stamina below it
+        if (!gRt->isSafari)
         {
             struct RtActorX *x = &gRt->ax[p->id];
-            u8 sf = x->stamina * 30 / RT_STAMINA_MAX;
-            u16 sk = sf | ((x->stamina < RT_STAMINA_DASH) << 8);
-            if (sStaDrawn != sk)
+            u8 fill, color;
+            u16 key;
+            if (gRt->str.on)
             {
-                sStaDrawn = sk;
-                DrawBar(UI_TILE_STAMINA, 4, 30, sf, x->stamina < RT_STAMINA_DASH ? 5 : 8, 2);
+                s32 b = gRt->str.bal + RT_STR_MAX; // 0..2*MAX, full = the player's side winning
+                fill = b * 30 / (RT_STR_MAX * 2);
+                if (gRt->actors[gRt->str.ownA].side != RT_SIDE_PLAYER)
+                    fill = 30 - fill;
+                color = 5;
             }
-            PutObj(UI_TILE_STAMINA, 1, 1, HUD_P_BAR_X, HUD_BAR_Y + 7, 4, 0);
+            else
+            {
+                fill = x->ki * 30 / RT_KI_MAX;
+                color = x->superTimer ? 10 : (x->ki >= 800 && (gRt->frame & 8) ? 2 : 6);
+            }
+            key = fill | (color << 8) | (gRt->str.on << 12);
+            if (sKiDrawn != key)
+            {
+                sKiDrawn = key;
+                DrawBar(UI_TILE_KI, 4, 30, fill, color, 3);
+            }
+            PutObj(UI_TILE_KI, 1, 1, HUD_P_BAR_X, HUD_BAR_Y + 7, 4, 0);
+            {
+                u8 sf = x->stamina * 30 / RT_STAMINA_MAX;
+                u16 sk = sf | ((x->stamina < RT_STAMINA_DASH) << 8);
+                if (sStaDrawn != sk)
+                {
+                    sStaDrawn = sk;
+                    DrawBar(UI_TILE_STAMINA, 4, 30, sf, x->stamina < RT_STAMINA_DASH ? 5 : 8, 2);
+                }
+                PutObj(UI_TILE_STAMINA, 1, 1, HUD_P_BAR_X, HUD_BAR_Y + 11, 4, 0);
+            }
         }
         // low hp warning sound
     }

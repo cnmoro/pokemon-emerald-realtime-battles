@@ -602,8 +602,17 @@ struct RtProp
     s16 z;
 };
 
+#define RT_KI_MAX 1000
+
 struct RtActorX
 {
+    u16 ki;            // 0..RT_KI_MAX
+    u16 superTimer;    // frames of SUPER form left (0 = normal)
+    u16 chargeHold;    // frames SELECT has been held (transformation)
+    u8 superKind;      // Deoxys forme: 1 attack, 2 defense, 3 speed
+    u8 kiFlash;        // HUD: frames to flash the ki bar
+    u16 oldGfx;        // gfx index before a form change
+    u8 oldType[2];     // types before a form change
     u16 stamina;       // dash stamina (0..RT_STAMINA_MAX)
     u8 staminaWait;    // frames before stamina refills after a dash
     u8 pulse;          // frames of the 'hit' pulse (sprite grows and shrinks back)
@@ -949,6 +958,16 @@ void Rt_EnemySendNext(struct RtActor *slot);
 // rt_talent.c: dash stamina, talents, arena modifiers
 void RtStamina_Init(struct RtActor *a);
 void RtStamina_Tick(struct RtActor *a);
+// ki and SUPER form (rt_talent.c)
+void RtKi_InitActor(struct RtActor *a);
+u16 RtKi_MoveCost(u16 move);
+bool8 RtKi_Spend(struct RtActor *a, u16 cost);
+void RtKi_Gain(struct RtActor *a, u16 amount);
+void RtKi_OnDamage(struct RtActor *a, s32 amount, u8 src);
+void RtKi_Tick(struct RtActor *a);
+bool8 RtKi_CanCast(struct RtActor *a, u16 move);
+bool8 RtExt_TrySuper(struct RtActor *a);
+void RtExt_PlayerInput(struct RtActor *a, u16 held, u16 pressed);
 bool8 RtStamina_Spend(struct RtActor *a);
 // talents: one of two per tier, picked in the SUMMARY (SKILLS page); stored in the unused ribbon bits
 enum { TALENT_LIGHT_STEP, TALENT_THICK_HIDE, TALENT_PREDATOR, TALENT_QUICK_MIND, TALENT_MOMENTUM, TALENT_LAST_STAND };

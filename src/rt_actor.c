@@ -116,6 +116,20 @@ u16 RtActor_GetStat(struct RtActor *a, u8 stat)
     if (st > 6) st = 6;
     v = v * sStageRatios[st + 6][0] / sStageRatios[st + 6][1];
     v = v * RtTalent_StatMul(a, stat) / 100;
+    if (gRt->ax[a->id].superTimer)
+    {
+        u8 k = gRt->ax[a->id].superKind;
+        bool8 off = stat == STG_ATK || stat == STG_SPA;
+        bool8 def = stat == STG_DEF || stat == STG_SPD;
+        if (k == 1)
+            v = v * (off ? 170 : (def ? 60 : 100)) / 100;
+        else if (k == 2)
+            v = v * (def ? 170 : (off ? 60 : 100)) / 100;
+        else if (k == 3)
+            v = v * (stat == STG_SPE ? 190 : 100) / 100;
+        else
+            v = v * (off ? 140 : (stat == STG_SPE ? 125 : 120)) / 100;
+    }
     return v ? v : 1;
 }
 
@@ -177,6 +191,8 @@ u8 RtActor_MoveSlotUsable(struct RtActor *a, u8 slot)
     if (move == MOVE_NONE)
         return 0;
     if (a->cd[slot])
+        return 0;
+    if (!RtKi_CanCast(a, move))
         return 0;
     if (a->disable && a->disabledMove == move)
         return 0;
@@ -463,6 +479,11 @@ static void UpdatePaletteFx(struct RtActor *a)
             color = RGB(31, 31, 31);
             amt = 3;
         }
+        if (gRt->ax[a->id].superTimer && !a->mstatus)
+        {
+            color = RGB(31, 26, 4);
+            amt = 5 + wave / 2;
+        }
         if (amt)
         {
             RtActor_LoadPalette(a);
@@ -657,6 +678,7 @@ void RtActor_Damage(struct RtActor *a, s32 amount, u8 src, bool8 direct)
     if (amount <= 0)
         amount = 1;
     RtTalent_OnHit(a, &amount, src);
+    RtKi_OnDamage(a, amount, src);
     if (amount >= a->hp)
     {
         a->hp = 0;
