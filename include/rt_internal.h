@@ -603,6 +603,8 @@ struct RtActorX
     u8 kiFlash;        // HUD: frames to flash the ki bar
     u16 oldGfx;        // gfx index before a form change
     u8 oldType[2];     // types before a form change
+    u8 tossTimer;      // Seismic Toss / Vital Throw: frames of being carried and thrown (0 = none)
+    u8 tossBy, tossAng;
     u16 stamina;       // dash stamina (0..RT_STAMINA_MAX)
     u8 staminaWait;    // frames before stamina refills after a dash
     u8 pulse;          // frames of the 'hit' pulse (sprite grows and shrinks back)
@@ -819,7 +821,8 @@ void RtActor_LoadGfxIfNeeded(struct RtActor *a);
 void RtActor_LoadPalette(struct RtActor *a);
 void RtActor_SyncToMon(struct RtActor *a);
 u16 RtActor_GetStat(struct RtActor *a, u8 stat);
-u8 RtActor_SpeedPx(struct RtActor *a);
+u16 RtActor_SpeedPx(struct RtActor *a);
+u16 RtActor_SpeedCdPct(struct RtActor *a);
 bool8 RtActor_CanAct(struct RtActor *a);
 bool8 RtActor_IsAlive(struct RtActor *a);
 bool8 RtActor_HasType(struct RtActor *a, u8 type);
@@ -828,6 +831,7 @@ void RtActor_TickStatus(struct RtActor *a);
 void RtActor_Faint(struct RtActor *a);
 void RtActor_Heal(struct RtActor *a, s32 amount);
 void RtActor_Damage(struct RtActor *a, s32 amount, u8 src, bool8 direct);
+void RtMove_TossTick(struct RtActor *t);
 bool8 RtStruggle_Involves(u8 actorId);
 void RtStruggle_Press(u8 actorId);
 bool8 RtActor_ChangeStage(struct RtActor *a, u8 stage, s8 delta, u8 src, bool8 showFx);

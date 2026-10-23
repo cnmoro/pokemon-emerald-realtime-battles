@@ -50,6 +50,7 @@ EternaCity_Mart_Pokemart_Secondary:
 	.2byte ITEM_SHINY_STONE @ mod: evolution item
 	.2byte ITEM_DUSK_STONE @ mod: evolution item
 	.2byte ITEM_DAWN_STONE @ mod: evolution item
+	.2byte ITEM_ICE_STONE @ mod: evolution item
 	.2byte ITEM_OVAL_STONE @ mod: evolution item
 	.2byte ITEM_KINGS_ROCK @ mod: evolution item
 	.2byte ITEM_METAL_COAT @ mod: evolution item
@@ -64,6 +65,8 @@ EternaCity_Mart_Pokemart_Secondary:
 	.2byte ITEM_REAPER_CLOTH @ mod: evolution item
 	.2byte ITEM_RAZOR_CLAW @ mod: evolution item
 	.2byte ITEM_RAZOR_FANG @ mod: evolution item
+	.2byte ITEM_PRISM_SCALE @ mod: evolution item
+	.2byte ITEM_LINKING_CORD @ mod: evolution item
 	pokemartlistend
 
 EternaCity_Mart_EventScript_Guitarist::

@@ -283,6 +283,7 @@ void CB2_InitRtBattle(void)
 {
     gPreBattleCallback1 = gMain.callback1;
     gMain.callback1 = CB1_RtBattle;
+    RtMoves_Init(); // the engine's legacy move table (power, effect, accuracy...) must be filled before anything reads it
     gRt = AllocZeroed(sizeof(struct RtBattle));
     {
         s32 i;

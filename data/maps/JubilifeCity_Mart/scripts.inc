@@ -39,6 +39,26 @@ JubilifeCity_Mart_Pokemart_Secondary:
 	.2byte ITEM_LEAF_STONE @ mod: evolution item
 	.2byte ITEM_MOON_STONE @ mod: evolution item
 	.2byte ITEM_SUN_STONE @ mod: evolution item
+	.2byte ITEM_SHINY_STONE @ mod: evolution item
+	.2byte ITEM_DUSK_STONE @ mod: evolution item
+	.2byte ITEM_DAWN_STONE @ mod: evolution item
+	.2byte ITEM_ICE_STONE @ mod: evolution item
+	.2byte ITEM_OVAL_STONE @ mod: evolution item
+	.2byte ITEM_KINGS_ROCK @ mod: evolution item
+	.2byte ITEM_METAL_COAT @ mod: evolution item
+	.2byte ITEM_DRAGON_SCALE @ mod: evolution item
+	.2byte ITEM_UP_GRADE @ mod: evolution item
+	.2byte ITEM_DEEP_SEA_TOOTH @ mod: evolution item
+	.2byte ITEM_DEEP_SEA_SCALE @ mod: evolution item
+	.2byte ITEM_PROTECTOR @ mod: evolution item
+	.2byte ITEM_ELECTIRIZER @ mod: evolution item
+	.2byte ITEM_MAGMARIZER @ mod: evolution item
+	.2byte ITEM_DUBIOUS_DISC @ mod: evolution item
+	.2byte ITEM_REAPER_CLOTH @ mod: evolution item
+	.2byte ITEM_RAZOR_CLAW @ mod: evolution item
+	.2byte ITEM_RAZOR_FANG @ mod: evolution item
+	.2byte ITEM_PRISM_SCALE @ mod: evolution item
+	.2byte ITEM_LINKING_CORD @ mod: evolution item
 	pokemartlistend
 
 JubilifeCity_Mart_EventScript_Woman::
