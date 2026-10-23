@@ -612,6 +612,21 @@ struct RtActorX
     u8 dashBuff;       // MOMENTUM talent: frames of the post-dash damage bonus
 };
 
+#define RT_STR_MAX 600     // beam struggle balance needed to win
+
+// beam struggle: two opposing beams locked together (rt_moves.c)
+struct RtStruggle
+{
+    u8 on;
+    u8 projA, projB;   // indices into gRt->proj
+    u8 ownA, ownB;     // actor ids
+    s16 bal;           // + = A winning
+    u16 timer;
+    s32 px, py;        // clash point (Q8)
+    u8 pressA, pressB; // presses this frame
+    u8 mashA, mashB;   // smoothed mash rate
+};
+
 struct RtBattle
 {
     u8 state;
@@ -757,6 +772,7 @@ struct RtBattle
     u16 fxDynUse[FX_COUNT];
     // per-actor extras (stamina, talents, AI style, hit pulse) and the arena modifier
     struct RtActorX ax[RT_MAX_ACTORS];
+    struct RtStruggle str;
     u16 lineBldy[2][DISPLAY_HEIGHT + 2]; // per-scanline BLDY (HBlank DMA), moved here from EWRAM
     u8 arenaMod;                       // ARENA_MOD_*
     u8 windAng;                        // ARENA_MOD_WIND: direction
@@ -814,6 +830,8 @@ void RtActor_TickStatus(struct RtActor *a);
 void RtActor_Faint(struct RtActor *a);
 void RtActor_Heal(struct RtActor *a, s32 amount);
 void RtActor_Damage(struct RtActor *a, s32 amount, u8 src, bool8 direct);
+bool8 RtStruggle_Involves(u8 actorId);
+void RtStruggle_Press(u8 actorId);
 bool8 RtActor_ChangeStage(struct RtActor *a, u8 stage, s8 delta, u8 src, bool8 showFx);
 void RtActor_SetFacingFromAngle(struct RtActor *a, u8 angle);
 u8 RtDirToAngle(u8 dir);
