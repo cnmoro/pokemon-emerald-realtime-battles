@@ -561,35 +561,51 @@ void RtFx_LineVBlank(void)
     REG_DMA0CNT = 1 | ((u32)(DMA_DEST_RELOAD | DMA_SRC_INC | DMA_REPEAT | DMA_16BIT | DMA_START_HBLANK | DMA_ENABLE) << 16);
 }
 
+static void WaveTimerStop(void);
 void RtFx_LineStop(void)
 {
+    WaveTimerStop();
     REG_DMA0CNT_H = 0;
     REG_BLDY = 0;
     SetHBlankCallback(NULL);
     DisableInterrupts(INTR_FLAG_HBLANK);
 }
 
-// heat-haze / psychic distortion: each scanline of the arena is shifted sideways
-static void HBlankCB_Wave(void)
+// heat-haze / psychic distortion: the arena is shifted sideways in bands of 4 scanlines. A per-line HBlank
+// interrupt (228 a frame) ate up to half of the CPU on slower builds; timer 2 fires every 4 lines instead
+// (4 * 1232 cycles: 57 periods make exactly one frame, so it stays in step with the screen)
+#define WAVE_TIMER_PERIOD (4 * 1232)
+extern IntrFunc gIntrTable[];
+static void TimerCB_Wave(void)
 {
-    u16 v = REG_VCOUNT;
-    if (v >= DISPLAY_HEIGHT - 1)
-        v = 0;
-    else
-        v++;
+    u16 v = REG_VCOUNT + 2;
+    s16 o = 0;
     if (v >= HUD_TOP && v < DISPLAY_HEIGHT - HUD_BOTTOM)
-    {
-        s16 o = (gSineTable[(u8)(v * 6 + gRt->frame * 5)] * gRt->waveAmp) >> 8;
-        REG_BG1HOFS = sLineHofs[0] + o;
-        REG_BG2HOFS = sLineHofs[0] + o;
-        REG_BG3HOFS = sLineHofs[0] + o;
-    }
-    else
-    {
-        REG_BG1HOFS = sLineHofs[0];
-        REG_BG2HOFS = sLineHofs[0];
-        REG_BG3HOFS = sLineHofs[0];
-    }
+        o = (gSineTable[(u8)(v * 6 + gRt->frame * 5)] * gRt->waveAmp) >> 8;
+    REG_BG1HOFS = sLineHofs[0] + o;
+    REG_BG2HOFS = sLineHofs[0] + o;
+    REG_BG3HOFS = sLineHofs[0] + o;
+}
+
+static void WaveTimerStart(void)
+{
+    if (REG_TM2CNT_H & TIMER_ENABLE)
+        return;
+    gIntrTable[7] = TimerCB_Wave; // INTR_FLAG_TIMER2
+    REG_TM2CNT_L = (u16)(0x10000 - WAVE_TIMER_PERIOD);
+    REG_TM2CNT_H = TIMER_ENABLE | TIMER_INTR_ENABLE | TIMER_1CLK;
+    EnableInterrupts(INTR_FLAG_TIMER2);
+}
+
+static void WaveTimerStop(void)
+{
+    if (!(REG_TM2CNT_H & TIMER_ENABLE))
+        return;
+    REG_TM2CNT_H = 0;
+    DisableInterrupts(INTR_FLAG_TIMER2);
+    REG_BG1HOFS = sLineHofs[0];
+    REG_BG2HOFS = sLineHofs[0];
+    REG_BG3HOFS = sLineHofs[0];
 }
 
 void RtFx_Dim(u8 level, u8 hold)
@@ -778,15 +794,12 @@ anim:
             gRt->waveAmp--;
         sLineHofs[0] = gRt->camX;
         if (gRt->waveAmp)
-        {
-            SetHBlankCallback(HBlankCB_Wave);
-            EnableInterrupts(INTR_FLAG_HBLANK);
-            SetGpuRegBits(REG_OFFSET_DISPSTAT, DISPSTAT_HBLANK_INTR);
-        }
+            WaveTimerStart();
     }
     if (!gRt->waveTimer || !gRt->waveAmp)
     {
         gRt->waveAmp = 0;
+        WaveTimerStop();
         SetHBlankCallback(NULL);
         DisableInterrupts(INTR_FLAG_HBLANK);
     }
@@ -1294,8 +1307,8 @@ void RtFx_DrawProjectiles(void)
             break;
         case PK_ZONE:
             {
-                s32 k, n = p->maxRadius > 18 ? 5 : 3;
                 bool8 still = (p->shape == FX_SPIKES16);
+                s32 k, n = still ? 3 : (p->maxRadius > 18 ? 5 : 3);
                 for (k = 0; k < n; k++)
                 {
                     u8 a = k * 256 / n + (still ? 0 : p->age * 3);

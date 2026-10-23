@@ -134,7 +134,7 @@ u16 RtActor_GetStat(struct RtActor *a, u8 stat)
 }
 
 // movement speed in Q8 px/frame
-u8 RtActor_SpeedPx(struct RtActor *a)
+u16 RtActor_SpeedPx(struct RtActor *a)
 {
     u32 s = RtActor_GetStat(a, STG_SPE);
     u32 ratio; // Q8
@@ -146,18 +146,31 @@ u8 RtActor_SpeedPx(struct RtActor *a)
     if (a->holdEffect == HOLD_EFFECT_MACHO_BRACE)
         s /= 2;
     ratio = s * 256 / (a->level * 2 + 10);
-    v = 192 + ratio * 140 / 256;
+    // the SPEED stat shows: a slow POKeMON plods (~0.55 px/frame), an average one walks (~1.2), a very fast
+    // one darts (up to ~1.85); ratio is the stat against what an average POKeMON of that level has
+    v = 110 + ratio * 230 / 256;
     if (a->mstatus == MST_PAR)
         v = v * 55 / 100;
     if (a->slowTimer)
         v = v * 60 / 100;
     if (a->trap)
         v = v * 35 / 100;
-    if (v < 160) v = 160;
-    if (v > 255) v = 255;
+    if (v < 140) v = 140;
+    if (v > 470) v = 470;
     if (a->mstatus == MST_PAR && v > 150)
         v = 150;
     return v;
+}
+
+// cooldown scale from the SPEED stat, in percent: fast POKeMON ready their moves sooner (85..115)
+u16 RtActor_SpeedCdPct(struct RtActor *a)
+{
+    u32 s = RtActor_GetStat(a, STG_SPE);
+    s32 ratio = s * 256 / (a->level * 2 + 10), pct;
+    pct = 122 - ratio * 22 / 256;
+    if (pct < 85) pct = 85;
+    if (pct > 115) pct = 115;
+    return pct;
 }
 
 bool8 RtActor_IsAlive(struct RtActor *a)
@@ -1222,6 +1235,15 @@ void RtActor_Update(struct RtActor *a)
     RtActor_TickStatus(a);
     if (!RtActor_IsAlive(a) || a->state == AST_FAINT || a->state == AST_GONE)
         return;
+    // a Fly / Dig / Dive that was cut short (sleep, freeze, a stun) must not leave the POKeMON up in the air,
+    // underground or untouchable
+    if (a->invuln && a->state != AST_CAST)
+    {
+        a->invuln = 0;
+        a->z = 0;
+        a->hidden = FALSE;
+    }
+    RtMove_TossTick(a);
     RtStamina_Tick(a);
 
     // knockback
