@@ -591,7 +591,7 @@ static void SpinBurst(struct RtActor *a, u8 pal, u8 pal2, u8 n)
 
 static bool8 IsSpinMove(u16 move)
 {
-    if (move == MOVE_RAPID_SPIN || move == MOVE_ROLLING_KICK)
+    if (move == MOVE_RAPID_SPIN || move == MOVE_ROLLING_KICK || move == MOVE_FLAME_WHEEL)
         return TRUE;
 #ifdef MOVE_GYRO_BALL
     if (move == MOVE_GYRO_BALL)
@@ -600,21 +600,65 @@ static bool8 IsSpinMove(u16 move)
     return FALSE;
 }
 
-// Seismic Toss / Vital Throw (rt_moves.c moves the POKeMON): the grab, the flight and the slam
+#define TOSS_RISE_LAST 22 // last frame of the leap (TOSS_RISE in rt_moves.c)
+// Seismic Toss / Vital Throw (rt_moves.c moves the POKeMON): the grab, the leap and the slam
 void RtVfx_TossGrab(struct RtActor *a, struct RtActor *t)
 {
     struct RtPart *p;
     s32 k;
-    ImpactRing(FXP_E_FIGHT, t->x, CenterY(t), 6, 3, 12);
-    for (k = 0; k < 6; k++)
+    // a firm grip, not a blow: a tight flash where the hands close and the thrower's power welling up
+    p = Sp(FX_FLARE32, FXP_E_WHITE, t->x, CenterY(t), 6);
+    Scale(p, 10, 0);
+    Blend(p);
+    for (k = 0; k < 4; k++)
     {
-        p = Fly(FX_SPEED16, FXP_E_WHITE, t->x, CenterY(t), k * 43, 420, 8, FALSE);
-        Stretch(p);
+        p = Fly(FX_SPARKLE8, FXP_E_GOLD, t->x, CenterY(t), k * 64 + 32, 200, 10, FALSE);
+        Drag(p, 13);
     }
     p = Sp(FX_GLOW32, FXP_E_HOT, a->x, CenterY(a), 14);
     Scale(p, 18, 1);
     Blend(p);
     PlaySE(SE_M_VITAL_THROW);
+}
+
+// the leap: dust kicked up at take-off, wind rushing past, a glowing trail circling the pair as they spin
+void RtVfx_TossRise(struct RtActor *a, struct RtActor *t, s32 j)
+{
+    struct RtPart *p;
+    s32 k, cy = a->y - TO_FX(a->z + a->height / 2);
+    if (j == 1)
+    {
+        ImpactRing(FXP_E_DUST, a->x, a->y, 8, 3, 14);
+        for (k = 0; k < 8; k++)
+        {
+            p = Fly(FX_PUFF16, FXP_E_DUST, a->x, a->y, k * 32, 300, 22, TRUE);
+            Blend(p);
+            Drag(p, 13);
+        }
+        PlaySE(SE_M_JUMP_KICK);
+    }
+    if ((j & 1) == 0)
+    {
+        // wind streaks rushing down past them
+        p = Sp(FX_SPEED16, FXP_E_WHITE, a->x + TO_FX((s32)(Rnd() % 25) - 12), cy + TO_FX(10 + (Rnd() & 7)), 7);
+        if (p)
+        {
+            p->angle = 192;
+            p->vy = TO_FX(3);
+            p->flags |= PF_SCALE;
+            p->scale = 20;
+            RtFx_X(p)->flags |= PX_STRETCH;
+        }
+    }
+    // the orbit: a glowing mark swinging round the spinning pair
+    p = Sp(FX_SPARK8, FXP_E_FIGHT, a->x + RtCos((u8)(j * 24)) * 16, cy - TO_FX(4) + RtSin((u8)(j * 24)) * 6, 10);
+    Drag(p, 14);
+    if (j == TOSS_RISE_LAST)
+    {
+        p = Sp(FX_FLARE32, FXP_E_GOLD, a->x, cy - TO_FX(6), 8);
+        Scale(p, 14, 0);
+        Blend(p);
+    }
 }
 
 void RtVfx_TossTrail(struct RtActor *t, u8 ang)
@@ -1710,6 +1754,20 @@ void RtVfx_Execute(struct RtActor *a, u16 move)
     case VS_QUAKE:
         RtFx_Shake(4, 30);
         break;
+    case VS_VORTEX:
+        {
+            s32 k;
+            u8 sh = v->pal == FXP_E_FIRE ? FX_FIRE16 : (v->pal == FXP_E_WATER ? FX_FOAM8 : FX_GRAIN8);
+            for (k = 0; k < 10; k++)
+            {
+                u8 ang = k * 256 / 10;
+                p = Fly(sh, (k & 1) ? v->pal2 : (v->pal == FXP_E_SAND ? FXP_SAND : v->pal), a->x + RtCos(ang) * a->radius, CenterY(a) + RtSin(ang) * a->radius / 2,
+                        ang + 48, 360, 14, FALSE);
+                Drag(p, 14);
+            }
+            ImpactRing(v->pal == FXP_E_SAND ? FXP_E_DUST : v->pal, a->x, CenterY(a), 5, 3, 12);
+        }
+        break;
     case VS_METEOR:
         {
             s32 k;
@@ -2288,6 +2346,8 @@ static bool8 DrawMelee(struct RtProj *p, const struct RtVfxDef *v, s32 sx, s32 s
 {
     u8 total = p->param2 ? 8 : 8;
     u8 fr = p->age * 3 / (total + 1);
+    if (p->move == MOVE_SEISMIC_TOSS || p->move == MOVE_VITAL_THROW)
+        return TRUE; // a grab, not a blow: nothing swings
     if (fr > 2)
         fr = 2;
     switch (v->style)
@@ -2326,7 +2386,29 @@ static bool8 DrawWaveStyle(struct RtProj *p, const struct RtVfxDef *v, s32 sx, s
             bool8 across = RtCos(p->angle) > 181 || RtCos(p->angle) < -181; // travelling mostly sideways
             u8 flip = RtCos(p->angle) < 0 ? RFD_HFLIP : 0;
             u8 cf = gRtFxShapes[FX_CREST32].frames ? gRtFxShapes[FX_CREST32].frames : 1;
-            step = across ? 12 : 18;
+            if (across)
+            {
+                // travelling sideways: one long breaking wave, bowed forward in the middle like a crescent and
+                // towering highest there, its crest curling and foaming along the whole front
+                step = 12;
+                n = (half * 2) / step + 1;
+                if (n > 7)
+                    n = 7;
+                for (i = 0; i < n; i++)
+                {
+                    s32 k = n == 1 ? 0 : -half + (half * 2) * i / (n - 1);
+                    s32 q = half ? k * 16 / half : 0;
+                    s32 fo = 10 - q * q * 10 / 256 + RtSin(i * 90 + p->age * 10) * 2 / 256;
+                    s32 x = sx + RtCos(perp) * k / 256 + RtCos(p->angle) * fo / 256;
+                    s32 y = sy + RtSin(perp) * k / 256 + RtSin(p->angle) * fo / 512;
+                    u8 fr = ((p->age >> 2) + i) % 3;
+                    RtFx_Draw(FX_SWELL32, fr, v->pal, x, y - 10, 4, 0, 16, flip);
+                    if (q > -11 && q < 11)
+                        RtFx_Draw(FX_SWELL32, (fr + 1) % 3, v->pal, x - RtCos(p->angle) * 12 / 256, y - 16, 4, 0, 16, flip);
+                }
+                return TRUE;
+            }
+            step = 18;
             n = (half * 2) / step + 1;
             if (n > 7)
                 n = 7;
@@ -2415,19 +2497,31 @@ static bool8 DrawZone(struct RtProj *p, const struct RtVfxDef *v, s32 sx, s32 sy
     switch (v->style)
     {
     case VS_VORTEX:
-        // a ring of fire / water / sand spinning around the spot, back half behind, front half in front
-        n = 8;
-        for (k = 0; k < n; k++)
+        // a tornado of fire / water / sand whirling round the spot (as Fire Spin traps its foe in the anime): three
+        // rings stacked up, each wider and faster than the one below, the back half behind the POKeMON
         {
-            u8 a = k * 256 / n + p->age * 6;
-            s32 r = p->maxRadius;
-            s32 x = sx + RtCos(a) * r / 256, y = sy + RtSin(a) * r / 512;
+            s32 t;
             u8 shape = v->pal == FXP_E_FIRE ? FX_FIRE16 : (v->pal == FXP_E_WATER ? FX_JET16 : FX_PUFF16);
-            u8 fr = (p->age / 3 + k) % gRtFxShapes[shape].frames;
-            if (shape == FX_JET16)
-                RtFx_Draw(shape, fr, (k & 1) ? FXP_E_WATER : FXP_E_FOAM, x, y - 6, RtSin(a) > 0 ? 1 : 4, a + 64, 16, RFD_AFFINE);
-            else
-                RtFx_Draw(shape, fr, v->pal == FXP_E_SAND ? FXP_SAND : v->pal, x, y - 6 - (k & 1) * 4, RtSin(a) > 0 ? 1 : 4, 0, shape == FX_PUFF16 ? 22 : 16, (shape == FX_PUFF16 && v->pal != FXP_E_SAND) ? RFD_BLEND : 0);
+            u8 nf = gRtFxShapes[shape].frames ? gRtFxShapes[shape].frames : 1;
+            for (t = 0; t < 3; t++)
+            {
+                n = t == 0 ? 4 : 3;
+                for (k = 0; k < n; k++)
+                {
+                    u8 a = k * 256 / n + p->age * (7 + t * 3) + t * 21;
+                    s32 r = p->maxRadius * (8 + t * 2) / 10;
+                    s32 x = sx + RtCos(a) * r / 256, y = sy + RtSin(a) * r / 512 - 4 - t * 11 + RtSin(p->age * 9 + k * 40) * 2 / 256;
+                    u8 fr = (p->age / 3 + t + (k & 1)) % nf; // few distinct frames: fewer tiles to stream
+                    u8 b = RtSin(a) > 0 ? 1 : 4;
+                    if (shape == FX_JET16)
+                    {
+                            RtFx_Draw(FX_JET16, fr, (k & 1) ? FXP_E_FOAM : FXP_E_WATER, x, y, b, 0, 16, RtSin(a) > 0 ? RFD_HFLIP : 0);
+                    }
+                    else
+                        RtFx_Draw(shape, fr, v->pal == FXP_E_SAND ? FXP_SAND : ((k + t) & 1 ? v->pal : v->pal2), x, y, b, 0, 16,
+                                  (shape == FX_PUFF16 && v->pal != FXP_E_SAND) ? RFD_BLEND : 0);
+                }
+            }
         }
         return TRUE;
     case VS_CLOUD:
@@ -2453,6 +2547,23 @@ bool8 RtVfx_ZoneTick(struct RtProj *p)
     switch (v->style)
     {
     case VS_VORTEX:
+        if (p->age == 1 || (p->age & 31) == 16)
+        {
+            // flung out all the way round, whirling outward
+            s32 k, nb = p->age == 1 ? 10 : 5;
+            u8 sh = v->pal == FXP_E_FIRE ? FX_FIRE16 : (v->pal == FXP_E_WATER ? FX_FOAM8 : FX_GRAIN8);
+            for (k = 0; k < nb; k++)
+            {
+                u8 a = k * 256 / nb + p->age * 5;
+                pt = Fly(sh, (k & 1) ? v->pal2 : (v->pal == FXP_E_SAND ? FXP_SAND : v->pal), p->x + RtCos(a) * p->maxRadius,
+                         p->y + RtSin(a) * p->maxRadius / 2 - TO_FX(6 + (k % 3) * 8), a + 40, p->age == 1 ? 420 : 300, 14, FALSE);
+                Drag(pt, 14);
+                if (sh == FX_FIRE16)
+                    Fade(pt, FXP_E_FIRE, 8, FXP_E_SMOKE, 4);
+            }
+            if (p->age == 1)
+                ImpactRing(v->pal == FXP_E_SAND ? FXP_E_DUST : v->pal, p->x, p->y, 6, 4, 14);
+        }
         if ((p->age & 3) == 0)
         {
             u8 a = Random();
@@ -3541,6 +3652,17 @@ bool8 RtVfx_RushTick(struct RtActor *a, u16 move)
         }
         if ((a->act.timer & 7) == 0)
             SpinBurst(a, v->pal, v->pal2, 8);
+        {
+            s32 k;
+            for (k = 0; k < 4; k++)
+            {
+                u8 ang = a->act.timer * 24 + k * 64;
+                p = Sp(v->pal == FXP_E_FIRE ? FX_FIRE16 : FX_SPARK8, (k & 1) ? v->pal2 : v->pal,
+                       a->x + RtCos(ang) * (a->radius + 6), CenterY(a) + RtSin(ang) * (a->radius + 6) / 2, 4);
+                if (p && v->pal != FXP_E_FIRE)
+                    p->frameRate = 1;
+            }
+        }
     }
     if ((a->act.timer & 3) == 1)
         AddGhost(a, 0, a->x, a->y, 10);

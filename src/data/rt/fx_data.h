@@ -136,6 +136,7 @@ const struct RtFxShape gRtFxShapes[] = {
   {34236,1,2,4,16,16}, // EYE16B
   {34244,0,1,1,8,8}, // QMARK8
   {34245,2,3,16,32,32}, // SURGE32
+  {34293,2,3,16,32,32}, // SWELL32
 };
 const u16 gRtFxPalettes[][16] = {
   {0x0000,0x18E7,0x18E7,0x1CE8,0x254A,0x2D8D,0x39F0,0x4252,0x4A95,0x52D6,0x56F8,0x5F39,0x635B,0x6B9C,0x77DE,0x7FFF}, // NORMAL
