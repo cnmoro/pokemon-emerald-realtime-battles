@@ -32,7 +32,30 @@ def subsample(idx, maxn, keep=-1):
         near=min(range(len(sel)),key=lambda q:abs(sel[q]-keep)); sel[near]=keep; sel=sorted(set(sel))
     return sel
 def process(dex, quant_cache=None):
-    d='%s/%04d'%(SC,dex); A,shadow=load_anims(d)
+    return _process_dir('%s/%04d'%(SC,dex), dex)
+def process_path(path, key):
+    # path like '0006/0001' (relative to SpriteCollab/sprite)
+    return _process_dir('%s/%s'%(SC,path), key)
+def _quantize(imgs):
+    # reduce all opaque pixels of all sheets to <=15 colours (median cut), return (colors, cidx)
+    px=[(p[0],p[1],p[2]) for im in imgs.values() for p in im.getdata() if p[3]>127]
+    strip=Image.new('RGB',(len(px),1)); strip.putdata(px)
+    q=strip.quantize(colors=15,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE)
+    qp=q.getpalette()[:45]
+    pal5=[]
+    for i in range(0,len(qp),3):
+        c=(qp[i]>>3,qp[i+1]>>3,qp[i+2]>>3)
+        if c not in pal5: pal5.append(c)
+    pal5=pal5[:15]
+    cache={}
+    def near(c):
+        return min(range(len(pal5)),key=lambda i:(pal5[i][0]-c[0])**2*3+(pal5[i][1]-c[1])**2*4+(pal5[i][2]-c[2])**2*2)
+    for p in set(px):
+        c=(p[0]>>3,p[1]>>3,p[2]>>3)
+        if c not in cache: cache[c]=near(c)
+    return pal5,cache
+def _process_dir(d, dex):
+    A,shadow=load_anims(d)
     def res(n):
         seen=0
         while n in A and A[n][0]=='copy' and seen<5: n=A[n][1]; seen+=1
@@ -48,10 +71,16 @@ def process(dex, quant_cache=None):
             if px[3]>127:
                 c=(px[0]>>3,px[1]>>3,px[2]>>3)
                 if c not in colors: colors.append(c)
-    assert len(colors)<=15, (dex,len(colors))
-    # sort by luminance for nicer ordering
-    colors.sort(key=lambda c:(c[0]*3+c[1]*6+c[2]))
-    cidx={c:i+1 for i,c in enumerate(colors)}
+    if len(colors)<=15:
+        # sort by luminance for nicer ordering
+        colors.sort(key=lambda c:(c[0]*3+c[1]*6+c[2]))
+        cidx={c:i+1 for i,c in enumerate(colors)}
+    else:
+        pal5,m=_quantize(imgs)
+        order=sorted(range(len(pal5)),key=lambda i:(pal5[i][0]*3+pal5[i][1]*6+pal5[i][2]))
+        rank={o:k+1 for k,o in enumerate(order)}
+        colors=[pal5[o] for o in order]
+        cidx={c:rank[i] for c,i in m.items()}
     pal=[(0,0,0)]+colors+[(0,0,0)]*(15-len(colors))
     anims={}; frames=[]
     for an,maxn,rows in ANIMS:
@@ -150,6 +179,16 @@ def make_frame(fr,fw,fh,cidx,dur):
                     tiles.append(v[0]|(v[1]<<4))
     return dict(x=ox-cx,y=oy-cy,shape=(sw,sh,shp,sz),tiles=bytes(tiles),dur=dur)
 if __name__=='__main__':
+    if sys.argv[1]=='forms':
+        from forms import FORMS
+        out={}
+        for i,(dex,fd,nm) in enumerate(FORMS):
+            p='%04d/%s'%(dex,fd)
+            if not (os.path.exists('%s/%s/AnimData.xml'%(SC,p)) and os.path.exists('%s/%s/Walk-Anim.png'%(SC,p))):
+                print('DROP',nm,p); continue
+            try: out[i]=process_path(p,i); print('ok',i,nm,len(out[i]['pal'])-1)
+            except Exception as e: print('DROP(err)',nm,p,e)
+        pickle.dump(out,open(os.path.join(WORK,'f.pkl'),'wb')); sys.exit()
     out={}
     a,b=int(sys.argv[1]),int(sys.argv[2])
     for dex in range(a,b+1):

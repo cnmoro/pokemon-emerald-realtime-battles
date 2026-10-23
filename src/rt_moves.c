@@ -1319,6 +1319,7 @@ static void StruggleResolve(bool8 aWins, bool8 draw)
     wo->act.aimBase = wo->act.angle;
     wp->param |= 0x100;
     wp->hitMask = 0;
+    RtKi_Gain(wo, 250);
     RtFx_Impact(RTI_STAR, FXP_GOLD, s->px, s->py);
     RtFx_Flash(0, 6);
     RtFx_Shake(4, 16);
@@ -2801,6 +2802,7 @@ bool8 RtMove_TryStart(struct RtActor *a, u8 slot, u8 angle)
         RtFx_Burst(FX_PLUS8, FXP_GOLD, a->x, a->y - TO_FX(a->height / 2), 4, 1, 24);
     }
     a->cd[slot] = (u32)a->cd[slot] * RtExt_CdPct(a) / 100;
+    RtKi_Spend(a, RtKi_MoveCost(move));
     if (a->holdEffect == HOLD_EFFECT_CHOICE_BAND && !a->choiceMove)
         a->choiceMove = move;
     if (a->ability == ABILITY_TRUANT)
