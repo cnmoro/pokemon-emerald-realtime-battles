@@ -42,7 +42,8 @@ static struct RtPart *Sp(u8 shape, u8 pal, s32 x, s32 y, u8 life)
 {
     struct RtPart *p;
     // the frame is running long: keep only every other cosmetic particle until it recovers
-    if (gRtFxHeavy && ((++sThin) & 1))
+    ++sThin;
+    if (gRtFxHeavy && (sThin % 3) != 0)
         return NULL;
     p = RtFx_Spawn(shape, pal, x, y, life);
     if (p)

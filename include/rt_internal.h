@@ -17,6 +17,8 @@
 #define FXS 8
 #define RT_UI_TILE_BASE 256
 #define RT_FX_TILE_BASE 304
+#define RT_STAMINA_MAX 300
+#define RT_STAMINA_DASH 100
 #define TO_FX(v) ((s32)(v) << FXS)
 #define FROM_FX(v) ((s32)(v) >> FXS)
 
@@ -32,8 +34,8 @@
 #define ARENA_BORDER 1         // metatiles of border on each side
 #define RT_SOLID_WALK 1
 #define RT_SOLID_SHOT 2
-#define HUD_TOP 16
-#define HUD_BOTTOM 16
+#define HUD_TOP 0
+#define HUD_BOTTOM 0
 
 #define MAX_OBSTACLES 24
 
@@ -590,6 +592,16 @@ struct RtProp
     s16 z;
 };
 
+struct RtActorX
+{
+    u16 stamina;       // dash stamina (0..RT_STAMINA_MAX)
+    u8 staminaWait;    // frames before stamina refills after a dash
+    u8 pulse;          // frames of the 'hit' pulse (sprite grows and shrinks back)
+    u8 talents;        // TALENT_* bits active for this battle (Lv 20 / 40 / 60 picks)
+    u8 aiStyle;        // AI_STYLE_*
+    u8 dashBuff;       // MOMENTUM talent: frames of the post-dash damage bonus
+};
+
 struct RtBattle
 {
     u8 state;
@@ -729,6 +741,13 @@ struct RtBattle
     s32 lerpProjX[RT_MAX_PROJ], lerpProjY[RT_MAX_PROJ];
     u8 lerpT;            // 100 = draw the current positions
     u16 lerpQ8;          // lerpT as 0..256
+    // per-actor extras (stamina, talents, AI style, hit pulse) and the arena modifier
+    struct RtActorX ax[RT_MAX_ACTORS];
+    u16 lineBldy[2][DISPLAY_HEIGHT + 2]; // per-scanline BLDY (HBlank DMA), moved here from EWRAM
+    u8 arenaMod;                       // ARENA_MOD_*
+    u8 windAng;                        // ARENA_MOD_WIND: direction
+    u16 modTimer;
+    s32 modX, modY;                    // ARENA_MOD_ERUPTION: next eruption point
 };
 
 // battle pace (OPTION menu, BATTLE SPEED): percentage of frames that advance the fight
@@ -895,6 +914,22 @@ void Rt_GiveExpForFaint(struct RtActor *fainted);
 void Rt_HandleCaught(void);
 u8 Rt_CountUsableParty(u8 side);
 void Rt_EnemySendNext(struct RtActor *slot);
+// rt_talent.c: dash stamina, talents, arena modifiers
+void RtStamina_Init(struct RtActor *a);
+void RtStamina_Tick(struct RtActor *a);
+bool8 RtStamina_Spend(struct RtActor *a);
+// talents: one of two per tier, picked in the SUMMARY (SKILLS page); stored in the unused ribbon bits
+enum { TALENT_LIGHT_STEP, TALENT_THICK_HIDE, TALENT_PREDATOR, TALENT_QUICK_MIND, TALENT_MOMENTUM, TALENT_LAST_STAND };
+void RtTalent_Init(struct RtActor *a, struct Pokemon *mon);
+bool8 RtTalent_Has(struct RtActor *a, u8 talent);
+u16 RtTalent_StatMul(struct RtActor *a, u8 stat);
+void RtTalent_OnHit(struct RtActor *v, s32 *amount, u8 src);
+u16 RtExt_CdPct(struct RtActor *a);
+enum { ARENA_MOD_NONE, ARENA_MOD_ERUPTION, ARENA_MOD_FOG, ARENA_MOD_WIND, ARENA_MOD_COUNT };
+void RtMod_Setup(void);
+void RtMod_Tick(void);
+u16 RtMod_RangePct(void);
+enum { AI_STYLE_BALANCED, AI_STYLE_AGGRESSIVE, AI_STYLE_KITER, AI_STYLE_TRICKSTER };
 u16 Rt_Random(u16 n);
 
 // shared strings

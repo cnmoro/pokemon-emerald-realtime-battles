@@ -2674,13 +2674,17 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
                 retVal += substruct3->victoryRibbon;
                 retVal += substruct3->artistRibbon;
                 retVal += substruct3->effortRibbon;
-                retVal += substruct3->marineRibbon;
-                retVal += substruct3->landRibbon;
-                retVal += substruct3->skyRibbon;
+                // marine/land/sky ribbons were never distributed: their bits hold the talent picks
                 retVal += substruct3->countryRibbon;
                 retVal += substruct3->nationalRibbon;
                 retVal += substruct3->earthRibbon;
                 retVal += substruct3->worldRibbon;
+            }
+            break;
+        case MON_DATA_TALENT_BITS:
+            {
+                struct PokemonSubstruct3 *substruct3 = GetSubstruct3(boxMon);
+                retVal = substruct3->marineRibbon | (substruct3->landRibbon << 1) | (substruct3->skyRibbon << 2);
             }
             break;
         case MON_DATA_RIBBONS:
@@ -2697,9 +2701,6 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
                        | (substruct3->victoryRibbon << 17)
                        | (substruct3->artistRibbon << 18)
                        | (substruct3->effortRibbon << 19)
-                       | (substruct3->marineRibbon << 20)
-                       | (substruct3->landRibbon << 21)
-                       | (substruct3->skyRibbon << 22)
                        | (substruct3->countryRibbon << 23)
                        | (substruct3->nationalRibbon << 24)
                        | (substruct3->earthRibbon << 25)
@@ -3110,6 +3111,15 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
         case MON_DATA_EFFORT_RIBBON:
             SET8(GetSubstruct3(boxMon)->effortRibbon);
             break;
+        case MON_DATA_TALENT_BITS:
+        {
+            u8 bits = *(const u8 *)data;
+            struct PokemonSubstruct3 *substruct3 = GetSubstruct3(boxMon);
+            substruct3->marineRibbon = bits & 1;
+            substruct3->landRibbon = (bits >> 1) & 1;
+            substruct3->skyRibbon = (bits >> 2) & 1;
+            break;
+        }
         case MON_DATA_MARINE_RIBBON:
             SET8(GetSubstruct3(boxMon)->marineRibbon);
             break;
@@ -4834,6 +4844,17 @@ u32 GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode mode, u16 
             case EVO_LEVEL_BATTLE_ONLY:
                 if (mode == EVO_MODE_BATTLE_ONLY && evolutions[i].param <= level)
                     conditionsMet = TRUE;
+                break;
+            // mod: no trading needed. Plain trade evolutions happen on level-up from Lv 36, item trade
+            // evolutions on level-up while holding the item (the extra condition below checks it)
+            case EVO_TRADE:
+                if (mode == EVO_MODE_NORMAL)
+                {
+                    if (evolutions[i].params == NULL || evolutions[i].params[0].condition == CONDITIONS_END)
+                        conditionsMet = (level >= 36);
+                    else
+                        conditionsMet = TRUE;
+                }
                 break;
             }
 

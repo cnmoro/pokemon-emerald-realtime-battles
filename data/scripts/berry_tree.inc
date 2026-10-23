@@ -180,10 +180,6 @@ BerryTree_EventScript_PickBerry::
 	showberrydescription
 	playfanfare MUS_DP_OBTAIN_BERRY
 	waitmessage
-	waitfanfare
-	waitbuttonpress
-	message BerryTree_Text_PutAwayBerry
-	waitmessage
 	waitbuttonpress
 	hideitemdescription
 	release

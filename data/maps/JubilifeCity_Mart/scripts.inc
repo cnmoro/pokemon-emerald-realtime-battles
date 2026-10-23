@@ -33,6 +33,12 @@ JubilifeCity_Mart_EventScript_Clerk2::
 JubilifeCity_Mart_Pokemart_Secondary:
 	.2byte ITEM_ORANGE_MAIL @ FODO: Implement ITEM_AIR_MAIL
 	.2byte ITEM_HEAL_BALL
+	.2byte ITEM_FIRE_STONE @ mod: evolution item
+	.2byte ITEM_WATER_STONE @ mod: evolution item
+	.2byte ITEM_THUNDER_STONE @ mod: evolution item
+	.2byte ITEM_LEAF_STONE @ mod: evolution item
+	.2byte ITEM_MOON_STONE @ mod: evolution item
+	.2byte ITEM_SUN_STONE @ mod: evolution item
 	pokemartlistend
 
 JubilifeCity_Mart_EventScript_Woman::

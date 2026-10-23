@@ -1173,9 +1173,13 @@ u32 GetAdjustedIvData(struct Pokemon *mon, u32 stat)
     return GetMonData(mon, MON_DATA_HP_IV + stat);
 }
 
+static EWRAM_DATA u8 sTalentWin = 0;   // window id + 1 (0 = closed)
+static EWRAM_DATA u8 sTalentCur = 0;
+
 void ShowPokemonSummaryScreen(u8 mode, void *mons, u8 monIndex, u8 maxMonIndex, void (*callback)(void))
 {
     sMonSummaryScreen = AllocZeroed(sizeof(*sMonSummaryScreen));
+    sTalentWin = 0;
     sMonSummaryScreen->mode = mode;
     sMonSummaryScreen->monList.mons = mons;
     sMonSummaryScreen->curMonIndex = monIndex;
@@ -1686,10 +1690,118 @@ static void ClearStatLabel(u32 length, u32 statsCoordX, u32 statsCoordY)
         FillBgTilemapBufferRect(1, blankStatsBlock, statsCoordX + blankOffset + i, statsCoordY, 1, 1, 2);
 }
 
+// mod: talents (real-time battles), shown on the SKILLS page with START: one of two per tier (Lv 20/40/60),
+// SELECT moves between the tiers, A swaps the pick, START/B close
+static const struct WindowTemplate sTalentWinTemplate = { .bg = 0, .tilemapLeft = 11, .tilemapTop = 7, .width = 19, .height = 6, .paletteNum = 6, .baseBlock = 830 };
+static const u8 sTalentNames[6][12] = {
+    _("Light Step"), _("Thick Hide"), _("Predator"), _("Quick Mind"), _("Momentum"), _("Last Stand")
+};
+static const u8 sTalentDesc[6][28] = {
+    _("dash costs 25% less"), _("takes 8% less damage"), _("KO heals 10% HP"),
+    _("moves recharge 10% faster"), _("+10% dmg after a dash"), _("+20% dmg below 1/3 HP")
+};
+
+static void DrawTalents(void)
+{
+    static const u8 sTierLv[3] = {20, 40, 60};
+    static const u8 sColOn[] = {3, 1, 2}, sColOff[] = {3, 2, 3}, sColDesc[] = {3, 7, 2};
+    struct Pokemon *mon = &sMonSummaryScreen->currentMon;
+    u8 bits = GetMonData(mon, MON_DATA_TALENT_BITS), i, w;
+    u8 lv = sMonSummaryScreen->summary.level;
+    if (!sTalentWin)
+        sTalentWin = AddWindow(&sTalentWinTemplate) + 1;
+    w = sTalentWin - 1;
+    FillWindowPixelBuffer(w, PIXEL_FILL(3));
+    for (i = 0; i < 3; i++)
+    {
+        u8 pick = (bits >> i) & 1, *str;
+        bool8 open = lv >= sTierLv[i];
+        str = ConvertIntToDecimalStringN(gStringVar1, sTierLv[i], STR_CONV_MODE_LEFT_ALIGN, 2);
+        *str = EOS;
+        if (i == sTalentCur)
+            AddTextPrinterParameterized3(w, FONT_SMALL, 0, i * 11, sColDesc, TEXT_SKIP_DRAW, (const u8[]){CHAR_RIGHT_ARROW, EOS});
+        AddTextPrinterParameterized3(w, FONT_SMALL, 8, i * 11, sColOff, TEXT_SKIP_DRAW, gStringVar1);
+        AddTextPrinterParameterized3(w, FONT_SMALL, 22, i * 11, open ? sColOn : sColOff, TEXT_SKIP_DRAW, sTalentNames[i * 2 + pick]);
+        AddTextPrinterParameterized3(w, FONT_SMALL, 88, i * 11, sColOff, TEXT_SKIP_DRAW, sTalentNames[i * 2 + (pick ^ 1)]);
+    }
+    AddTextPrinterParameterized3(w, FONT_SMALL, 8, 33, sColDesc, TEXT_SKIP_DRAW, sTalentDesc[sTalentCur * 2 + ((bits >> sTalentCur) & 1)]);
+    PutWindowTilemap(w);
+    CopyWindowToVram(w, COPYWIN_FULL);
+    ScheduleBgCopyTilemapToVram(0);
+}
+
+static void CloseTalents(void)
+{
+    if (sTalentWin)
+    {
+        ClearWindowTilemap(sTalentWin - 1);
+        RemoveWindow(sTalentWin - 1);
+        sTalentWin = 0;
+        if (sMonSummaryScreen->currPageIndex == PSS_PAGE_SKILLS)
+        {
+            // the talent window covered the stat labels: put them back
+            PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_LEFT);
+            PutWindowTilemap(PSS_LABEL_WINDOW_POKEMON_SKILLS_STATS_RIGHT);
+            PutWindowTilemap(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_LEFT));
+            PutWindowTilemap(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_RIGHT));
+        }
+        ScheduleBgCopyTilemapToVram(0);
+    }
+}
+
+static bool8 HandleTalentInput(void)
+{
+    static const u8 sTierLv[3] = {20, 40, 60};
+    if (!sTalentWin)
+    {
+        if (JOY_NEW(START_BUTTON) && sMonSummaryScreen->currPageIndex == PSS_PAGE_SKILLS && !sMonSummaryScreen->summary.isEgg)
+        {
+            sTalentCur = 0;
+            PlaySE(SE_SELECT);
+            DrawTalents();
+            return TRUE;
+        }
+        return FALSE;
+    }
+    if (JOY_NEW(SELECT_BUTTON))
+    {
+        sTalentCur = (sTalentCur + 1) % 3;
+        PlaySE(SE_SELECT);
+        DrawTalents();
+    }
+    else if (JOY_NEW(A_BUTTON))
+    {
+        struct Pokemon *mon = &sMonSummaryScreen->currentMon;
+        if (sMonSummaryScreen->summary.level >= sTierLv[sTalentCur] && !sMonSummaryScreen->isBoxMon)
+        {
+            u8 bits = GetMonData(mon, MON_DATA_TALENT_BITS) ^ (1 << sTalentCur);
+            SetMonData(mon, MON_DATA_TALENT_BITS, &bits);
+            SetMonData(&gPlayerParty[sMonSummaryScreen->curMonIndex], MON_DATA_TALENT_BITS, &bits);
+            PlaySE(SE_SUCCESS);
+        }
+        else
+            PlaySE(SE_FAILURE);
+        DrawTalents();
+    }
+    else if (JOY_NEW(START_BUTTON | B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        CloseTalents();
+    }
+    else if (JOY_NEW(DPAD_ANY))
+    {
+        CloseTalents();
+        return FALSE; // let the page / POKeMON change happen
+    }
+    return TRUE;
+}
+
 static void Task_HandleInput(u8 taskId)
 {
     if (MenuHelpers_ShouldWaitForLinkRecv() != TRUE && !gPaletteFade.active)
     {
+        if (HandleTalentInput())
+            return;
         if (JOY_NEW(DPAD_UP))
         {
             ChangeSummaryPokemon(taskId, -1);

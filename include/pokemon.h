@@ -108,6 +108,7 @@ enum MonData {
     MON_DATA_WORLD_RIBBON,
     MON_DATA_MODERN_FATEFUL_ENCOUNTER,
     MON_DATA_KNOWN_MOVES,
+    MON_DATA_TALENT_BITS, // real-time battles: Lv 20/40/60 talent picks (in the never-distributed marine/land/sky ribbon bits)
     MON_DATA_RIBBON_COUNT,
     MON_DATA_RIBBONS,
     MON_DATA_ATK2,

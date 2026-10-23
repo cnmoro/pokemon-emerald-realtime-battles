@@ -26,6 +26,8 @@
 #define tExpShare data[7]
 #define tExpBonus data[8]
 #define tBattleSpeed data[9]  // menu order: 0 = 60 % .. 4 = 100 %
+#define tLevelCap data[10]
+#define tAutoHeal data[11]
 
 enum
 {
@@ -35,6 +37,8 @@ enum
     MENUITEM_EXPSHARE,
     MENUITEM_EXPBONUS,
     MENUITEM_BATTLESPEED,
+    MENUITEM_LEVELCAP,
+    MENUITEM_AUTOHEAL,
     MENUITEM_SOUND,
     MENUITEM_BUTTONMODE,
     MENUITEM_FRAMETYPE,
@@ -48,16 +52,21 @@ enum
     WIN_OPTIONS
 };
 
-#define OPTION_ROW_H      11   // 10 rows (EXP SHARE, EXP BONUS, BATTLE SPEED added) in the same window
-#define YPOS_EXPSHARE     (MENUITEM_EXPSHARE * OPTION_ROW_H)
-#define YPOS_EXPBONUS     (MENUITEM_EXPBONUS * OPTION_ROW_H)
-#define YPOS_BATTLESPEED  (MENUITEM_BATTLESPEED * OPTION_ROW_H)
-#define YPOS_TEXTSPEED    (MENUITEM_TEXTSPEED * OPTION_ROW_H)
-#define YPOS_BATTLESCENE  (MENUITEM_BATTLESCENE * OPTION_ROW_H)
-#define YPOS_BATTLESTYLE  (MENUITEM_BATTLESTYLE * OPTION_ROW_H)
-#define YPOS_SOUND        (MENUITEM_SOUND * OPTION_ROW_H)
-#define YPOS_BUTTONMODE   (MENUITEM_BUTTONMODE * OPTION_ROW_H)
-#define YPOS_FRAMETYPE    (MENUITEM_FRAMETYPE * OPTION_ROW_H)
+#define OPTION_ROW_H      11   // 10 visible rows; the list scrolls (12 options + CANCEL)
+#define OPTION_VISIBLE    10
+EWRAM_DATA static u8 sScroll = 0;
+#define YROW(i)           ((u8)(((i) - sScroll) * OPTION_ROW_H))
+#define YPOS_LEVELCAP     YROW(MENUITEM_LEVELCAP)
+#define YPOS_AUTOHEAL     YROW(MENUITEM_AUTOHEAL)
+#define YPOS_EXPSHARE YROW(MENUITEM_EXPSHARE)
+#define YPOS_EXPBONUS YROW(MENUITEM_EXPBONUS)
+#define YPOS_BATTLESPEED YROW(MENUITEM_BATTLESPEED)
+#define YPOS_TEXTSPEED YROW(MENUITEM_TEXTSPEED)
+#define YPOS_BATTLESCENE YROW(MENUITEM_BATTLESCENE)
+#define YPOS_BATTLESTYLE YROW(MENUITEM_BATTLESTYLE)
+#define YPOS_SOUND YROW(MENUITEM_SOUND)
+#define YPOS_BUTTONMODE YROW(MENUITEM_BUTTONMODE)
+#define YPOS_FRAMETYPE YROW(MENUITEM_FRAMETYPE)
 
 static void Task_OptionMenuFadeIn(u8 taskId);
 static void Task_OptionMenuProcessInput(u8 taskId);
@@ -83,6 +92,9 @@ static void FrameType_DrawChoices(u8 selection);
 static u8 ButtonMode_ProcessInput(u8 selection);
 static void ButtonMode_DrawChoices(u8 selection);
 static void DrawHeaderText(void);
+static void OnOff_DrawChoices(u8 selection, u8 y);
+static void RedrawAll(u8 taskId);
+static void ScrollTo(u8 taskId, u8 sel);
 static void DrawOptionMenuTexts(void);
 static void DrawBgWindowFrames(void);
 
@@ -102,6 +114,8 @@ static const u8 gText_RtExpShare5[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN
 static const u8 gText_RtExpShareAll[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ALL 6");
 static const u8 gText_RtExpBonus[]         = _("EXP BONUS");
 static const u8 gText_RtBattleSpeed[]      = _("BATTLE SPEED");
+static const u8 gText_RtLevelCap[]         = _("LEVEL CAP");
+static const u8 gText_RtAutoHeal[]         = _("AUTO HEAL");
 static const u8 gText_RtDifficultyEasy[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}EASY");
 static const u8 gText_RtDifficultyMedium[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}MEDIUM");
 static const u8 gText_RtDifficultyHard[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HARD");
@@ -137,6 +151,8 @@ static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
     [MENUITEM_EXPSHARE]    = gText_RtExpShare,
     [MENUITEM_EXPBONUS]    = gText_RtExpBonus,
     [MENUITEM_BATTLESPEED] = gText_RtBattleSpeed,
+    [MENUITEM_LEVELCAP]    = gText_RtLevelCap,
+    [MENUITEM_AUTOHEAL]    = gText_RtAutoHeal,
     [MENUITEM_SOUND]       = gText_Sound,
     [MENUITEM_BUTTONMODE]  = gText_ButtonMode,
     [MENUITEM_FRAMETYPE]   = gText_Frame,
@@ -272,6 +288,7 @@ void CB2_InitOptionMenu(void)
         gMain.state++;
         break;
     case 8:
+        sScroll = 0;
         PutWindowTilemap(WIN_OPTIONS);
         DrawOptionMenuTexts();
         gMain.state++;
@@ -300,6 +317,11 @@ void CB2_InitOptionMenu(void)
             gTasks[taskId].tBattleSpeed = sCodeToMenu[code < 5 ? code : 0];
         }
 
+        gTasks[taskId].tLevelCap = gSaveBlock2Ptr->optionsRtLevelCap & 1;
+        gTasks[taskId].tAutoHeal = gSaveBlock2Ptr->optionsRtAutoHeal & 1;
+        sScroll = 0;
+        OnOff_DrawChoices(gTasks[taskId].tLevelCap, YPOS_LEVELCAP);
+        OnOff_DrawChoices(gTasks[taskId].tAutoHeal, YPOS_AUTOHEAL);
         TextSpeed_DrawChoices(gTasks[taskId].tTextSpeed);
         Difficulty_DrawChoices(gTasks[taskId].tDifficulty);
         BattleStyle_DrawChoices(gTasks[taskId].tBattleStyle);
@@ -346,6 +368,7 @@ static void Task_OptionMenuProcessInput(u8 taskId)
             gTasks[taskId].tMenuSelection--;
         else
             gTasks[taskId].tMenuSelection = MENUITEM_CANCEL;
+        ScrollTo(taskId, gTasks[taskId].tMenuSelection);
         HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
     }
     else if (JOY_NEW(DPAD_DOWN))
@@ -354,6 +377,7 @@ static void Task_OptionMenuProcessInput(u8 taskId)
             gTasks[taskId].tMenuSelection++;
         else
             gTasks[taskId].tMenuSelection = 0;
+        ScrollTo(taskId, gTasks[taskId].tMenuSelection);
         HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
     }
     else
@@ -426,6 +450,22 @@ static void Task_OptionMenuProcessInput(u8 taskId)
             if (previousOption != gTasks[taskId].tBattleSpeed)
                 BattleSpeed_DrawChoices(gTasks[taskId].tBattleSpeed);
             break;
+        case MENUITEM_LEVELCAP:
+            if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+            {
+                gTasks[taskId].tLevelCap ^= 1;
+                sArrowPressed = TRUE;
+                OnOff_DrawChoices(gTasks[taskId].tLevelCap, YPOS_LEVELCAP);
+            }
+            break;
+        case MENUITEM_AUTOHEAL:
+            if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+            {
+                gTasks[taskId].tAutoHeal ^= 1;
+                sArrowPressed = TRUE;
+                OnOff_DrawChoices(gTasks[taskId].tAutoHeal, YPOS_AUTOHEAL);
+            }
+            break;
         case MENUITEM_FRAMETYPE:
             previousOption = gTasks[taskId].tWindowFrameType;
             gTasks[taskId].tWindowFrameType = FrameType_ProcessInput(gTasks[taskId].tWindowFrameType);
@@ -456,6 +496,8 @@ static void Task_OptionMenuSave(u8 taskId)
         static const u8 sMenuToCode[] = {1, 2, 0, 3, 4};
         gSaveBlock2Ptr->optionsRtBattleSpeed = sMenuToCode[gTasks[taskId].tBattleSpeed < 5 ? gTasks[taskId].tBattleSpeed : 2];
     }
+    gSaveBlock2Ptr->optionsRtLevelCap = gTasks[taskId].tLevelCap;
+    gSaveBlock2Ptr->optionsRtAutoHeal = gTasks[taskId].tAutoHeal;
     gSaveBlock2Ptr->optionsSound = gTasks[taskId].tSound;
     gSaveBlock2Ptr->optionsButtonMode = gTasks[taskId].tButtonMode;
     gSaveBlock2Ptr->optionsWindowFrameType = gTasks[taskId].tWindowFrameType;
@@ -477,7 +519,7 @@ static void Task_OptionMenuFadeOut(u8 taskId)
 static void HighlightOptionMenuItem(u8 index)
 {
     SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(16, DISPLAY_WIDTH - 16));
-    SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(index * OPTION_ROW_H + 42, index * OPTION_ROW_H + 42 + OPTION_ROW_H));
+    SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE((index - sScroll) * OPTION_ROW_H + 42, (index - sScroll) * OPTION_ROW_H + 42 + OPTION_ROW_H));
 }
 
 // rows are 11 px apart but a glyph cell is 14 px tall: text is drawn with a transparent
@@ -487,6 +529,8 @@ static const u8 sOptionTextColors[] = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_DARK_G
 
 static void ClearChoiceRow(u8 y)
 {
+    if (y >= OPTION_VISIBLE * OPTION_ROW_H)
+        return;
     FillWindowPixelRect(WIN_OPTIONS, PIXEL_FILL(1), 100, y + 3, 208 - 100, OPTION_ROW_H);
 }
 
@@ -505,6 +549,8 @@ static void DrawOptionMenuChoice(const u8 *text, u8 x, u8 y, u8 style)
     }
 
     dst[i] = EOS;
+    if (y >= OPTION_VISIBLE * OPTION_ROW_H)
+        return;
     AddTextPrinterParameterized3(WIN_OPTIONS, FONT_NORMAL, x, y + 1, sOptionTextColors, TEXT_SKIP_DRAW, dst);
 }
 
@@ -808,8 +854,8 @@ static void DrawOptionMenuTexts(void)
     u8 i;
 
     FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));
-    for (i = 0; i < MENUITEM_COUNT; i++)
-        AddTextPrinterParameterized3(WIN_OPTIONS, FONT_NORMAL, 8, (i * OPTION_ROW_H), sOptionTextColors, TEXT_SKIP_DRAW, sOptionMenuItemsNames[i]);
+    for (i = sScroll; i < MENUITEM_COUNT && i < sScroll + OPTION_VISIBLE; i++)
+        AddTextPrinterParameterized3(WIN_OPTIONS, FONT_NORMAL, 8, YROW(i), sOptionTextColors, TEXT_SKIP_DRAW, sOptionMenuItemsNames[i]);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
 
@@ -846,4 +892,39 @@ static void DrawBgWindowFrames(void)
     FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 19,  1,  1,  7);
 
     CopyBgTilemapBufferToVram(1);
+}
+
+static void OnOff_DrawChoices(u8 selection, u8 y)
+{
+    ClearChoiceRow(y);
+    DrawOptionMenuChoice(gText_BattleSceneOff, 104, y, selection == 0);
+    DrawOptionMenuChoice(gText_BattleSceneOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_BattleSceneOn, 198), y, selection == 1);
+}
+
+static void RedrawAll(u8 taskId)
+{
+    DrawOptionMenuTexts();
+    TextSpeed_DrawChoices(gTasks[taskId].tTextSpeed);
+    Difficulty_DrawChoices(gTasks[taskId].tDifficulty);
+    BattleStyle_DrawChoices(gTasks[taskId].tBattleStyle);
+    ExpShare_DrawChoices(gTasks[taskId].tExpShare);
+    ExpBonus_DrawChoices(gTasks[taskId].tExpBonus);
+    BattleSpeed_DrawChoices(gTasks[taskId].tBattleSpeed);
+    OnOff_DrawChoices(gTasks[taskId].tLevelCap, YPOS_LEVELCAP);
+    OnOff_DrawChoices(gTasks[taskId].tAutoHeal, YPOS_AUTOHEAL);
+    Sound_DrawChoices(gTasks[taskId].tSound);
+    ButtonMode_DrawChoices(gTasks[taskId].tButtonMode);
+    FrameType_DrawChoices(gTasks[taskId].tWindowFrameType);
+    CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
+}
+
+static void ScrollTo(u8 taskId, u8 sel)
+{
+    u8 old = sScroll;
+    if (sel < sScroll)
+        sScroll = sel;
+    else if (sel >= sScroll + OPTION_VISIBLE)
+        sScroll = sel - OPTION_VISIBLE + 1;
+    if (old != sScroll)
+        RedrawAll(taskId);
 }

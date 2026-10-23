@@ -115,6 +115,7 @@ u16 RtActor_GetStat(struct RtActor *a, u8 stat)
     if (st < -6) st = -6;
     if (st > 6) st = 6;
     v = v * sStageRatios[st + 6][0] / sStageRatios[st + 6][1];
+    v = v * RtTalent_StatMul(a, stat) / 100;
     return v ? v : 1;
 }
 
@@ -250,6 +251,8 @@ void RtActor_InitFromMon(struct RtActor *a, struct Pokemon *mon, u8 side, u8 par
     a->vramSlot = slot;
     a->palSlot = slot;
     a->level = GetMonData(mon, MON_DATA_LEVEL);
+    RtStamina_Init(a);
+    RtTalent_Init(a, mon);
     a->types[0] = gSpeciesInfo[species].types[0];
     a->types[1] = gSpeciesInfo[species].types[1];
     a->ability = GetMonAbility(mon);
@@ -498,7 +501,7 @@ void RtActor_LoadGfxIfNeeded(struct RtActor *a)
     }
     f = &gRtFrames[idx];
     LZ77UnCompWram((const u32 *)((const u8 *)gRtSpriteGfx + f->offset), gRt->gfxBuf[a->vramSlot]);
-    shape = f->shapeSize >> 2;
+    shape = (f->shapeSize >> 2) & 3;
     size = f->shapeSize & 3;
     gRt->gfxPendingSize[a->vramSlot] = sTiles[shape][size] * TILE_SIZE_4BPP;
     gRt->gfxPending[a->vramSlot] = TRUE;
@@ -645,6 +648,7 @@ void RtActor_Damage(struct RtActor *a, s32 amount, u8 src, bool8 direct)
         return;
     if (amount <= 0)
         amount = 1;
+    RtTalent_OnHit(a, &amount, src);
     if (amount >= a->hp)
     {
         a->hp = 0;
@@ -655,6 +659,7 @@ void RtActor_Damage(struct RtActor *a, s32 amount, u8 src, bool8 direct)
     a->hp -= amount;
     a->hpBarDirty = TRUE;
     gRt->hudDirty = TRUE;
+    gRt->ax[a->id].pulse = 12;
     if (!direct)
         RtFx_Number(a->x, a->y - TO_FX(a->height + 4), amount, 3);
     // berries
@@ -1197,6 +1202,7 @@ void RtActor_Update(struct RtActor *a)
     RtActor_TickStatus(a);
     if (!RtActor_IsAlive(a) || a->state == AST_FAINT || a->state == AST_GONE)
         return;
+    RtStamina_Tick(a);
 
     // knockback
     if (a->vx || a->vy)
@@ -1237,7 +1243,7 @@ void RtActor_Update(struct RtActor *a)
                 break;
             }
         }
-        if (a->inDash && a->dashCd == 0 && !a->ingrain && !a->trap)
+        if (a->inDash && a->dashCd == 0 && !a->ingrain && !a->trap && RtStamina_Spend(a))
         {
             u8 ang;
             if (a->inMoveX || a->inMoveY)
@@ -1376,7 +1382,7 @@ void RtActor_DrawGhost(struct RtActor *a, s32 dx, s32 dy)
     sy = FROM_FX(a->y) - gRt->camY + dy;
     f = &gRtFrames[a->curFrame];
     FrameIndex(a, &hf);
-    shape = f->shapeSize >> 2;
+    shape = (f->shapeSize >> 2) & 3;
     size = f->shapeSize & 3;
     w = sShapeW[shape][size];
     h = sShapeH[shape][size];
@@ -1387,6 +1393,20 @@ void RtActor_DrawGhost(struct RtActor *a, s32 dx, s32 dy)
     oam = (u16 *)RtOam_Next(4);
     if (!oam)
         return;
+    if (f->shapeSize >> 4)
+    {
+        // oversized frame (stored reduced): draw it enlarged with an affine sprite
+        u8 m = RtFx_AllocAffine(0, 16 + (f->shapeSize >> 4), hf);
+        if (m != 0xFF)
+        {
+            s32 cxs = hf ? (sx - (f->x + w / 2)) : (sx + f->x + w / 2);
+            s32 cys = sy - a->z + f->y + h / 2;
+            oam[0] = ((cys - h) & 0xFF) | (3 << 8) | (shape << 14) | (1 << 10);
+            oam[1] = ((cxs - w) & 0x1FF) | (m << 9) | (size << 14);
+            oam[2] = (a->vramSlot * 64) | (2 << 10) | (a->palSlot << 12);
+            return;
+        }
+    }
     oam[0] = (y & 0xFF) | (shape << 14) | (1 << 10);
     oam[1] = (x & 0x1FF) | (size << 14) | (hf ? (1 << 12) : 0);
     oam[2] = (a->vramSlot * 64) | (2 << 10) | (a->palSlot << 12);
@@ -1407,12 +1427,14 @@ void RtActor_Draw(struct RtActor *a)
     sy = FROM_FX(a->y) - gRt->camY;
 
     // sprite
-    if (!a->hidden && a->curFrame != 0xFFFF && !(a->invuln == 2 || a->invuln == 3))
+    if (!a->hidden && a->curFrame != 0xFFFF && !(a->invuln == 2 || a->invuln == 3)
+     && !(gRt->arenaMod == ARENA_MOD_FOG && a->side != RT_SIDE_PLAYER && Rt_PlayerActor()->active
+          && RtDist(a->x - Rt_PlayerActor()->x, a->y - Rt_PlayerActor()->y) > TO_FX(88)))
     {
         bool8 blink = (a->state == AST_DASH) || (a->iframes > 14 && (gRt->frame & 2));
         f = &gRtFrames[a->curFrame];
         FrameIndex(a, &hf);
-        shape = f->shapeSize >> 2;
+        shape = (f->shapeSize >> 2) & 3;
         size = f->shapeSize & 3;
         w = sShapeW[shape][size];
         h = sShapeH[shape][size];
@@ -1423,8 +1445,35 @@ void RtActor_Draw(struct RtActor *a)
                 y += (50 - a->stateTimer) / 4;
             if (!(x + w < 0 || x > DISPLAY_WIDTH || y + h < 0 || y > DISPLAY_HEIGHT) && !(blink && (gRt->frame & 1)))
             {
+                u8 m = 0xFF, extra = 0, scale;
+                struct RtActorX *ax = &gRt->ax[a->id];
+                // pulse: briefly bigger when hit, throbbing while winding up a powerful move
+                if (ax->pulse)
+                {
+                    u8 t = ax->pulse;
+                    extra = (t > 6 ? 12 - t : t) / 2;
+                    ax->pulse--;
+                }
+                else if (a->state == AST_CAST && a->act.phase == 0 && a->act.power >= 80)
+                {
+                    u8 t = gRt->frame & 15;
+                    extra = (t < 8 ? t : 16 - t) / 3;
+                }
+                scale = (16 + (f->shapeSize >> 4)) * (16 + extra) / 16;
                 o = RtOam_Next(2);
-                if (o)
+                if (o && scale > 16)
+                    m = RtFx_AllocAffine(0, scale, hf);
+                if (o && m != 0xFF)
+                {
+                    // oversized frame (stored reduced) or pulse: affine, double-size sprite
+                    s32 cxs = hf ? (sx - (f->x + w / 2)) : (sx + f->x + w / 2);
+                    s32 cys = y + h / 2 - h * extra / 32;
+                    oam = (u16 *)o;
+                    oam[0] = ((cys - h) & 0xFF) | (3 << 8) | (shape << 14) | (a->state == AST_DASH ? (1 << 10) : 0);
+                    oam[1] = ((cxs - w) & 0x1FF) | (m << 9) | (size << 14);
+                    oam[2] = (a->vramSlot * 64) | (2 << 10) | (a->palSlot << 12);
+                }
+                else if (o)
                 {
                     oam = (u16 *)o;
                     oam[0] = (y & 0xFF) | (shape << 14) | (a->state == AST_DASH ? (1 << 10) : 0);

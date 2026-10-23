@@ -597,6 +597,8 @@ struct SaveBlock2
              u8 optionsRtBattleSpeed; // real-time battle pace: 0 = 80 % (default), 1 = 60, 2 = 70, 3 = 90, 4 = 100 %
              u8 optionsRtExpShare:3;  // automatic EXP share: 0 off, 1..5 = first 2..6 party POKeMON
              u8 optionsRtExpBonus:3;  // EXP bonus: 0 off, 1..7 = +25/50/100/150/200/300/400 %
+             u8 optionsRtLevelCap:1;  // 1: party levels capped by the next Gym / League stage
+             u8 optionsRtAutoHeal:1;  // 1: the party is fully healed after every battle
     /*0x18*/ struct Pokedex pokedex;
     /*0x90*/ u8 rivalName[PLAYER_NAME_LENGTH + 1];
     /*0x98*/ struct Time localTimeOffset;

@@ -1,4 +1,5 @@
 #include "global.h"
+#include "level_cap.h"
 #include "battle.h"
 #include "event_data.h"
 #include "caps.h"
@@ -7,6 +8,10 @@
 
 u32 GetCurrentLevelCap(void)
 {
+    // mod: the LEVEL CAP option (real-time battles) decides
+    if (gSaveBlock2Ptr->optionsRtLevelCap)
+        return GetLevelCap();
+
     static const u32 sLevelCapFlagMap[][2] =
     {
         {FLAG_BADGE01_GET, 15},

@@ -87,14 +87,14 @@ static const u16 sMenuPal[16] = {
     0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static const u8 sColHud[] = {1, 2, 3};
-static const u8 sColHudGray[] = {1, 4, 3};
-static const u8 sColHudRed[] = {1, 5, 3};
-static const u8 sColHudYellow[] = {1, 6, 3};
-static const u8 sColHudGreen[] = {1, 7, 3};
-static const u8 sColHudBlue[] = {1, 8, 3};
-static const u8 sColHudPurple[] = {1, 9, 3};
-static const u8 sColHudOrange[] = {1, 10, 3};
+static const u8 sColHud[] = {0, 2, 1};
+static const u8 sColHudGray[] = {0, 4, 1};
+static const u8 sColHudRed[] = {0, 5, 1};
+static const u8 sColHudYellow[] = {0, 6, 1};
+static const u8 sColHudGreen[] = {0, 7, 1};
+static const u8 sColHudBlue[] = {0, 8, 1};
+static const u8 sColHudPurple[] = {0, 9, 1};
+static const u8 sColHudOrange[] = {0, 10, 1};
 static const u8 sColMenu[] = {1, 2, 3};
 static const u8 sColMenuRed[] = {1, 5, 3};
 // cursor arrow: transparent background, so the glyph's empty right side doesn't paint over the row's text
@@ -165,6 +165,8 @@ static EWRAM_DATA u8 sMoveHudState[MAX_MON_MOVES] = {0};
 #define UI_TILE_ENEMY_BAR1 272
 #define UI_TILE_CD0        280
 #define UI_TILE_ALLY_BAR   296
+#define UI_TILE_STAMINA    300 // 4 tiles: the dash stamina bar
+static EWRAM_DATA u16 sStaDrawn = 0;
 
 static void SetPixel(u8 *tiles, u8 widthTiles, s32 x, s32 y, u8 c)
 {
@@ -233,14 +235,16 @@ static void DrawHpBar(u16 tileBase, u16 shown, u16 max, u8 widthPx)
 // ---------------------------------------------------------------------------
 // Init / HUD text
 // ---------------------------------------------------------------------------
+static EWRAM_DATA bool8 sExpOn = FALSE;
 void RtUi_Init(void)
 {
+    sExpOn = FALSE;
     InitWindows(sRtWindows);
     DeactivateAllTextPrinters();
     LoadPalette(sHudPal, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
     LoadPalette(sMenuPal, BG_PLTT_ID(14), PLTT_SIZE_4BPP);
-    FillWindowPixelBuffer(WIN_TOP, PIXEL_FILL(1));
-    FillWindowPixelBuffer(WIN_BOTTOM, PIXEL_FILL(1));
+    FillWindowPixelBuffer(WIN_TOP, PIXEL_FILL(0));
+    FillWindowPixelBuffer(WIN_BOTTOM, PIXEL_FILL(0));
     PutWindowTilemap(WIN_TOP);
     PutWindowTilemap(WIN_BOTTOM);
     CopyWindowToVram(WIN_TOP, COPYWIN_FULL);
@@ -252,6 +256,7 @@ void RtUi_Init(void)
     sReticleY = TO_FX(ARENA_H / 2);
     memset(sMoveHudState, 0xFF, sizeof(sMoveHudState));
     memset(sCdBarDrawn, 0xFF, sizeof(sCdBarDrawn));
+    sStaDrawn = 0xFFFF;
     {
         extern void RtAi_ResetTrainerItems(void);
         RtAi_ResetTrainerItems();
@@ -411,9 +416,9 @@ static void HudElemDraw(u8 id)
     u8 y = 2;
     const u8 *col, *st;
     if (gRt->isSafari && id == HE_TOP_EXTRA)
-        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(1), 0, 0, HUD_SPLIT_X - 1, 16);
+        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(0), 0, 0, HUD_SPLIT_X - 1, 16);
     else if (el->w)
-        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(1), el->x, 0, el->w, 16);
+        FillWindowPixelRect(WIN_TOP, PIXEL_FILL(0), el->x, 0, el->w, 16);
     switch (id)
     {
     case HE_E0_NAME:
@@ -466,7 +471,7 @@ static void HudElemDraw(u8 id)
             // one dot per POKéMON of the foe's party under its HP bar: red = still able, dark = fainted
             s32 k;
             for (k = 0; k < sEnemyPartyTotalCache && k < PARTY_SIZE; k++)
-                FillWindowPixelRect(WIN_TOP, PIXEL_FILL(k < sEnemyPartyCountCache ? 5 : 3), el->x + 1 + k * 6, 13, 4, 2);
+                FillWindowPixelRect(WIN_TOP, PIXEL_FILL(k < sEnemyPartyCountCache ? 5 : 4), el->x + 1 + k * 6, 13, 4, 2);
         }
         break;
     case HE_P_NAME:
@@ -499,6 +504,7 @@ static void HudElemDraw(u8 id)
 
 static void DrawHudDivider(void)
 {
+    return; // minimal HUD: no divider
     if (!gRt->isSafari)
         FillWindowPixelRect(WIN_TOP, PIXEL_FILL(3), HUD_SPLIT_X - 1, 2, 1, 12);
     if (gRt->isDouble)
@@ -511,7 +517,7 @@ void RtUi_RefreshHud(void)
     s32 i;
     gRt->hudDirty = FALSE;
     RefreshEnemyPartyCount();
-    FillWindowPixelBuffer(WIN_TOP, PIXEL_FILL(1));
+    FillWindowPixelBuffer(WIN_TOP, PIXEL_FILL(0));
     DrawHudDivider();
     for (i = 0; i < HE_COUNT; i++)
     {
@@ -565,7 +571,7 @@ static void DrawMoveCell(struct RtActor *p, u8 i, u8 st)
 {
     static const u8 *const sBtn[] = {sButtonA, sButtonB, sButtonL, sButtonR};
     const u8 *col = st == 1 ? sColHud : (st == 3 ? sColHudRed : (st == 4 ? sColHudYellow : sColHudGray));
-    FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(1), i * 60, HUD_ROW2_Y, 60, 16 - HUD_ROW2_Y);
+    FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(0), i * 60, HUD_ROW2_Y, 60, 16 - HUD_ROW2_Y);
     sMoveHudState[i] = st;
     if (st == 0)
         return;
@@ -599,7 +605,7 @@ void RtUi_RefreshMoves(void)
     sMovesPending = 0;
     if (gRt->isSafari)
     {
-        FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(1), 0, HUD_ROW2_Y, 240, 16 - HUD_ROW2_Y);
+        FillWindowPixelRect(WIN_BOTTOM, PIXEL_FILL(0), 0, HUD_ROW2_Y, 240, 16 - HUD_ROW2_Y);
         AddTextPrinterParameterized3(WIN_BOTTOM, FONT_SMALL, 2, HUD_ROW2_TEXT_Y, sColHudYellow, TEXT_SKIP_DRAW, sText_SafariHelp);
         CopyWindowToVram(WIN_BOTTOM, COPYWIN_GFX);
         return;
@@ -642,12 +648,14 @@ static void RtUi_MovesStep(void)
 // ---------------------------------------------------------------------------
 void RtUi_Toast(const u8 *str, u16 frames)
 {
-    FillWindowPixelBuffer(WIN_TOAST, PIXEL_FILL(11));
+    if (sExpOn)
+        return; // the EXP panel is up: it would cut its top row
+    FillWindowPixelBuffer(WIN_TOAST, PIXEL_FILL(0)); // transparent, like the rest of the HUD
     {
         s32 w = GetStringWidth(FONT_SMALL, str, 0);
         s32 x = (28 * 8 - w) / 2;
         if (x < 2) x = 2;
-        AddTextPrinterParameterized3(WIN_TOAST, FONT_SMALL, x, 2, (const u8[]){11, 2, 3}, TEXT_SKIP_DRAW, str);
+        AddTextPrinterParameterized3(WIN_TOAST, FONT_SMALL, x, 2, (const u8[]){0, 2, 1}, TEXT_SKIP_DRAW, str);
     }
     PutWindowTilemap(WIN_TOAST);
     CopyWindowToVram(WIN_TOAST, COPYWIN_FULL);
@@ -674,6 +682,9 @@ void RtUi_HideToast(void)
         return;
     gRt->toast.active = FALSE;
     ClearWindowTilemap(WIN_TOAST);
+    // the toast row overlaps the top of the EXP panel: put the panel back over it
+    if (sExpOn)
+        PutWindowTilemap(WIN_EXP);
     CopyWindowToVram(WIN_TOAST, COPYWIN_MAP);
 }
 
@@ -851,6 +862,19 @@ void RtUi_DrawObjs(void)
         }
         PutObj(UI_TILE_PLAYER_BAR, 1, 1, HUD_P_BAR_X, HUD_BAR_Y, 4, 0);
         PutObj(UI_TILE_PLAYER_BAR + 4, 1, 1, HUD_P_BAR_X + 32, HUD_BAR_Y, 4, 0);
+        // dash stamina: a thin bar under the HP bar
+        if (!gRt->isSafari)
+        {
+            struct RtActorX *x = &gRt->ax[p->id];
+            u8 sf = x->stamina * 30 / RT_STAMINA_MAX;
+            u16 sk = sf | ((x->stamina < RT_STAMINA_DASH) << 8);
+            if (sStaDrawn != sk)
+            {
+                sStaDrawn = sk;
+                DrawBar(UI_TILE_STAMINA, 4, 30, sf, x->stamina < RT_STAMINA_DASH ? 5 : 8, 2);
+            }
+            PutObj(UI_TILE_STAMINA, 1, 1, HUD_P_BAR_X, HUD_BAR_Y + 7, 4, 0);
+        }
         // low hp warning sound
     }
     // ally floating bar
@@ -2243,6 +2267,7 @@ static void DrawExpPanel(u16 t)
     }
     PutWindowTilemap(WIN_EXP);
     CopyWindowToVram(WIN_EXP, COPYWIN_FULL);
+    sExpOn = TRUE;
 }
 
 bool8 RtUi_ExpPanelStart(void)
@@ -2304,6 +2329,7 @@ bool8 RtUi_ExpPanelUpdate(void)
     {
         m4aSongNumStop(SE_EXP);
         ClearWindowTilemap(WIN_EXP);
+        sExpOn = FALSE;
         CopyWindowToVram(WIN_EXP, COPYWIN_MAP);
         return TRUE;
     }
