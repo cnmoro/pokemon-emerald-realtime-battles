@@ -79,6 +79,7 @@ void RtVfx_BideTick(struct RtActor *a, u16 t);
 bool8 RtVfx_Cone(struct RtActor *a, u16 move);
 bool8 RtVfx_ZoneTick(struct RtProj *p);
 void RtVfx_TossGrab(struct RtActor *a, struct RtActor *t);
+void RtVfx_TossRise(struct RtActor *a, struct RtActor *t, s32 j);
 void RtVfx_TossTrail(struct RtActor *t, u8 ang);
 void RtVfx_TossSlam(struct RtActor *t);
 void RtVfx_Ghosts(struct RtActor *a, u8 n, u8 life);

@@ -794,9 +794,12 @@ def mk_wave48():
     for f in range(3):
         c = Canvas(32, 32)
         ph = f * 0.7
+        rr = random.Random(900 + f)
         for x in range(32):
-            top = 10 + 4 * math.sin(x / 32 * math.pi * 2 + ph) - (3 if 10 < x < 24 else 0)
-            for y in range(int(top), 32):
+            e = min(x + 0.5, 31.5 - x) / 7.0  # rounded, ragged ends so neighbouring stretches melt together
+            top = 10 + 4 * math.sin(x / 32 * math.pi * 2 + ph) - (3 if 10 < x < 24 else 0) + (max(0, 1 - e) * 10 if e < 1 else 0)
+            bot = 32 - (max(0, 1 - e) * 8 if e < 1 else 0) - rr.random() * 2.5
+            for y in range(int(top), int(bot)):
                 d = y - top
                 t = 0.5 + 0.35 * math.exp(-d / 5) - 0.2 * (y / 32)
                 if (x * 7 + y * 3 + f * 5) % 11 == 0 and d > 3: t += 0.2
@@ -811,6 +814,47 @@ def mk_wave48():
         fr.append(c)
     return fr
 add('SURGE32', 32, 32, mk_wave48())
+
+def mk_swell32():
+    # SURF, travelling sideways: one stretch of a breaking wave seen from above, crest towards +x:
+    # the long back slope, the white curling crest, the steep shadowed face and the foam at its foot.
+    # Rounded and ragged at every edge so the stretches blend into one wave (3 frames)
+    fr = []
+    for f in range(3):
+        rr = random.Random(500 + f)
+        c = Canvas(32, 32)
+        ph = f * 2 * math.pi / 3
+        for y in range(32):
+            u = (y + 0.5 - 16) / 16.0
+            if abs(u) >= 1: continue
+            r = math.sqrt(1 - u * u)
+            xc = 21 + 2.0 * math.sin(y * 0.45 + ph) + 1.5 * r
+            L = (17 + 2 * math.sin(y * 0.9 + 1.3)) * r ** 0.7
+            F = 5.5 * r ** 0.8
+            xb = xc - L
+            for x in range(32):
+                px = x + 0.5
+                if px < xb or px > xc + F: continue
+                if px < xc - 1.5:
+                    s = (px - xb) / max(1, (xc - 1.5 - xb))
+                    t = 0.3 + 0.5 * s ** 1.4
+                    if math.sin(px * 0.7 - y * 1.1 + ph * 2) > 0.8: t += 0.1   # flow streaks
+                    if px - xb < 1.2 and rr.random() < 0.35: continue          # soft ragged back edge
+                elif px <= xc + 1.0:
+                    t = 1.0 - 0.08 * abs(px - xc)                             # the crest
+                else:
+                    s = (px - xc - 1.0) / max(1, F - 1.0)
+                    t = 0.62 - 0.12 * s
+                    if s > 0.6 and rr.random() < 0.55: t = 0.9                 # foam at the foot
+                c.putmax(x, y, lv(t))
+            # curling lip thrown over the face
+            if r > 0.3 and (y + f) % 3 != 0:
+                c.putmax(xc + 2, y, lv(0.92)); c.putmax(xc + 3, y, lv(0.8))
+        for k in range(7):
+            soft_disc(c, rr.uniform(21, 30), rr.uniform(3, 29), rr.uniform(1.2, 2.0), gamma=0.6, lo=0.75)
+        fr.append(c)
+    return fr
+add('SWELL32', 32, 32, mk_swell32())
 
 # ---------------------------------------------------------------- energy palettes (no dark outline needed)
 def EP(name, keys): P[name] = mkpal(keys)
