@@ -1,5 +1,6 @@
 // Debug helpers for testing the real-time battle system. Inert unless gRtDebugEnabled is patched to 1.
 #include "global.h"
+#include "script.h"
 #include "rt_internal.h"
 #include "battle.h"
 #include "battle_setup.h"
@@ -124,6 +125,13 @@ bool8 RtDebug_FieldInput(void)
         ZeroEnemyPartyMons();
         CreateMon(&gEnemyParty[0], SPECIES_ZIGZAGOON, 3, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
         RtDebug_StartWildBattleWithTransition(gRtDebugTrainer);
+        return TRUE;
+    }
+    if (cmd == 31)
+    {
+        // receive a Potion through the normal obtain-item script (timing test)
+        extern const u8 RtDebug_EventScript_GiveItem[];
+        ScriptContext_SetupScript(RtDebug_EventScript_GiveItem);
         return TRUE;
     }
     if (cmd == 29)

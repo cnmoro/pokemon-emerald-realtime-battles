@@ -666,12 +666,12 @@ static u8 TextSpeed_ProcessInput(u8 selection)
 {
     if (JOY_NEW(DPAD_RIGHT))
     {
-        selection = selection < OPTIONS_TEXT_SPEED_FAST ? selection + 1 : 0;
+        selection = selection < OPTIONS_TEXT_SPEED_INSTANT ? selection + 1 : 0;
         sArrowPressed = TRUE;
     }
     if (JOY_NEW(DPAD_LEFT))
     {
-        selection = selection != 0 ? selection - 1 : OPTIONS_TEXT_SPEED_FAST;
+        selection = selection != 0 ? selection - 1 : OPTIONS_TEXT_SPEED_INSTANT;
         sArrowPressed = TRUE;
     }
     return selection;
@@ -681,7 +681,7 @@ static void TextSpeed_DrawChoices(u8 selection)
 {
     static const u8 sInstant[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}INSTANT");
     static const u8 *const sTexts[] = {gText_TextSpeedSlow, gText_TextSpeedMid, gText_TextSpeedFast, sInstant};
-    if (selection > OPTIONS_TEXT_SPEED_FAST)
+    if (selection > OPTIONS_TEXT_SPEED_INSTANT)
         selection = OPTIONS_TEXT_SPEED_MID;
     ClearChoiceRow(YPOS_TEXTSPEED);
     DrawOptionMenuChoice(sTexts[selection], 104, YPOS_TEXTSPEED, 1);

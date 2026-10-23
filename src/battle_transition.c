@@ -1005,17 +1005,17 @@ static void UNUSED TestBattleTransition(u8 transitionId)
     SetMainCallback2(CB2_TestBattleTransition);
 }
 
-// real-time mod: the field transition into a battle plays 3x faster
+// real-time mod: the field transition into a battle plays 4x faster
 static EWRAM_DATA bool8 sTransitionTurbo = FALSE;
 
-// palette fades started by a transition go 3x faster too (frames per fade step / 3)
+// palette fades started by a transition go 4x faster too (frames per fade step / 4)
 s8 BattleTransition_TurboFadeDelay(s8 delay)
 {
     if (!sTransitionTurbo)
         return delay;
     if (delay > 0)
-        return (delay + 1) / 3 > 0 ? (delay + 1) / 3 - 1 : 0;
-    return delay * 3 - 2;
+        return (delay + 1) / 4 > 0 ? (delay + 1) / 4 - 1 : 0;
+    return delay * 4 - 3;
 }
 
 void BattleTransition_StartOnField(u8 transitionId)
@@ -1072,11 +1072,11 @@ static void Task_BattleTransition(u8 taskId)
 {
     while (sTaskHandlers[gTasks[taskId].tState](&gTasks[taskId]));
 
-    // real-time mod: the transition's own tasks run twice more per frame (3x faster)
+    // real-time mod: the transition's own tasks run three more times per frame (4x faster)
     if (sTransitionTurbo && !gTasks[taskId].tTransitionDone)
     {
         u8 id = gTasks[taskId].tTransitionId, k;
-        for (k = 0; k < 2; k++)
+        for (k = 0; k < 3; k++)
         {
             RunTransitionTaskOnce(sTasks_Intro[id]);
             RunTransitionTaskOnce(Task_BattleTransition_Intro);

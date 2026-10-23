@@ -59,7 +59,6 @@ EventScript_ObtainedItem::
 EventScript_ObtainedItemMessage:
 	message gText_ObtainedTheItem
 EventScript_ContinueObtainedItem:
-	delay 10
 	showitemdescription
 	waitmessage
 	waitbuttonpress
@@ -127,7 +126,6 @@ EventScript_PickUpItem::
 	copyvar VAR_0x8008, VAR_RESULT
 	call_if_eq VAR_0x8008, TRUE, EventScript_FoundTMHM
 	call_if_eq VAR_0x8008, FALSE, EventScript_FoundItem
-	delay 10
 	showitemdescription
 	waitmessage
 	bufferitemnameplural STR_VAR_2, VAR_0x8004, VAR_0x8005
@@ -204,7 +202,6 @@ EventScript_FoundHiddenItem::
 
 EventScript_PutHiddenItemInPocket::
 	callnative Script_ClearDowsingColor
-	delay 10
 	showitemdescription
 	waitmessage
 	bufferitemnameplural STR_VAR_2, VAR_0x8004, 1
@@ -221,5 +218,12 @@ EventScript_NoRoomForHiddenItem::
 	msgbox gText_PlayerFoundOneItem, MSGBOX_DEFAULT
 	msgbox gText_TooBadBagIsFull, MSGBOX_DEFAULT
 	setvar VAR_RESULT, 0
+	releaseall
+	end
+
+@ real-time mod debug: receive a Potion (item flow timing test)
+RtDebug_EventScript_GiveItem::
+	lockall
+	giveitem ITEM_POTION
 	releaseall
 	end
