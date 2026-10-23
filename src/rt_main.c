@@ -1258,8 +1258,7 @@ static void Rt_HandlePlayerInput(struct RtActor *a)
         }
     }
 
-    if (pressed & SELECT_BUTTON)
-        a->inDash = TRUE;
+    RtExt_PlayerInput(a, held, pressed); // SELECT: tap = dash, hold with full ki = SUPER form
 
     // input buffer: a move or dash pressed while the POKeMON is still busy (end of the last move, hit
     // stun, a dash) comes out as soon as it is free again, instead of being dropped
