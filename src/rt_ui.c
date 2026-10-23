@@ -862,8 +862,21 @@ void RtUi_DrawObjs(void)
         }
         PutObj(UI_TILE_PLAYER_BAR, 1, 1, HUD_P_BAR_X, HUD_BAR_Y, 4, 0);
         PutObj(UI_TILE_PLAYER_BAR + 4, 1, 1, HUD_P_BAR_X + 32, HUD_BAR_Y, 4, 0);
-        // dash stamina: a thin bar under the HP bar
-        if (!gRt->isSafari)
+        // dash stamina: a thin bar under the HP bar (the balance of a beam struggle while one is on)
+        if (gRt->str.on)
+        {
+            s32 b = gRt->str.bal + RT_STR_MAX; // 0..2*MAX, full = the player's side winning
+            u8 sf = b * 30 / (RT_STR_MAX * 2);
+            if (gRt->actors[gRt->str.ownA].side != RT_SIDE_PLAYER)
+                sf = 30 - sf;
+            if (sStaDrawn != (sf | 0x1000))
+            {
+                sStaDrawn = sf | 0x1000;
+                DrawBar(UI_TILE_STAMINA, 4, 30, sf, 5, 3);
+            }
+            PutObj(UI_TILE_STAMINA, 1, 1, HUD_P_BAR_X, HUD_BAR_Y + 7, 4, 0);
+        }
+        else if (!gRt->isSafari)
         {
             struct RtActorX *x = &gRt->ax[p->id];
             u8 sf = x->stamina * 30 / RT_STAMINA_MAX;
