@@ -1,4 +1,5 @@
 #include "global.h"
+#include "wide.h"
 #include "battle_pyramid.h"
 #include "bg.h"
 #include "fieldmap.h"
@@ -58,7 +59,8 @@ static inline u16 GetBorderBlockAt(int x, int y)
 
 #define AreCoordsWithinMapGridBounds(x, y) (x >= 0 && x < gBackupMapLayout.width && y >= 0 && y < gBackupMapLayout.height)
 
-#define GetMapGridBlockAt(x, y) (AreCoordsWithinMapGridBounds(x, y) ? gBackupMapLayout.map[x + gBackupMapLayout.width * y] : GetBorderBlockAt(x, y))
+static u16 GetFarBlockAt(s32 x, s32 y);
+#define GetMapGridBlockAt(x, y) (AreCoordsWithinMapGridBounds(x, y) ? gBackupMapLayout.map[x + gBackupMapLayout.width * y] : GetFarBlockAt(x, y))
 
 const struct MapHeader *const GetMapHeaderFromConnection(const struct MapConnection *connection)
 {
@@ -957,5 +959,39 @@ void LoadMapTilesetPalettes(struct MapLayout const *mapLayout)
     {
         LoadPrimaryTilesetPalette(mapLayout);
         LoadSecondaryTilesetPalette(mapLayout, FALSE);
+    }
+}
+
+// Widescreen: the picture reaches further than the strips of the connected maps copied around the map (7
+// metatiles), so past them the connected maps are read directly (impassable: only to be looked at)
+static u16 GetFarBlockAt(s32 x, s32 y)
+{
+    const struct MapConnections *conns = gMapHeader.connections;
+    if (gFieldWideExt && conns != NULL && conns->connections != NULL && gMapHeader.mapLayout != NULL)
+    {
+        s32 mx = x - MAP_OFFSET, my = y - MAP_OFFSET, i;
+        s32 w = gMapHeader.mapLayout->width, h = gMapHeader.mapLayout->height;
+        for (i = 0; i < conns->count; i++)
+        {
+            const struct MapConnection *c = &conns->connections[i];
+            const struct MapLayout *cl;
+            s32 cx, cy, off = (s32)c->offset;
+            if (c->direction < CONNECTION_SOUTH || c->direction > CONNECTION_EAST)
+                continue;
+            cl = GetMapHeaderFromConnection(c)->mapLayout;
+            switch (c->direction)
+            {
+            case CONNECTION_SOUTH: cx = mx - off; cy = my - h; break;
+            case CONNECTION_NORTH: cx = mx - off; cy = my + cl->height; break;
+            case CONNECTION_WEST:  cx = mx + cl->width; cy = my - off; break;
+            default:               cx = mx - w; cy = my - off; break;
+            }
+            if (cx >= 0 && cx < cl->width && cy >= 0 && cy < cl->height)
+                return cl->map[cx + cy * cl->width] | MAPGRID_COLLISION_MASK;
+        }
+    }
+    {
+        u16 b = GetBorderBlockAt(x, y);
+        return b;
     }
 }

@@ -1,4 +1,5 @@
 #include "global.h"
+#include "wide.h"
 #include "malloc.h"
 #include "battle_anim.h"
 #include "battle_pyramid.h"
@@ -2734,8 +2735,8 @@ void GetFollowerAction(struct ScriptContext *ctx) // Essentially a big switch fo
 // Sprite callback for light sprites
 void UpdateLightSprite(struct Sprite *sprite)
 {
-    s16 left =   gSaveBlock1Ptr->pos.x - 2;
-    s16 right =  gSaveBlock1Ptr->pos.x + 17;
+    s16 left =   gSaveBlock1Ptr->pos.x - 2 - gFieldWideExt;
+    s16 right =  gSaveBlock1Ptr->pos.x + 17 + gFieldWideExt;
     s16 top =    gSaveBlock1Ptr->pos.y;
     s16 bottom = gSaveBlock1Ptr->pos.y + 15;
     s16 x = sprite->sLightXPos;
@@ -2842,8 +2843,8 @@ void TrySpawnLightSprites(s16 camX, s16 camY)
 {
     u32 i;
     u8 objectCount;
-    s16 left = gSaveBlock1Ptr->pos.x - 2;
-    s16 right = gSaveBlock1Ptr->pos.x + MAP_OFFSET_W + 2;
+    s16 left = gSaveBlock1Ptr->pos.x - 2 - gFieldWideExt;
+    s16 right = gSaveBlock1Ptr->pos.x + MAP_OFFSET_W + 2 + gFieldWideExt;
     s16 top = gSaveBlock1Ptr->pos.y;
     s16 bottom = gSaveBlock1Ptr->pos.y + MAP_OFFSET_H + 2;
     if (gMapHeader.events == NULL)
@@ -2876,8 +2877,8 @@ void TrySpawnObjectEvents(s16 cameraX, s16 cameraY)
 
     if (gMapHeader.events != NULL)
     {
-        s16 left = gSaveBlock1Ptr->pos.x - 2;
-        s16 right = gSaveBlock1Ptr->pos.x + MAP_OFFSET_W + 2;
+        s16 left = gSaveBlock1Ptr->pos.x - 2 - gFieldWideExt;
+        s16 right = gSaveBlock1Ptr->pos.x + MAP_OFFSET_W + 2 + gFieldWideExt;
         s16 top = gSaveBlock1Ptr->pos.y;
         s16 bottom = gSaveBlock1Ptr->pos.y + MAP_OFFSET_H + 2;
 
@@ -2932,8 +2933,8 @@ void RemoveObjectEventsOutsideView(void)
 
 static void RemoveObjectEventIfOutsideView(struct ObjectEvent *objectEvent)
 {
-    s16 left =   gSaveBlock1Ptr->pos.x - 2;
-    s16 right =  gSaveBlock1Ptr->pos.x + 17;
+    s16 left =   gSaveBlock1Ptr->pos.x - 2 - gFieldWideExt;
+    s16 right =  gSaveBlock1Ptr->pos.x + 17 + gFieldWideExt;
     s16 top =    gSaveBlock1Ptr->pos.y;
     s16 bottom = gSaveBlock1Ptr->pos.y + 16;
 
@@ -9671,7 +9672,7 @@ static void UpdateObjectEventOffscreen(struct ObjectEvent *objectEvent, struct S
     y2 = y;
     y2 += graphicsInfo->height;
 
-    if ((s16)x >= DISPLAY_WIDTH + 16 || (s16)x2 < -16)
+    if ((s16)x >= DISPLAY_WIDTH + WIDE_L + 16 || (s16)x2 < -16 - WIDE_L)
         objectEvent->offScreen = TRUE;
 
     if ((s16)y >= DISPLAY_HEIGHT + 16 || (s16)y2 < -16)
@@ -11014,7 +11015,7 @@ void UpdateObjectEventSpriteInvisibility(struct Sprite *sprite, bool8 invisible)
     x2 = x - (sprite->centerToCornerVecX >> 1);
     y2 = y - (sprite->centerToCornerVecY >> 1);
 
-    if ((s16)x >= DISPLAY_WIDTH + 16 || x2 < -16)
+    if ((s16)x >= DISPLAY_WIDTH + WIDE_L + 16 || x2 < -16 - WIDE_L)
         sprite->invisible = TRUE;
     if ((s16)y >= DISPLAY_HEIGHT + 16 || y2 < -16)
         sprite->invisible = TRUE;

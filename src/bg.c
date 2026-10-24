@@ -1,5 +1,6 @@
 #include <limits.h>
 #include "global.h"
+#include "wide.h"
 #include "bg.h"
 #include "dma3.h"
 #include "gpu_regs.h"
@@ -295,6 +296,9 @@ int BgTileAllocOp(int bg, int offset, int count, int mode)
 void ResetBgsAndClearDma3BusyFlags(u32 leftoverFireRedLeafGreenVariable)
 {
     int i;
+    if (gWideW > DISPLAY_WIDTH)
+        Wide_Request(DISPLAY_WIDTH);
+    gFieldWideExt = 0;
     ResetBgs();
 
     for (i = 0; i < NUM_BACKGROUNDS; i++)
