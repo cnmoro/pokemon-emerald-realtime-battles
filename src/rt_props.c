@@ -396,7 +396,7 @@ void RtProps_DrawOne(u8 i)
     }
     sx = FROM_FX(p->x) - gRt->camX - 8;
     sy = FROM_FX(p->y) - gRt->camY - 14 - p->z;
-    if (sx < -16 || sx > DISPLAY_WIDTH || sy < -16 || sy > DISPLAY_HEIGHT)
+    if (sx < RT_VIEW_X0 - 16 || sx > RT_VIEW_X1 || sy < -16 || sy > DISPLAY_HEIGHT)
         return;
     palSlot = RtFx_GetPalSlot(RtProps_PalOf(p->kind));
     o = RtOam_Next(p->state == PRS_LIFTED ? 1 : 2);
