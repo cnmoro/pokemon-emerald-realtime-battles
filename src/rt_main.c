@@ -286,7 +286,7 @@ void Rt_GetOpponentName(u8 *dst, u16 trainerId)
 // ---------------------------------------------------------------------------
 static const struct BgTemplate sRtBgTemplates[] =
 {
-    { .bg = 0, .charBaseIndex = 2, .mapBaseIndex = 31, .screenSize = 0, .paletteMode = 0, .priority = 0, .baseTile = 0 },
+    { .bg = 0, .charBaseIndex = 2, .mapBaseIndex = 30, .screenSize = 1, .paletteMode = 0, .priority = 0, .baseTile = 0 },
     { .bg = 1, .charBaseIndex = 0, .mapBaseIndex = 24, .screenSize = 1, .paletteMode = 0, .priority = 1, .baseTile = 0 },
     { .bg = 2, .charBaseIndex = 0, .mapBaseIndex = 26, .screenSize = 1, .paletteMode = 0, .priority = 2, .baseTile = 0 },
     { .bg = 3, .charBaseIndex = 0, .mapBaseIndex = 28, .screenSize = 1, .paletteMode = 0, .priority = 3, .baseTile = 0 },
@@ -294,6 +294,36 @@ static const struct BgTemplate sRtBgTemplates[] =
 
 static void CB1_RtBattle(void)
 {
+}
+
+// widescreen: an emulator that can show a wider picture answers on registers a real GBA does not have
+// (0x4000110 reads 'WD', 0x4000112 the widest picture it can show); writing the width to 0x4000114 makes it
+// render that many columns, the extra ones split between both sides of the normal picture
+EWRAM_DATA u16 gRtWideW = 0; // 0 or 240: the normal picture
+#define REG_WIDE_MAGIC (*(vu16 *)(REG_BASE + 0x110))
+#define REG_WIDE_MAX   (*(vu16 *)(REG_BASE + 0x112))
+#define REG_WIDE_REQ   (*(vu16 *)(REG_BASE + 0x114))
+#define RT_WIDE_LIMIT  432
+
+void Rt_WideBegin(void)
+{
+    u16 w = DISPLAY_WIDTH;
+    if (REG_WIDE_MAGIC == 0x5744)
+    {
+        w = REG_WIDE_MAX;
+        if (w < DISPLAY_WIDTH || w > RT_WIDE_LIMIT)
+            w = DISPLAY_WIDTH;
+        w &= ~1;
+        REG_WIDE_REQ = w;
+    }
+    gRtWideW = w;
+}
+
+void Rt_WideEnd(void)
+{
+    if (gRtWideW != DISPLAY_WIDTH)
+        REG_WIDE_REQ = DISPLAY_WIDTH;
+    gRtWideW = DISPLAY_WIDTH;
 }
 
 void CB2_InitRtBattle(void)
@@ -374,6 +404,7 @@ static void CB2_RtSetup(void)
         ResetBgsAndClearDma3BusyFlags(0);
         InitBgsFromTemplates(0, sRtBgTemplates, ARRAY_COUNT(sRtBgTemplates));
         SetBgTilemapBuffer(0, gRt->bg0Tilemap);
+        Rt_WideBegin();
         gMain.state++;
         break;
     case 2:
@@ -863,8 +894,8 @@ static void Rt_UpdateCamera(void)
         tx = cx - DISPLAY_WIDTH / 2;
         ty = cy - (HUD_TOP + (DISPLAY_HEIGHT - HUD_TOP - HUD_BOTTOM) / 2);
         // keep the player comfortably inside the view
-        if (px - tx < 40) tx = px - 40;
-        if (px - tx > DISPLAY_WIDTH - 40) tx = px - (DISPLAY_WIDTH - 40);
+        if (px - tx < RT_VIEW_X0 + 40) tx = px - (RT_VIEW_X0 + 40);
+        if (px - tx > RT_VIEW_X1 - 40) tx = px - (RT_VIEW_X1 - 40);
         if (py - ty < HUD_TOP + 24) ty = py - (HUD_TOP + 24);
         if (py - ty > DISPLAY_HEIGHT - HUD_BOTTOM - 24) ty = py - (DISPLAY_HEIGHT - HUD_BOTTOM - 24);
     }
@@ -2306,6 +2337,7 @@ static void CB2_RtEvolutionLoop(void)
 static void Rt_Exit(void)
 {
     bool8 nick;
+    Rt_WideEnd();
 #if RT_FIRERED
     HelpSystem_Enable();
 #endif

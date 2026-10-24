@@ -809,12 +809,13 @@ void RtArena_ClampCamera(s32 *tx, s32 *ty)
         x0 = 0;
         x1 = ARENA_W;
     }
-    if (x1 - x0 <= DISPLAY_WIDTH)
-        *tx = (x0 + x1 - DISPLAY_WIDTH) / 2;
-    else if (*tx < x0)
-        *tx = x0;
-    else if (*tx > x1 - DISPLAY_WIDTH)
-        *tx = x1 - DISPLAY_WIDTH;
+    // (the view starts RT_VIEW_L columns left of camX in a wide picture)
+    if (x1 - x0 <= RT_VIEW_W)
+        *tx = (x0 + x1 - RT_VIEW_W) / 2 + RT_VIEW_L;
+    else if (*tx - RT_VIEW_L < x0)
+        *tx = x0 + RT_VIEW_L;
+    else if (*tx - RT_VIEW_L > x1 - RT_VIEW_W)
+        *tx = x1 - RT_VIEW_W + RT_VIEW_L;
     if (y1 <= y0)
         *ty = (y0 + y1) / 2;
     else if (*ty < y0)

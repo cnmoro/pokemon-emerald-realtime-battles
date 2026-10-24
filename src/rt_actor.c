@@ -1430,7 +1430,7 @@ void RtActor_DrawGhost(struct RtActor *a, s32 dx, s32 dy)
     h = sShapeH[shape][size];
     x = hf ? (sx - (f->x + w)) : (sx + f->x);
     y = sy - a->z + f->y;
-    if (x + w < 0 || x > DISPLAY_WIDTH || y + h < 0 || y > DISPLAY_HEIGHT)
+    if (x + w < RT_VIEW_X0 || x > RT_VIEW_X1 || y + h < 0 || y > DISPLAY_HEIGHT)
         return;
     oam = (u16 *)RtOam_Next(4);
     if (!oam)
@@ -1485,7 +1485,7 @@ void RtActor_Draw(struct RtActor *a)
             s32 y = sy - a->z + f->y;
             if (a->state == AST_FAINT)
                 y += (50 - a->stateTimer) / 4;
-            if (!(x + w < 0 || x > DISPLAY_WIDTH || y + h < 0 || y > DISPLAY_HEIGHT) && !(blink && (gRt->frame & 1)))
+            if (!(x + w < RT_VIEW_X0 || x > RT_VIEW_X1 || y + h < 0 || y > DISPLAY_HEIGHT) && !(blink && (gRt->frame & 1)))
             {
                 u8 m = 0xFF, extra = 0, scale;
                 struct RtActorX *ax = &gRt->ax[a->id];
@@ -1535,7 +1535,7 @@ void RtActor_Draw(struct RtActor *a)
         s32 x = sx - s->w / 2, y = sy - s->h / 2 + 1;
         if (a->invuln == 2 || a->invuln == 3)
             fx = FX_SHADOW16;
-        if (!(x + s->w < 0 || x > DISPLAY_WIDTH || y + s->h < 0 || y > DISPLAY_HEIGHT))
+        if (!(x + s->w < RT_VIEW_X0 || x > RT_VIEW_X1 || y + s->h < 0 || y > DISPLAY_HEIGHT))
         {
             o = RtOam_Next(3);
             if (o)

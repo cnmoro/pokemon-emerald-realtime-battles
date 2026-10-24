@@ -934,12 +934,12 @@ static bool8 DrawShape(u8 shape, u8 frame, u8 fxPal, s32 sx, s32 sy, u8 bucket, 
     }
     if (useAffine)
     {
-        if (sx + w < 0 || sx - w > DISPLAY_WIDTH || sy + h < 0 || sy - h > DISPLAY_HEIGHT)
+        if (sx + w < RT_VIEW_X0 || sx - w > RT_VIEW_X1 || sy + h < 0 || sy - h > DISPLAY_HEIGHT)
             return FALSE;
     }
     else
     {
-        if (sx + w / 2 < 0 || sx - w / 2 > DISPLAY_WIDTH || sy + h / 2 < 0 || sy - h / 2 > DISPLAY_HEIGHT)
+        if (sx + w / 2 < RT_VIEW_X0 || sx - w / 2 > RT_VIEW_X1 || sy + h / 2 < 0 || sy - h / 2 > DISPLAY_HEIGHT)
             return FALSE;
     }
     // single-frame shapes animated by mirroring
@@ -1090,7 +1090,7 @@ void RtFx_DrawEdges(void)
     for (y = HUD_TOP - 8; y < DISPLAY_HEIGHT - HUD_BOTTOM; y += 64)
     {
         u16 *oam;
-        if (l > -4)
+        if (l > RT_VIEW_X0 - 4)
         {
             // left of the field: ramp faces right (flipped)
             oam = (u16 *)RtOam_Next(3);
@@ -1102,7 +1102,7 @@ void RtFx_DrawEdges(void)
                 oam[2] = tile | (1 << 10) | (4 << 12);
             }
         }
-        if (r < DISPLAY_WIDTH + 4)
+        if (r < RT_VIEW_X1 + 4)
         {
             oam = (u16 *)RtOam_Next(3);
             if (oam)

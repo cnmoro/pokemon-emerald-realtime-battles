@@ -221,7 +221,7 @@ void RtMod_Tick(void)
     case ARENA_MOD_FOG:
         if ((gRt->frame & 7) == 0)
         {
-            struct RtPart *p = RtFx_Spawn(FX_SMOKE16, FXP_WHITE, TO_FX(gRt->camX + Random() % DISPLAY_WIDTH), TO_FX(gRt->camY + Random() % DISPLAY_HEIGHT), 60);
+            struct RtPart *p = RtFx_Spawn(FX_SMOKE16, FXP_WHITE, TO_FX(gRt->camX + RT_VIEW_X0 + Random() % RT_VIEW_W), TO_FX(gRt->camY + Random() % DISPLAY_HEIGHT), 60);
             if (p)
             {
                 p->flags |= PF_BLEND;
@@ -255,7 +255,7 @@ void RtMod_Tick(void)
                 }
             if ((gRt->frame & 3) == 0)
             {
-                struct RtPart *p = RtFx_Spawn(FX_SPARK8, FXP_WHITE, TO_FX(gRt->camX + Random() % DISPLAY_WIDTH), TO_FX(gRt->camY + Random() % DISPLAY_HEIGHT), 30);
+                struct RtPart *p = RtFx_Spawn(FX_SPARK8, FXP_WHITE, TO_FX(gRt->camX + RT_VIEW_X0 + Random() % RT_VIEW_W), TO_FX(gRt->camY + Random() % DISPLAY_HEIGHT), 30);
                 if (p)
                 {
                     p->vx = wx * 3;
