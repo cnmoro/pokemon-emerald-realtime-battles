@@ -1,4 +1,5 @@
 #include "global.h"
+#include "wide.h"
 #include "day_night.h"
 #include "world_tiles.h"
 #include "overworld.h"
@@ -1405,15 +1406,42 @@ u8 GetCurrentMapBattleScene(void)
     return Overworld_GetMapHeaderByGroupAndId(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum)->battleType;
 }
 
+// widescreen: the BGs become 64 tiles wide (nothing repeats in a wide picture), the map ring 32 metatiles
+static const struct BgTemplate sOverworldBgTemplatesWide[] =
+{
+    // VRAM: map tiles fill 0x0000-0x7FFF and the text windows' tiles 0x8000-0xC7FF, so the three map layers take
+    // screen blocks 25-30 and the text layer stays 32 tiles wide in 31 (the emulator keeps it out of the margins)
+    { .bg = 0, .charBaseIndex = 2, .mapBaseIndex = 31, .screenSize = 0, .paletteMode = 0, .priority = 0, .baseTile = 0 },
+    { .bg = 1, .charBaseIndex = 0, .mapBaseIndex = 27, .screenSize = 1, .paletteMode = 0, .priority = 1, .baseTile = 0 },
+    { .bg = 2, .charBaseIndex = 0, .mapBaseIndex = 25, .screenSize = 1, .paletteMode = 0, .priority = 2, .baseTile = 0 },
+    { .bg = 3, .charBaseIndex = 0, .mapBaseIndex = 29, .screenSize = 1, .paletteMode = 0, .priority = 3, .baseTile = 0 },
+};
+
 static void InitOverworldBgs(void)
 {
-    InitBgsFromTemplates(0, sOverworldBgTemplates, ARRAY_COUNT(sOverworldBgTemplates));
+    u16 wide = Wide_MaxWidth();
+    u32 size = BG_SCREEN_SIZE;
+    if (wide > DISPLAY_WIDTH)
+    {
+        InitBgsFromTemplates(0, sOverworldBgTemplatesWide, ARRAY_COUNT(sOverworldBgTemplatesWide));
+        size = BG_SCREEN_SIZE * 2;
+        // metatiles that may show beyond the normal picture on each side (plus the one scrolling in)
+        gFieldWideExt = ((wide - DISPLAY_WIDTH) / 2 + 15) / 16 + 1;
+        Wide_Request(wide);
+        Wide_SetMask(1 << 0); // the text layer (32 tiles wide) stays out of the side margins
+    }
+    else
+    {
+        InitBgsFromTemplates(0, sOverworldBgTemplates, ARRAY_COUNT(sOverworldBgTemplates));
+        gFieldWideExt = 0;
+    }
+    FieldCamera_SetWide(wide > DISPLAY_WIDTH);
     SetBgAttribute(1, BG_ATTR_MOSAIC, 1);
     SetBgAttribute(2, BG_ATTR_MOSAIC, 1);
     SetBgAttribute(3, BG_ATTR_MOSAIC, 1);
-    gOverworldTilemapBuffer_Bg1 = AllocZeroed(BG_SCREEN_SIZE);
-    gOverworldTilemapBuffer_Bg2 = AllocZeroed(BG_SCREEN_SIZE);
-    gOverworldTilemapBuffer_Bg3 = AllocZeroed(BG_SCREEN_SIZE);
+    gOverworldTilemapBuffer_Bg1 = AllocZeroed(size);
+    gOverworldTilemapBuffer_Bg2 = AllocZeroed(size);
+    gOverworldTilemapBuffer_Bg3 = AllocZeroed(size);
     SetBgTilemapBuffer(1, gOverworldTilemapBuffer_Bg1);
     SetBgTilemapBuffer(2, gOverworldTilemapBuffer_Bg2);
     SetBgTilemapBuffer(3, gOverworldTilemapBuffer_Bg3);

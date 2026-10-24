@@ -1,4 +1,5 @@
 #include "global.h"
+#include "wide.h"
 #include "malloc.h"
 #include "battle_pyramid.h"
 #include "berry.h"
@@ -1648,8 +1649,8 @@ u8 CreateVirtualObject(u8 graphicsId, u8 virtualObjId, s16 x, s16 y, u8 elevatio
 static void TrySpawnNeighborObjectEvents(s16 cameraX, s16 cameraY)
 {
     const struct MapConnections *conns = gMapHeader.connections;
-    s16 left = gSaveBlock1Ptr->pos.x - 2;
-    s16 right = gSaveBlock1Ptr->pos.x + MAP_OFFSET_W + 2;
+    s16 left = gSaveBlock1Ptr->pos.x - 2 - gFieldWideExt;
+    s16 right = gSaveBlock1Ptr->pos.x + MAP_OFFSET_W + 2 + gFieldWideExt;
     s16 top = gSaveBlock1Ptr->pos.y;
     s16 bottom = gSaveBlock1Ptr->pos.y + MAP_OFFSET_H + 2;
     s32 c, i;
@@ -1701,8 +1702,8 @@ void TrySpawnObjectEvents(s16 cameraX, s16 cameraY)
 
     if (gMapHeader.events != NULL)
     {
-        s16 left = gSaveBlock1Ptr->pos.x - 2;
-        s16 right = gSaveBlock1Ptr->pos.x + MAP_OFFSET_W + 2;
+        s16 left = gSaveBlock1Ptr->pos.x - 2 - gFieldWideExt;
+        s16 right = gSaveBlock1Ptr->pos.x + MAP_OFFSET_W + 2 + gFieldWideExt;
         s16 top = gSaveBlock1Ptr->pos.y;
         s16 bottom = gSaveBlock1Ptr->pos.y + MAP_OFFSET_H + 2;
 
@@ -1751,8 +1752,8 @@ void RemoveObjectEventsOutsideView(void)
 
 static void RemoveObjectEventIfOutsideView(struct ObjectEvent *objectEvent)
 {
-    s16 left =   gSaveBlock1Ptr->pos.x - 2;
-    s16 right =  gSaveBlock1Ptr->pos.x + 17;
+    s16 left =   gSaveBlock1Ptr->pos.x - 2 - gFieldWideExt;
+    s16 right =  gSaveBlock1Ptr->pos.x + 17 + gFieldWideExt;
     s16 top =    gSaveBlock1Ptr->pos.y;
     s16 bottom = gSaveBlock1Ptr->pos.y + 16;
 
@@ -7396,7 +7397,7 @@ static void UpdateObjectEventOffscreen(struct ObjectEvent *objectEvent, struct S
     x2 = (u16)x + (u16)graphicsInfo->width;
     y2 = (u16)y + (u16)graphicsInfo->height;
 
-    if (x >= DISPLAY_WIDTH + 16 || x2 < -16)
+    if (x >= DISPLAY_WIDTH + WIDE_L + 16 || x2 < -16 - WIDE_L)
         objectEvent->offScreen = TRUE;
 
     if (y >= DISPLAY_HEIGHT + 16 || y2 < -16)
@@ -8600,7 +8601,7 @@ void UpdateObjectEventSpriteInvisibility(struct Sprite *sprite, bool8 invisible)
     x2 = (u16)x - (u16)(sprite->centerToCornerVecX >> 1);
     y2 = (u16)y - (u16)(sprite->centerToCornerVecY >> 1);
 
-    if (x >= DISPLAY_WIDTH + 16 || x2 < -16)
+    if (x >= DISPLAY_WIDTH + WIDE_L + 16 || x2 < -16 - WIDE_L)
         sprite->invisible = TRUE;
     if (y >= DISPLAY_HEIGHT + 16 || y2 < -16)
         sprite->invisible = TRUE;

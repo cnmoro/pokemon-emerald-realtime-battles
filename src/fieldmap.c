@@ -1,4 +1,5 @@
 #include "global.h"
+#include "wide.h"
 #include "world_tiles.h"
 #include "battle_pyramid.h"
 #include "bg.h"
@@ -53,7 +54,39 @@ static bool8 IsCoordInIncomingConnectingMap(s32 coord, s32 srcMax, s32 destMax, 
 
 #define AreCoordsWithinMapGridBounds(x, y) (x >= 0 && x < gBackupMapLayout.width && y >= 0 && y < gBackupMapLayout.height)
 
-#define GetMapGridBlockAt(x, y) (AreCoordsWithinMapGridBounds(x, y) ? gBackupMapLayout.map[x + gBackupMapLayout.width * y] : GetBorderBlockAt(x, y))
+static u16 GetFarBlockAt(s32 x, s32 y);
+#define GetMapGridBlockAt(x, y) (AreCoordsWithinMapGridBounds(x, y) ? gBackupMapLayout.map[x + gBackupMapLayout.width * y] : GetFarBlockAt(x, y))
+
+// Widescreen: the picture reaches further than the strips of the connected maps copied around the map (7
+// metatiles), so past them the connected maps are read directly (impassable: only to be looked at)
+static u16 GetFarBlockAt(s32 x, s32 y)
+{
+    const struct MapConnections *conns = gMapHeader.connections;
+    if (gFieldWideExt && conns != NULL && conns->connections != NULL && gMapHeader.mapLayout != NULL)
+    {
+        s32 mx = x - MAP_OFFSET, my = y - MAP_OFFSET, i;
+        s32 w = gMapHeader.mapLayout->width, h = gMapHeader.mapLayout->height;
+        for (i = 0; i < conns->count; i++)
+        {
+            const struct MapConnection *c = &conns->connections[i];
+            const struct MapLayout *cl;
+            s32 cx, cy;
+            if (c->direction < CONNECTION_SOUTH || c->direction > CONNECTION_EAST)
+                continue;
+            cl = GetMapHeaderFromConnection(c)->mapLayout;
+            switch (c->direction)
+            {
+            case CONNECTION_SOUTH: cx = mx - c->offset; cy = my - h; break;
+            case CONNECTION_NORTH: cx = mx - c->offset; cy = my + cl->height; break;
+            case CONNECTION_WEST:  cx = mx + cl->width; cy = my - c->offset; break;
+            default:               cx = mx - w; cy = my - c->offset; break;
+            }
+            if (cx >= 0 && cx < cl->width && cy >= 0 && cy < cl->height)
+                return cl->map[cx + cy * cl->width] | MAPGRID_IMPASSABLE;
+        }
+    }
+    return GetBorderBlockAt(x, y);
+}
 
 const struct MapHeader *const GetMapHeaderFromConnection(const struct MapConnection *connection)
 {
@@ -166,7 +199,19 @@ static void FillConnection(s32 x, s32 y, const struct MapHeader *connectedMapHea
     s32 mapWidth;
 
     mapWidth = connectedMapHeader->mapLayout->width;
-    WorldTiles_AddRect(x, y, width, height, connectedMapHeader->mapLayout->secondaryTileset);
+    {
+        // the tileset area of a connection reaches past the copied strip (widescreen reads further, see GetFarBlockAt)
+        s32 rx = x, ry = y, rw = width, rh = height;
+        if (x == 0 && width == MAP_OFFSET)
+            rx -= 32, rw += 32;
+        else if (y == 0 && height == MAP_OFFSET)
+            ry -= 32, rh += 32;
+        else if (width == MAP_OFFSET + 1)
+            rw += 32;
+        else if (height == MAP_OFFSET)
+            rh += 32;
+        WorldTiles_AddRect(rx, ry, rw, rh, connectedMapHeader->mapLayout->secondaryTileset);
+    }
     src = &connectedMapHeader->mapLayout->map[mapWidth * y2 + x2];
     dest = &gBackupMapLayout.map[gBackupMapLayout.width * y + x];
 

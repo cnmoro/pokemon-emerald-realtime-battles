@@ -178,10 +178,12 @@ static void WtBuildRef(void)
     for (bg = 1; bg <= 3; bg++)
     {
         const u16 *buf = GetBgTilemapBuffer(bg);
+        // a 64-tile-wide map (widescreen) holds twice the entries
+        s32 n = GetBgAttribute(bg, BG_ATTR_SCREENSIZE) == 1 ? 2048 : 1024;
 
         if (buf == NULL)
             continue;
-        for (i = 0; i < 1024; i++)
+        for (i = 0; i < n; i++)
         {
             u16 e = buf[i];
             u16 t = e & 0x3FF;
