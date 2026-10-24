@@ -722,7 +722,7 @@ struct RtBattle
     // affine matrices allocation this frame
     u8 affineUsed;
 
-    u16 bg0Tilemap[32 * 32];
+    u16 bg0Tilemap[64 * 32];  // 64 wide: nothing repeats in a wide picture
 
     // arena props (rocks, cuttable trees, boulders, boxes)
     struct RtProp props[RT_MAX_PROPS];
@@ -795,6 +795,16 @@ struct RtBattle
 u8 RtBattleSpeedPct(void);
 
 extern struct RtBattle *gRt;
+
+// widescreen (emulators that offer a wider picture, see Rt_WideBegin): the normal 240-px picture stays where it
+// is and RT_VIEW_L extra columns show on each side of it (screen x from RT_VIEW_X0 to RT_VIEW_X1)
+extern u16 gRtWideW;
+#define RT_VIEW_W ((s32)(gRtWideW > DISPLAY_WIDTH ? gRtWideW : DISPLAY_WIDTH))
+#define RT_VIEW_L ((RT_VIEW_W - DISPLAY_WIDTH) / 2)
+#define RT_VIEW_X0 (-RT_VIEW_L)
+#define RT_VIEW_X1 (DISPLAY_WIDTH + RT_VIEW_L)
+void Rt_WideBegin(void);
+void Rt_WideEnd(void);
 
 // ---------------------------------------------------------------------------
 // Functions shared between modules
