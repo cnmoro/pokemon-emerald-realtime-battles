@@ -25,6 +25,7 @@ extern bool8 gBikeCameraAheadPanback;
 // Exported ROM declarations
 
 void DrawWholeMapView(void);
+void FieldCamera_SetWide(bool8 wide);
 void CurrentMapDrawMetatileAt(int x, int y);
 void FieldCameraGetPixelOffsetAtGround(s16 *x, s16 *y);
 void SetCameraPanningCallback(void (*cb)(void));
