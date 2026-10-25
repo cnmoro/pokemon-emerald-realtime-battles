@@ -1478,6 +1478,7 @@ const u8 gText_BattleScene[] = _("BATTLE SCENE");
 const u8 gText_RtDifficulty[] = _("DIFFICULTY");
 const u8 gText_RtAutoAim[] = _("AUTO AIM");
 const u8 gText_RtMoves[] = _("MOVES");
+const u8 gText_RtAbility[] = _("ABILITY");
 const u8 gText_RtExpShare[] = _("EXP SHARE");
 const u8 gText_RtExpShareOff[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
 const u8 gText_RtExpShare2[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}FIRST 2");

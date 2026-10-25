@@ -96,6 +96,7 @@ enum {
     MENU_TRADE2,
     MENU_TOSS,
     MENU_RELEARN,
+    MENU_ABILITY,
     MENU_FIELD_MOVES
 };
 
@@ -462,6 +463,7 @@ static void BlitBitmapToPartyWindow_LeftColumn(u8, u8, u8, u8, u8, bool8);
 static void BlitBitmapToPartyWindow_RightColumn(u8, u8, u8, u8, u8, bool8);
 static void CursorCb_Summary(u8);
 static void CursorCb_Relearn(u8);
+static void CursorCb_Ability(u8);
 static void CursorCb_Switch(u8);
 static void CursorCb_Cancel1(u8);
 static void CursorCb_Item(u8);
@@ -2632,6 +2634,10 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
     if (!GetMonData(&mons[slotId], MON_DATA_IS_EGG) && GetNumberOfRelearnableMoves(&mons[slotId]) != 0)
         AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_RELEARN);
 
+    // ABILITY: pick any of the abilities the species can have
+    if (!GetMonData(&mons[slotId], MON_DATA_IS_EGG) && sPartyMenuInternal->numActions <= 4)
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_ABILITY);
+
     // HMs in the bag whose field move is used from this menu (FLASH in caves, STRENGTH for the
     // ruins' puzzles) are offered on every POKeMON, as long as there is room in the list
     {
@@ -2803,6 +2809,106 @@ static void CB2_OpenMoveRelearnerFromParty(void)
 }
 
 static const u8 sText_NoMovesToRelearn[] = _("{STR_VAR_1} has no other moves\nto learn right now.{PAUSE_UNTIL_PRESS}");
+
+// ---- ABILITY: choose among the abilities the species supports; the message box describes the highlighted one
+#include "battle_main.h"
+#include "constants/abilities.h"
+static const struct WindowTemplate sAbilityListWindowTemplate = {.bg = 2, .tilemapLeft = 19, .tilemapTop = 15, .width = 10, .height = 4, .paletteNum = 14, .baseBlock = 0x2E9};
+static const struct WindowTemplate sAbilityMsgWindowTemplate = {.bg = 2, .tilemapLeft = 1, .tilemapTop = 15, .width = 17, .height = 4, .paletteNum = 15, .baseBlock = 0x299};
+static const u8 sText_ChooseAbility[] = _("Choose an ability.");
+static const u8 sText_AbilityNow[] = _("{STR_VAR_1}'s ability is\nnow {STR_VAR_2}!{PAUSE_UNTIL_PRESS}");
+
+static u8 GetSpeciesAbilityChoices(u16 species, u8 *abilities)
+{
+    u8 n = 0;
+    if (gSpeciesInfo[species].abilities[0] != ABILITY_NONE)
+        abilities[n++] = gSpeciesInfo[species].abilities[0];
+    if (gSpeciesInfo[species].abilities[1] != ABILITY_NONE && gSpeciesInfo[species].abilities[1] != gSpeciesInfo[species].abilities[0])
+        abilities[n++] = gSpeciesInfo[species].abilities[1];
+    return n;
+}
+
+static void PrintAbilityMessage(u8 ability)
+{
+    u8 win = sPartyMenuInternal->windowId[1];
+    FillWindowPixelBuffer(win, PIXEL_FILL(1));
+    AddTextPrinterParameterized(win, FONT_NORMAL, sText_ChooseAbility, 0, 1, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(win, FONT_NARROW, gAbilityDescriptionPointers[ability], 0, 17, TEXT_SKIP_DRAW, NULL);
+    CopyWindowToVram(win, COPYWIN_GFX);
+}
+
+static void Task_HandleAbilityInput(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+    struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
+    u8 abilities[2];
+    s8 input;
+
+    if (gPaletteFade.active || MenuHelpers_ShouldWaitForLinkRecv())
+        return;
+    GetSpeciesAbilityChoices(GetMonData(mon, MON_DATA_SPECIES), abilities);
+    input = Menu_ProcessInputNoWrap();
+    if (data[2] != Menu_GetCursorPos())
+    {
+        data[2] = Menu_GetCursorPos();
+        PrintAbilityMessage(abilities[data[2]]);
+    }
+    if (input == MENU_NOTHING_CHOSEN)
+        return;
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
+    if (input == MENU_B_PRESSED)
+    {
+        PlaySE(SE_SELECT);
+        DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON);
+        gTasks[taskId].func = Task_HandleChooseMonInput;
+        return;
+    }
+    {
+        // the ability comes from the species' slot the POKeMON uses: slot 1 for the second one
+        u8 abilityNum = (input == 1 || gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES)].abilities[0] == ABILITY_NONE) ? 1 : 0;
+        SetMonData(mon, MON_DATA_ABILITY_NUM, &abilityNum);
+        PlaySE(SE_SUCCESS);
+        GetMonNickname(mon, gStringVar1);
+        StringCopy(gStringVar2, gAbilityNames[abilities[input]]);
+        StringExpandPlaceholders(gStringVar4, sText_AbilityNow);
+        DisplayPartyMenuMessage(gStringVar4, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = Task_ReturnToChooseMonAfterText;
+    }
+}
+
+static void CursorCb_Ability(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+    struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
+    u8 abilities[2], cur = 0, i, n, windowId;
+    u8 current = GetMonAbility(mon);
+
+    PlaySE(SE_SELECT);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
+    n = GetSpeciesAbilityChoices(GetMonData(mon, MON_DATA_SPECIES), abilities);
+    windowId = AddWindow(&sAbilityListWindowTemplate);
+    sPartyMenuInternal->windowId[0] = windowId;
+    DrawStdFrameWithCustomTileAndPalette(windowId, FALSE, 0x4F, 13);
+    for (i = 0; i < n; i++)
+    {
+        // the ability the POKeMON has now is shown in color
+        AddTextPrinterParameterized4(windowId, FONT_NORMAL, GetMenuCursorDimensionByFont(FONT_NORMAL, 0), (i * 16) + 1,
+                                     GetFontAttribute(FONT_NORMAL, FONTATTR_LETTER_SPACING), 0,
+                                     sFontColorTable[abilities[i] == current ? 4 : 3], 0, gAbilityNames[abilities[i]]);
+        if (abilities[i] == current)
+            cur = i;
+    }
+    InitMenuInUpperLeftCorner(windowId, n, cur, TRUE);
+    sPartyMenuInternal->windowId[1] = AddWindow(&sAbilityMsgWindowTemplate);
+    DrawStdFrameWithCustomTileAndPalette(sPartyMenuInternal->windowId[1], FALSE, 0x4F, 13);
+    PrintAbilityMessage(abilities[cur]);
+    ScheduleBgCopyTilemapToVram(2);
+    data[2] = cur;
+    gTasks[taskId].func = Task_HandleAbilityInput;
+}
 
 static void CursorCb_Relearn(u8 taskId)
 {
