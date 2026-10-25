@@ -105,6 +105,7 @@ enum {
     MENU_TM_MOVES,
     MENU_TUTOR_MOVES,
 	MENU_SUB_MOVES,
+    MENU_PICK_ABILITY,
     MENU_TOSS,
     MENU_CATALOG_BULB,
     MENU_CATALOG_OVEN,
@@ -486,6 +487,7 @@ static void CursorCb_ChangeEggMoves(u8);
 static void CursorCb_ChangeTMMoves(u8);
 static void CursorCb_ChangeTutorMoves(u8);
 static void CursorCb_LearnMovesSubMenu(u8);
+static void CursorCb_PickAbility(u8);
 static void CursorCb_CatalogBulb(u8);
 static void CursorCb_CatalogOven(u8);
 static void CursorCb_CatalogWashing(u8);
@@ -2894,7 +2896,7 @@ static u8 DisplaySelectionWindow(u8 windowType)
 
         if (sPartyMenuInternal->actions[i] >= MENU_FIELD_MOVES)
             fontColorsId = 4;
-        if (sPartyMenuInternal->actions[i] >= MENU_LEVEL_UP_MOVES && sPartyMenuInternal->actions[i] <= MENU_SUB_MOVES)
+        if (sPartyMenuInternal->actions[i] >= MENU_LEVEL_UP_MOVES && sPartyMenuInternal->actions[i] <= MENU_PICK_ABILITY)
             fontColorsId = 6;
 
         if (sPartyMenuInternal->actions[i] >= MENU_FIELD_MOVES)
@@ -2969,6 +2971,10 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
      && (GetNumberOfLevelUpMoves(&mons[slotId]) || GetNumberOfEggMoves(&mons[slotId])
      || GetNumberOfTMMoves(&mons[slotId]) || GetNumberOfTutorMoves(&mons[slotId]))))
         AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_SUB_MOVES);
+
+    // ABILITY: pick any of the abilities the species can have (hidden one included)
+    if (GetMonData(&mons[slotId], MON_DATA_SPECIES) && !GetMonData(&mons[slotId], MON_DATA_IS_EGG))
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_PICK_ABILITY);
 
     // Add field moves to action list
     for (i = 0; i < MAX_MON_MOVES; i++)
@@ -8280,6 +8286,122 @@ static void CursorCb_ChangeTutorMoves(u8 taskId)
     gSpecialVar_0x8004 = gLastViewedMonIndex;
     TeachMoveRelearnerMove();
     Task_ClosePartyMenu(taskId);
+}
+
+// ---- ABILITY: choose among the abilities the species supports; the message box describes the highlighted one
+static const u8 sText_AbilityNow[] = _("{STR_VAR_1}'s ability is\nnow {STR_VAR_2}!{PAUSE_UNTIL_PRESS}");
+
+// the species' distinct abilities and the slot (MON_DATA_ABILITY_NUM) each comes from
+static u8 GetSpeciesAbilityChoices(u16 species, u16 *abilities, u8 *slots)
+{
+    u8 n = 0, i, j;
+    for (i = 0; i < NUM_ABILITY_SLOTS; i++)
+    {
+        u16 a = gSpeciesInfo[species].abilities[i];
+        if (a == ABILITY_NONE)
+            continue;
+        for (j = 0; j < n; j++)
+            if (abilities[j] == a)
+                break;
+        if (j < n)
+            continue;
+        abilities[n] = a;
+        slots[n++] = i;
+    }
+    return n;
+}
+
+static void PrintAbilityDescription(u16 ability)
+{
+    u8 win = sPartyMenuInternal->windowId[1];
+    FillWindowPixelBuffer(win, PIXEL_FILL(1));
+    AddTextPrinterParameterized(win, FONT_NORMAL, gAbilitiesInfo[ability].description, 0, 1, TEXT_SKIP_DRAW, NULL);
+    CopyWindowToVram(win, COPYWIN_GFX);
+}
+
+static void Task_HandlePickAbilityInput(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+    struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
+    u16 abilities[NUM_ABILITY_SLOTS];
+    u8 slots[NUM_ABILITY_SLOTS];
+    s8 input;
+
+    if (gPaletteFade.active || MenuHelpers_ShouldWaitForLinkRecv())
+        return;
+    GetSpeciesAbilityChoices(GetMonData(mon, MON_DATA_SPECIES), abilities, slots);
+    input = Menu_ProcessInputNoWrap();
+    if (data[2] != Menu_GetCursorPos())
+    {
+        data[2] = Menu_GetCursorPos();
+        PrintAbilityDescription(abilities[data[2]]);
+    }
+    if (input == MENU_NOTHING_CHOSEN)
+        return;
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
+    if (input == MENU_B_PRESSED)
+    {
+        PlaySE(SE_SELECT);
+        DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON);
+        gTasks[taskId].func = Task_HandleChooseMonInput;
+        return;
+    }
+    {
+        u8 abilityNum = slots[input];
+        SetMonData(mon, MON_DATA_ABILITY_NUM, &abilityNum);
+        PlaySE(SE_SUCCESS);
+        GetMonNickname(mon, gStringVar1);
+        StringCopy(gStringVar2, gAbilitiesInfo[abilities[input]].name);
+        StringExpandPlaceholders(gStringVar4, sText_AbilityNow);
+        DisplayPartyMenuMessage(gStringVar4, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = Task_ReturnToChooseMonAfterText;
+    }
+}
+
+static void CursorCb_PickAbility(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+    struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
+    u16 abilities[NUM_ABILITY_SLOTS];
+    u8 slots[NUM_ABILITY_SLOTS];
+    u8 cur = 0, i, n, windowId;
+    u16 current = GetMonAbility(mon);
+    struct WindowTemplate list = {.bg = 2, .tilemapLeft = 17, .width = 12, .paletteNum = 14, .baseBlock = 0x2E9};
+    static const struct WindowTemplate sAbilityDescWindowTemplate = {.bg = 2, .tilemapLeft = 1, .tilemapTop = 17, .width = 28, .height = 2, .paletteNum = 15, .baseBlock = 0x24F};
+
+    PlaySE(SE_SELECT);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
+    n = GetSpeciesAbilityChoices(GetMonData(mon, MON_DATA_SPECIES), abilities, slots);
+    if (n == 0)
+    {
+        abilities[0] = current;
+        slots[0] = 0;
+        n = 1;
+    }
+    list.height = n * 2;
+    list.tilemapTop = 15 - n * 2;
+    windowId = AddWindow(&list);
+    sPartyMenuInternal->windowId[0] = windowId;
+    DrawStdFrameWithCustomTileAndPalette(windowId, FALSE, 0x4F, 13);
+    for (i = 0; i < n; i++)
+    {
+        // the ability the POKeMON has now is shown in color
+        AddTextPrinterParameterized4(windowId, FONT_NORMAL, GetMenuCursorDimensionByFont(FONT_NORMAL, 0), (i * 16) + 1,
+                                     GetFontAttribute(FONT_NORMAL, FONTATTR_LETTER_SPACING), 0,
+                                     sFontColorTable[abilities[i] == current ? 6 : 3], 0, gAbilitiesInfo[abilities[i]].name);
+        if (abilities[i] == current)
+            cur = i;
+    }
+    InitMenuInUpperLeftCorner(windowId, n, cur, TRUE);
+    sPartyMenuInternal->windowId[1] = AddWindow(&sAbilityDescWindowTemplate);
+    DrawStdFrameWithCustomTileAndPalette(sPartyMenuInternal->windowId[1], FALSE, 0x4F, 13);
+    PrintAbilityDescription(abilities[cur]);
+    ScheduleBgCopyTilemapToVram(2);
+    data[2] = cur;
+    gTasks[taskId].func = Task_HandlePickAbilityInput;
 }
 
 static void CursorCb_LearnMovesSubMenu(u8 taskId)
