@@ -538,6 +538,18 @@ static const struct WindowTemplate sWindowTemplate_FirstBattleOakVoiceover =
     .baseBlock = 0x1DF,
 };
 
+// ABILITY: the POKeMON's abilities on the right, the highlighted one's description above the message
+static const struct WindowTemplate sAbilitySelectWindowTemplate =
+{
+    .bg = 2,
+    .tilemapLeft = 19,
+    .tilemapTop = 15,
+    .width = 10,
+    .height = 4,
+    .paletteNum = 14,
+    .baseBlock = 0x2BF,
+};
+
 static const struct WindowTemplate sFieldMoveDescriptionWindowTemplate =
 {
     .bg = 2,
@@ -600,6 +612,8 @@ static const u8 sPartyBoxCurrSelectionPalIds2[] = {97, 103, 104};
 
 static const u8 sPartyBoxSelectedForActionPalIds2[] = {161, 167, 168};
 
+static const u8 sText_ChooseAbility[] = _("Choose an ability.");
+
 static const u8 *const sActionStringTable[] =
 {
     [PARTY_MSG_CHOOSE_MON]             = gText_ChoosePokemon,
@@ -629,6 +643,7 @@ static const u8 *const sActionStringTable[] =
     [PARTY_MSG_BOOST_PP_WHICH_MOVE]    = gText_BoostPp,
     [PARTY_MSG_DO_WHAT_WITH_ITEM]      = gText_DoWhatWithItem,
     [PARTY_MSG_DO_WHAT_WITH_MAIL]      = gText_DoWhatWithMail,
+    [PARTY_MSG_CHOOSE_ABILITY]         = sText_ChooseAbility,
 };
 
 static const u8 *const sDescriptionStringTable[] =
@@ -1050,10 +1065,12 @@ enum
     CURSOR_OPTION_TRADE1,
     CURSOR_OPTION_TRADE2,
     CURSOR_OPTION_RELEARN,
+    CURSOR_OPTION_ABILITY,
     CURSOR_OPTION_FIELD_MOVES,
 };
 
 static const u8 sText_RtMoves[] = _("MOVES");
+static const u8 sText_RtAbility[] = _("ABILITY");
 
 static struct
 {
@@ -1080,6 +1097,7 @@ static struct
     [CURSOR_OPTION_TRADE1]                               = {gText_Trade4,                 CursorCB_Trade1   },
     [CURSOR_OPTION_TRADE2]                               = {gText_Trade4,                 CursorCB_Trade2   },
     [CURSOR_OPTION_RELEARN]                              = {sText_RtMoves,                CursorCB_Relearn  },
+    [CURSOR_OPTION_ABILITY]                              = {sText_RtAbility,              CursorCB_Ability  },
     [CURSOR_OPTION_FIELD_MOVES + FIELD_MOVE_FLASH]       = {gMoveNames[MOVE_FLASH],       CursorCB_FieldMove},
     [CURSOR_OPTION_FIELD_MOVES + FIELD_MOVE_CUT]         = {gMoveNames[MOVE_CUT],         CursorCB_FieldMove},
     [CURSOR_OPTION_FIELD_MOVES + FIELD_MOVE_FLY]         = {gMoveNames[MOVE_FLY],         CursorCB_FieldMove},
