@@ -521,6 +521,29 @@ void CreateWildMon(u16 species, u8 level)
 #define TRY_GET_ABILITY_INFLUENCED_WILD_MON_INDEX(wildPokemon, type, ability, ptr, count) TryGetAbilityInfluencedWildMonIndex(wildPokemon, type, ability, ptr)
 #endif
 
+// Every species of an area is equally likely (12 slots with 3 species -> 1/3 each, whatever the slots'
+// original weights); the slot (and so the level range) is then picked among that species' slots.
+static u8 ChooseBalancedWildMonIndex(const struct WildPokemon *mons, u8 count)
+{
+    u16 species[LAND_WILD_COUNT];
+    u8 nSpecies = 0, i, j, pick, nSlots = 0, slots[LAND_WILD_COUNT];
+    for (i = 0; i < count && nSpecies < ARRAY_COUNT(species); i++)
+    {
+        for (j = 0; j < nSpecies; j++)
+            if (species[j] == mons[i].species)
+                break;
+        if (j == nSpecies)
+            species[nSpecies++] = mons[i].species;
+    }
+    if (nSpecies == 0)
+        return 0;
+    pick = Random() % nSpecies;
+    for (i = 0; i < count && nSlots < ARRAY_COUNT(slots); i++)
+        if (mons[i].species == species[pick])
+            slots[nSlots++] = i;
+    return slots[Random() % nSlots];
+}
+
 static bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum WildPokemonArea area, u8 flags)
 {
     u8 wildMonIndex = 0;
@@ -542,7 +565,7 @@ static bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum 
         if (OW_STORM_DRAIN >= GEN_8 && TRY_GET_ABILITY_INFLUENCED_WILD_MON_INDEX(wildMonInfo->wildPokemon, TYPE_WATER, ABILITY_STORM_DRAIN, &wildMonIndex, LAND_WILD_COUNT))
             break;
 
-        wildMonIndex = ChooseWildMonIndex_Land();
+        wildMonIndex = ChooseBalancedWildMonIndex(wildMonInfo->wildPokemon, LAND_WILD_COUNT);
         break;
     case WILD_AREA_WATER:
         if (TRY_GET_ABILITY_INFLUENCED_WILD_MON_INDEX(wildMonInfo->wildPokemon, TYPE_STEEL, ABILITY_MAGNET_PULL, &wildMonIndex, WATER_WILD_COUNT))
@@ -558,10 +581,10 @@ static bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum 
         if (OW_STORM_DRAIN >= GEN_8 && TRY_GET_ABILITY_INFLUENCED_WILD_MON_INDEX(wildMonInfo->wildPokemon, TYPE_WATER, ABILITY_STORM_DRAIN, &wildMonIndex, WATER_WILD_COUNT))
             break;
 
-        wildMonIndex = ChooseWildMonIndex_Water();
+        wildMonIndex = ChooseBalancedWildMonIndex(wildMonInfo->wildPokemon, WATER_WILD_COUNT);
         break;
     case WILD_AREA_ROCKS:
-        wildMonIndex = ChooseWildMonIndex_Rocks();
+        wildMonIndex = ChooseBalancedWildMonIndex(wildMonInfo->wildPokemon, ROCK_WILD_COUNT);
         break;
     case WILD_AREA_HONEY_TREE:
         wildMonIndex = ChooseWildMonIndex_Land();
@@ -692,7 +715,6 @@ bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
 {
     u32 headerId;
     enum TimeOfDay timeOfDay;
-    struct Roamer *roamer;
 
     if (sWildEncountersDisabled == TRUE)
         return FALSE;
@@ -749,8 +771,8 @@ bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
 
             if (TryStartRoamerEncounter())
             {
-                roamer = &gSaveBlock1Ptr->roamer[gEncounteredRoamerIndex];
-                if (!IsWildLevelAllowedByRepel(roamer->level))
+                // (the enemy party holds the roamer, or a legend of rt_legends.c)
+                if (!IsWildLevelAllowedByRepel(GetMonData(&gEnemyParty[0], MON_DATA_LEVEL)))
                     return FALSE;
 
                 BattleSetup_StartRoamerBattle();
@@ -800,8 +822,8 @@ bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
 
             if (TryStartRoamerEncounter())
             {
-                roamer = &gSaveBlock1Ptr->roamer[gEncounteredRoamerIndex];
-                if (!IsWildLevelAllowedByRepel(roamer->level))
+                // (the enemy party holds the roamer, or a legend of rt_legends.c)
+                if (!IsWildLevelAllowedByRepel(GetMonData(&gEnemyParty[0], MON_DATA_LEVEL)))
                     return FALSE;
 
                 BattleSetup_StartRoamerBattle();
@@ -1137,7 +1159,8 @@ static bool8 IsWildLevelAllowedByRepel(u8 wildLevel)
 {
     u8 i;
 
-    if (!REPEL_STEP_COUNT)
+    // holding L while walking works as a REPEL
+    if (!REPEL_STEP_COUNT && !(gMain.heldKeysRaw & L_BUTTON))
         return TRUE;
 
     for (i = 0; i < PARTY_SIZE; i++)

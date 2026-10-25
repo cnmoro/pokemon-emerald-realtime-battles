@@ -1,12 +1,13 @@
+@ Real-time mod: the nurse heals the party at once (no machine animation, no dialog). The callers'
+@ waitmessage / waitbuttonpress / release are skipped: the script releases the player and ends here.
 Common_EventScript_PkmnCenterNurse::
 	lock
 	faceplayer
-	setvar VAR_0x8004, 0
-	specialvar VAR_RESULT, CountPlayerTrainerStars
-	goto_if_eq VAR_RESULT, 4, EventScript_PkmnCenterNurse_GoldCard
-	msgbox gText_WouldYouLikeToRestYourPkmn, MSGBOX_YESNO
-	goto_if_eq VAR_RESULT, YES, EventScript_PkmnCenterNurse_HealPkmn
-	goto_if_eq VAR_RESULT, NO, EventScript_PkmnCenterNurse_Goodbye
+	incrementgamestat GAME_STAT_USED_POKECENTER
+	special HealPlayerParty
+	playse SE_USE_ITEM
+	waitse
+	release
 	end
 
 EventScript_PkmnCenterNurse_Goodbye::

@@ -2990,6 +2990,20 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
         }
     }
 
+    // HMs in the bag whose field move is used from this menu (FLASH in caves, STRENGTH for boulders)
+    // are offered on every POKeMON, as long as there is room in the list
+    {
+        static const u8 sMenuHms[] = {FIELD_MOVE_FLASH, FIELD_MOVE_STRENGTH};
+        for (i = 0; i < ARRAY_COUNT(sMenuHms); i++)
+        {
+            u16 move = FieldMove_GetMoveId(sMenuHms[i]);
+            if (sPartyMenuInternal->numActions >= 5 || !PlayerHasHmForFieldMove(move)
+             || MonKnowsMove(&mons[slotId], move) || GetMonData(&mons[slotId], MON_DATA_IS_EGG))
+                continue;
+            AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, sMenuHms[i] + MENU_FIELD_MOVES);
+        }
+    }
+
     if (!InBattlePike())
     {
         if (GetMonData(&mons[1], MON_DATA_SPECIES) != SPECIES_NONE)

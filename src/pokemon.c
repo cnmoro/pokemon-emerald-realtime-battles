@@ -4906,7 +4906,19 @@ u32 GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode mode, u16 
                 if (evolutions[i].param == evolutionItem)
                     conditionsMet = TRUE;
                 break;
+            case EVO_TRADE:
+                // mod: the item of an item trade evolution (King's Rock, Metal Coat...) works like a stone
+                if (evolutions[i].params != NULL && evolutions[i].params[0].condition == IF_HOLD_ITEM
+                 && evolutions[i].params[0].arg1 == evolutionItem)
+                {
+                    targetSpecies = evolutions[i].targetSpecies;
+                    if (canStopEvo != NULL)
+                        *canStopEvo = FALSE;
+                }
+                break;
             }
+            if (targetSpecies != SPECIES_NONE)
+                break;
 
             if (conditionsMet && DoesMonMeetAdditionalConditions(mon, evolutions[i].params, NULL, PARTY_SIZE, canStopEvo, evoState))
             {
@@ -5815,42 +5827,44 @@ u8 GetRelearnerLevelUpMoves(struct Pokemon *mon, u16 *moves)
     return numMoves;
 }
 
+static void AddRelearnerEggMove(u16 *moves, u8 *numMoves, const u16 *learnedMoves, u16 move)
+{
+    u32 j;
+    if (*numMoves >= MAX_RELEARNER_MOVES)
+        return;
+    for (j = 0; j < MAX_MON_MOVES; j++)
+        if (learnedMoves[j] == move)
+            return;
+    for (j = 0; j < *numMoves; j++)
+        if (moves[j] == move)
+            return;
+    moves[(*numMoves)++] = move;
+}
+
+// the egg moves of the POKeMON and of every earlier form of its line (Pichu, Pikachu, Raichu), minus what it
+// already knows; Volt Tackle (from a Light Ball parent) for the Pichu line
 u8 GetRelearnerEggMoves(struct Pokemon *mon, u16 *moves)
 {
     u16 learnedMoves[MAX_MON_MOVES] = {0};
     u8 numMoves = 0;
-    u16 species = GetMonData(mon, MON_DATA_SPECIES);
+    u16 line[4];
+    s32 n = 0, k;
 
-    while (GetSpeciesPreEvolution(species) != SPECIES_NONE)
-        species = GetSpeciesPreEvolution(species);
-    const u16 *eggMoves = GetSpeciesEggMoves(species);
-
-    if (eggMoves == sNoneEggMoveLearnset)
-        return numMoves;
-
+    line[n++] = GetMonData(mon, MON_DATA_SPECIES);
+    while (n < 4 && (line[n] = GetSpeciesPreEvolution(line[n - 1])) != SPECIES_NONE)
+        n++;
     for (u8 i = 0; i < MAX_MON_MOVES; i++)
         learnedMoves[i] = GetMonData(mon, MON_DATA_MOVE1 + i, 0);
 
-    for (u16 i = 0; eggMoves[i] != MOVE_UNAVAILABLE; i++)
+    for (k = n - 1; k >= 0; k--)
     {
-        u16 j;
-        for (j = 0; j < MAX_MON_MOVES; j++)
-        {
-            if (learnedMoves[j] == eggMoves[i])
-                break;
-        }
-        if (j < MAX_MON_MOVES)
+        const u16 *eggMoves = GetSpeciesEggMoves(line[k]);
+        if (line[k] == SPECIES_PICHU)
+            AddRelearnerEggMove(moves, &numMoves, learnedMoves, MOVE_VOLT_TACKLE);
+        if (eggMoves == sNoneEggMoveLearnset)
             continue;
-
-        for (j = 0; j < numMoves; j++)
-        {
-            if (moves[j] == eggMoves[i])
-                break;
-        }
-        if (j < numMoves)
-            continue;
-
-        moves[numMoves++] = eggMoves[i];
+        for (u16 i = 0; eggMoves[i] != MOVE_UNAVAILABLE; i++)
+            AddRelearnerEggMove(moves, &numMoves, learnedMoves, eggMoves[i]);
     }
 
     if (P_SORT_MOVES)
@@ -5968,7 +5982,7 @@ u8 GetNumberOfEggMoves(struct Pokemon *mon)
     if (!FlagGet(P_FLAG_EGG_MOVES) && !P_ENABLE_MOVE_RELEARNERS)
         return 0;
 
-    u16 moves[EGG_MOVES_ARRAY_COUNT] = {0};
+    u16 moves[MAX_RELEARNER_MOVES] = {0};
     u16 species = GetMonData(mon, MON_DATA_SPECIES_OR_EGG, 0);
 
     if (species == SPECIES_EGG)

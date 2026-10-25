@@ -257,6 +257,11 @@ void CreateRoamerMonInstance(u32 roamerIndex)
 bool8 TryStartRoamerEncounter(void)
 {
     u32 i;
+    extern bool8 RtLegends_TryEncounter(void);
+
+    // the legends of the earlier generations (rt_legends.c)
+    if (RtLegends_TryEncounter())
+        return TRUE;
 
     for (i = 0; i < ROAMER_COUNT; i++)
     {

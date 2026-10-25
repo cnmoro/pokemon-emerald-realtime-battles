@@ -367,10 +367,6 @@ BerryTree_EventScript_PickBerry_Mutation::
 	message BerryTree_Text_PickedTheBerry_Mutation
 	playfanfare MUS_DP_OBTAIN_BERRY
 	waitmessage
-	waitfanfare
-	waitbuttonpress
-	message BerryTree_Text_PutAwayBerry_Mutation
-	waitmessage
 	waitbuttonpress
 	release
 	end
