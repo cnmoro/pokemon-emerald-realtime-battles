@@ -752,9 +752,10 @@ void RtUi_ShowTrainerPic(u16 trainerId)
         pic = GetTrainerHillTrainerFrontSpriteId(trainerId);
     else
         pic = GetTrainerStructFromId(trainerId)->trainerPic;
-    LZ77UnCompWram((const u32 *)gTrainerSprites[pic].frontPic.data, gRt->gfxBuf[2]);
+    // the expansion's pictures may be in either compressed format; its palettes are not compressed
+    DecompressDataWithHeaderWram(gTrainerSprites[pic].frontPic.data, gRt->gfxBuf[2]);
     CpuCopy32(gRt->gfxBuf[2], (void *)(OBJ_VRAM0 + 2 * 64 * TILE_SIZE_4BPP), 64 * TILE_SIZE_4BPP);
-    { u16 trainerPal[16]; LZ77UnCompWram((const u32 *)gTrainerSprites[pic].palette.data, trainerPal); LoadPalette(trainerPal, OBJ_PLTT_ID(2), PLTT_SIZE_4BPP); }
+    LoadPalette(gTrainerSprites[pic].palette.data, OBJ_PLTT_ID(2), PLTT_SIZE_4BPP);
     gRt->actors[2].curFrame = 0xFFFF;
     gRt->actors[2].hidden = TRUE;
     sTrainerPicShown = TRUE;

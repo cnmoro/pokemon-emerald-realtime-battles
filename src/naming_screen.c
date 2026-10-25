@@ -690,7 +690,8 @@ static bool8 MainState_Exit(void)
     {
         if (sNamingScreen->templateNum == NAMING_SCREEN_PLAYER)
             SeedRngAndSetTrainerId();
-        if (sNamingScreen->templateNum == NAMING_SCREEN_CAUGHT_MON
+        // the battle engine's own nickname step goes back into the battle; the real-time battle has its own way back
+        if (sNamingScreen->templateNum == NAMING_SCREEN_CAUGHT_MON && sNamingScreen->returnCallback == BattleMainCB2
          && CalculatePlayerPartyCount() < PARTY_SIZE)
             SetMainCallback2(BattleMainCB2);
         else
