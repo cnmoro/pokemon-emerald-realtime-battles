@@ -1,4 +1,5 @@
 #include "global.h"
+#include "wide.h"
 #include "crt0.h"
 #include "malloc.h"
 #include "link.h"
@@ -95,6 +96,7 @@ void AgbMain(void)
 #endif //MODERN
     *(vu16 *)BG_PLTT = RGB_WHITE; // Set the backdrop to white on startup
     InitGpuRegManager();
+    Wide_Init();
     REG_WAITCNT = WAITCNT_PREFETCH_ENABLE | WAITCNT_WS0_S_1 | WAITCNT_WS0_N_3;
     InitKeys();
     InitIntrHandlers();
