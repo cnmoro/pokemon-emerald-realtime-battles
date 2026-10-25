@@ -9,6 +9,18 @@
 EWRAM_DATA u16 gWideW = 0;
 EWRAM_DATA u8 gFieldWideExt = 0;
 
+// boot (power on or soft reset): the emulator may still hold the width of the game that ran before; start at 240
+void Wide_Init(void)
+{
+    gWideW = DISPLAY_WIDTH;
+    gFieldWideExt = 0;
+    if (REG_WIDE_MAGIC == 0x5744)
+    {
+        REG_WIDE_REQ = DISPLAY_WIDTH;
+        REG_WIDE_MASK = 0;
+    }
+}
+
 u16 Wide_MaxWidth(void)
 {
     u16 w;

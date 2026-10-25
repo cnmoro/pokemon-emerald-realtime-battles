@@ -10,6 +10,7 @@
 extern u16 gWideW;          // width the game renders for right now (0/240: normal)
 extern u8 gFieldWideExt;    // overworld: extra metatiles visible on each side (0 when not wide)
 
+void Wide_Init(void);
 u16 Wide_MaxWidth(void);
 void Wide_Request(u16 width);
 void Wide_SetMask(u16 bgs);

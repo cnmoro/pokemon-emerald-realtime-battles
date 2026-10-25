@@ -1,4 +1,5 @@
 #include "global.h"
+#include "wide.h"
 #include "gflib.h"
 #include "link.h"
 #include "link_rfu.h"
@@ -140,6 +141,7 @@ void AgbMain()
     *(vu16 *)BG_PLTT = RGB_WHITE;
 #endif
     InitGpuRegManager();
+    Wide_Init();
     REG_WAITCNT = WAITCNT_PREFETCH_ENABLE | WAITCNT_WS0_S_1 | WAITCNT_WS0_N_3;
     InitKeys();
     InitIntrHandlers();
