@@ -179,6 +179,7 @@ struct RtLcPartyMenuInternal
 #define RTLC_OPTION_ITEM   3
 #define RTLC_OPTION_CANCEL 2
 #define RTLC_OPTION_MOVES  30
+#define RTLC_OPTION_ABILITY 31
 extern struct RtLcPartyMenuInternal *sPartyMenuInternal;
 void Task_ClosePartyMenu(u8 taskId);
 void CB2_MoveRelearner_Init(void);
@@ -186,9 +187,12 @@ void CB2_ReturnToPartyMenuFromSummaryScreen(void);
 u8 GetNumberOfRelearnableMoves(struct Pokemon *mon);
 
 static const u8 sText_RtLcMoves[] = _("MOVES");
+static const u8 sText_RtLcAbility[] = _("ABILITY");
 static void RtLc_CursorCB_Moves(u8 taskId);
-const struct RtLcCursorOption RtLc_CursorOptions[RTLC_OPTION_MOVES + 1] = {
+static void RtLc_CursorCB_Ability(u8 taskId);
+const struct RtLcCursorOption RtLc_CursorOptions[RTLC_OPTION_ABILITY + 1] = {
     [RTLC_OPTION_MOVES] = {sText_RtLcMoves, RtLc_CursorCB_Moves},
+    [RTLC_OPTION_ABILITY] = {sText_RtLcAbility, RtLc_CursorCB_Ability},
 };
 
 static EWRAM_DATA bool8 sRtLcRelearnFromParty = FALSE;
@@ -246,23 +250,153 @@ void RtLc_SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
             m->numActions++;
         }
     }
-    if (m->numActions >= 7 || GetNumberOfRelearnableMoves(&mons[slotId]) == 0)
-        return;
+    // MOVES, then ABILITY, right before SWITCH
     for (at = 1; at < m->numActions; at++)
         if (m->actions[at] == RTLC_OPTION_SWITCH || m->actions[at] == RTLC_OPTION_ITEM || m->actions[at] == RTLC_OPTION_CANCEL
          || m->actions[at] < 18 /* not a field move */)
             break;
-    for (i = m->numActions; i > at; i--)
-        m->actions[i] = m->actions[i - 1];
-    m->actions[at] = RTLC_OPTION_MOVES;
-    m->numActions++;
+    if (m->numActions < 7 && GetNumberOfRelearnableMoves(&mons[slotId]) != 0)
+    {
+        for (i = m->numActions; i > at; i--)
+            m->actions[i] = m->actions[i - 1];
+        m->actions[at++] = RTLC_OPTION_MOVES;
+        m->numActions++;
+    }
+    if (m->numActions < 8)
+    {
+        for (i = m->numActions; i > at; i--)
+            m->actions[i] = m->actions[i - 1];
+        m->actions[at] = RTLC_OPTION_ABILITY;
+        m->numActions++;
+    }
+}
+
+// --- party menu ABILITY: choose any ability the species supports, with the highlighted one's description ---
+#include "window.h"
+#include "menu.h"
+#include "text_window.h"
+#include "string_util.h"
+#include "strings.h"
+void PartyMenuRemoveWindow(u8 *ptr);
+u8 DisplayPartyMenuMessage(const u8 *str, bool8 keepOpen);
+void Task_ReturnToChooseMonAfterText(u8 taskId);
+void Task_HandleChooseMonInput(u8 taskId);
+void DisplayPartyMenuStdMessage(u32 stringId);
+void DrawHelpMessageWindowTilesById(u8 windowId);
+extern const u8 sFontColorTable[][3];
+extern const struct WindowTemplate sFieldMoveDescriptionWindowTemplate;
+extern const u8 *const gAbilityDescriptionPointers[];
+extern const u8 gAbilityNames[][ABILITY_NAME_LENGTH + 1];
+
+static const struct WindowTemplate sRtLcAbilityListWindow = {.bg = 2, .tilemapLeft = 19, .tilemapTop = 15, .width = 10, .height = 4, .paletteNum = 14, .baseBlock = 0x2BF};
+static const struct WindowTemplate sRtLcAbilityMsgWindow = {.bg = 2, .tilemapLeft = 1, .tilemapTop = 17, .width = 15, .height = 2, .paletteNum = 15, .baseBlock = 0x299};
+static const u8 sText_RtLcChooseAbility[] = _("Choose an ability.");
+static const u8 sText_RtLcAbilityNow[] = _("{STR_VAR_1}'s ability is\nnow {STR_VAR_2}!{PAUSE_UNTIL_PRESS}");
+
+static u8 RtLc_AbilityChoices(u16 species, u8 *abilities)
+{
+    u8 n = 0;
+    if (gSpeciesInfo[species].abilities[0] != ABILITY_NONE)
+        abilities[n++] = gSpeciesInfo[species].abilities[0];
+    if (gSpeciesInfo[species].abilities[1] != ABILITY_NONE && gSpeciesInfo[species].abilities[1] != gSpeciesInfo[species].abilities[0])
+        abilities[n++] = gSpeciesInfo[species].abilities[1];
+    return n;
+}
+
+static void RtLc_PrintAbilityDescription(u8 ability)
+{
+    u8 *win = &sPartyMenuInternal->windowId[2];
+    if (*win == WINDOW_NONE)
+        *win = AddWindow(&sFieldMoveDescriptionWindowTemplate);
+    DrawHelpMessageWindowTilesById(*win);
+    AddTextPrinterParameterized4(*win, FONT_NORMAL, 3, 6, GetFontAttribute(FONT_NORMAL, FONTATTR_LETTER_SPACING), 0,
+                                 sFontColorTable[5], 0, gAbilityDescriptionPointers[ability]);
+    PutWindowTilemap(*win);
+    ScheduleBgCopyTilemapToVram(2);
+}
+
+static void RtLc_Task_HandleAbilityInput(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+    struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
+    u8 abilities[2];
+    s8 input;
+
+    if (gPaletteFade.active)
+        return;
+    RtLc_AbilityChoices(GetMonData(mon, MON_DATA_SPECIES), abilities);
+    input = Menu_ProcessInputNoWrapAround();
+    if (data[2] != Menu_GetCursorPos())
+    {
+        data[2] = Menu_GetCursorPos();
+        RtLc_PrintAbilityDescription(abilities[data[2]]);
+    }
+    if (input == MENU_NOTHING_CHOSEN)
+        return;
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[2]);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
+    if (input == MENU_B_PRESSED)
+    {
+        PlaySE(SE_SELECT);
+        DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON);
+        gTasks[taskId].func = Task_HandleChooseMonInput;
+        return;
+    }
+    {
+        // the ability comes from the species' slot the POKeMON uses: slot 1 for the second one
+        u8 abilityNum = (input == 1 || gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES)].abilities[0] == ABILITY_NONE) ? 1 : 0;
+        SetMonData(mon, MON_DATA_ABILITY_NUM, &abilityNum);
+        PlaySE(SE_SUCCESS);
+        GetMonNickname(mon, gStringVar1);
+        StringCopy(gStringVar2, gAbilityNames[abilities[input]]);
+        StringExpandPlaceholders(gStringVar4, sText_RtLcAbilityNow);
+        DisplayPartyMenuMessage(gStringVar4, TRUE);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = Task_ReturnToChooseMonAfterText;
+    }
+}
+
+static void RtLc_CursorCB_Ability(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+    struct Pokemon *mon = &gPlayerParty[gPartyMenu.slotId];
+    u8 abilities[2], cur = 0, i, n, windowId;
+    u8 current = GetMonAbility(mon);
+
+    PlaySE(SE_SELECT);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[0]);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[1]);
+    PartyMenuRemoveWindow(&sPartyMenuInternal->windowId[2]);
+    n = RtLc_AbilityChoices(GetMonData(mon, MON_DATA_SPECIES), abilities);
+    windowId = AddWindow(&sRtLcAbilityListWindow);
+    sPartyMenuInternal->windowId[0] = windowId;
+    DrawStdFrameWithCustomTileAndPalette(windowId, FALSE, 0x4F, 13);
+    for (i = 0; i < n; i++)
+    {
+        // the ability the POKeMON has now is shown in blue
+        AddTextPrinterParameterized4(windowId, FONT_NORMAL, GetMenuCursorDimensionByFont(FONT_NORMAL, 0), (i * 16) + 2,
+                                     GetFontAttribute(FONT_NORMAL, FONTATTR_LETTER_SPACING), 0,
+                                     sFontColorTable[abilities[i] == current ? 4 : 3], 0, gAbilityNames[abilities[i]]);
+        if (abilities[i] == current)
+            cur = i;
+    }
+    Menu_InitCursor(windowId, FONT_NORMAL, 0, 2, 16, n, cur);
+    // "Choose an ability." in the message box
+    sPartyMenuInternal->windowId[1] = AddWindow(&sRtLcAbilityMsgWindow);
+    DrawStdFrameWithCustomTileAndPalette(sPartyMenuInternal->windowId[1], FALSE, 0x58, 15);
+    AddTextPrinterParameterized(sPartyMenuInternal->windowId[1], FONT_NORMAL, sText_RtLcChooseAbility, 0, 2, 0, 0);
+    ScheduleBgCopyTilemapToVram(2);
+    RtLc_PrintAbilityDescription(abilities[cur]);
+    data[2] = cur;
+    gTasks[taskId].func = RtLc_Task_HandleAbilityInput;
 }
 
 // the field move description box (shown while the cursor is on a field move) has no text for MOVES
 enum { TRAMP_FIELD_MOVE_DESC = 2 };
 void RtLc_ToggleFieldMoveDescriptionWindow(u8 action)
 {
-    TRAMP(TRAMP_FIELD_MOVE_DESC, void (*)(u8))(action == RTLC_OPTION_MOVES ? 0 : action);
+    TRAMP(TRAMP_FIELD_MOVE_DESC, void (*)(u8))(action >= RTLC_OPTION_MOVES ? 0 : action);
 }
 
 // --- MOVES / move relearner: after the level-up moves, the egg moves of the POKeMON and its earlier forms ---
