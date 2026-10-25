@@ -168,6 +168,7 @@ static u8 BehaviorOf(u16 metatile)
 #define MF_GROUND    (1 << 4) // a ground the battle field can keep as it is
 #define MF_INVALID   (1 << 5) // not a metatile of the tilesets
 static bool8 IsLedgeMeta(u16 m);
+static bool8 IsBlankMetatile(u16 m);
 static u8 MetaFlags(u16 m)
 {
     u8 f;
@@ -176,6 +177,14 @@ static u8 MetaFlags(u16 m)
         return MF_KNOWN | MF_INVALID;
     if (sMetaFlagCache != NULL && sMetaFlagCache[m])
         return sMetaFlagCache[m];
+    // the black void around rooms and caves: Platinum's maps leave it without collision (walls keep the
+    // player out), so it is told apart by its look - never ground, never walked on
+    if (IsBlankMetatile(m))
+    {
+        if (sMetaFlagCache != NULL)
+            sMetaFlagCache[m] = MF_KNOWN | MF_INVALID;
+        return MF_KNOWN | MF_INVALID;
+    }
     b = BehaviorOf(m);
     f = MF_KNOWN;
     if (MetatileBehavior_IsSurfableWaterOrUnderwater(b))
@@ -517,6 +526,8 @@ static void RtArena_BuildSynthetic(void)
 #define GF_WALK  1
 #define GF_SHOT  2   // blocks projectiles (trees, walls, rocks)
 #define GF_OPEN  4   // walkable with all 8 neighbours walkable
+#define GF_REACH 8   // walkable and reachable on foot from the player
+#define GF_CUT   16  // walkable but out of the player's reach (the rock mass around a cave)
 
 static EWRAM_DATA u8 sSpawnCell[2][2][2] = {0}; // [side][index][x/y] in arena cells
 static EWRAM_DATA bool8 sSpawnValid = FALSE;
@@ -626,6 +637,8 @@ static u8 CellFlags(s32 x, s32 y, bool8 water)
     if (m >= NUM_METATILES_TOTAL)
         return GF_SHOT;
     f = MetaFlags(m);
+    if (f & MF_INVALID)
+        return GF_SHOT;
     isWater = (f & (MF_SURF | MF_WATERFALL)) != 0;
     ledge = (f & MF_LEDGE) != 0;
     if (water)
@@ -865,6 +878,56 @@ void RtArena_Build(void)
             for (x = 0; x < GRID_W; x++)
                 grid[y * GRID_W + x] = CellFlags(gx0 + x, gy0 + y, water);
     }
+    // only ground the player can walk to counts: Platinum's maps leave the rock mass and the void around
+    // caves and rooms without collision (the walls keep the player out), which would otherwise look like
+    // open ground. Walkable cells that cannot be reached from the player become obstacles.
+    {
+        u16 *fq = Alloc(GRID_W * GRID_H * sizeof(u16));
+        if (fq != NULL)
+        {
+            u16 head = 0, tail = 0;
+            s32 k, sx = px - gx0, sy = py - gy0;
+            for (k = 0; k < 5; k++)
+            {
+                s32 nx = sx + (k == 1) - (k == 2), ny = sy + (k == 3) - (k == 4);
+                u8 *g = &grid[ny * GRID_W + nx];
+                if ((*g & GF_WALK) && !(*g & GF_REACH))
+                {
+                    *g |= GF_REACH;
+                    fq[tail++] = ny * GRID_W + nx;
+                }
+            }
+            while (head < tail)
+            {
+                u16 c = fq[head++];
+                s32 cx = c % GRID_W, cy = c / GRID_W;
+                for (k = 0; k < 4; k++)
+                {
+                    s32 nx = cx + (k == 0) - (k == 1), ny = cy + (k == 2) - (k == 3);
+                    u8 *g;
+                    if (nx < 0 || ny < 0 || nx >= GRID_W || ny >= GRID_H)
+                        continue;
+                    g = &grid[ny * GRID_W + nx];
+                    if ((*g & GF_WALK) && !(*g & GF_REACH))
+                    {
+                        *g |= GF_REACH;
+                        fq[tail++] = ny * GRID_W + nx;
+                    }
+                }
+            }
+            Free(fq);
+            if (tail > 0)
+                for (i = 0; i < GRID_W * GRID_H; i++)
+                    if ((grid[i] & GF_WALK) && !(grid[i] & GF_REACH))
+                        grid[i] = GF_SHOT | GF_CUT;
+        }
+        else
+        {
+            for (i = 0; i < GRID_W * GRID_H; i++)
+                if (grid[i] & GF_WALK)
+                    grid[i] |= GF_REACH;
+        }
+    }
     for (y = 1; y < GRID_H - 1; y++)
     {
         const u8 *r0 = &grid[(y - 1) * GRID_W], *r1 = &grid[y * GRID_W], *r2 = &grid[(y + 1) * GRID_W];
@@ -935,7 +998,8 @@ void RtArena_Build(void)
             {
                 s32 cx = gx0 + x - 1, c = 0;
                 bool8 outside = rowOut || cx < MAP_OFFSET || cx >= mapX1;
-                if (outside && noConn)
+                if ((outside && noConn) || (sBlkCache != NULL && (sCellMF[(y - 1) * GRID_W + x - 1] & MF_INVALID))
+                 || (grid[(y - 1) * GRID_W + x - 1] & GF_CUT))
                     c = 6; // (outside the map with connections: CellClean looks at the neighbour map)
                 else if (sBlkCache != NULL ? !CellCleanOf(sBlkCache[(y - 1) * GRID_W + x - 1], sCellMF[(y - 1) * GRID_W + x - 1], water, pe)
                                            : !CellClean(cx, cy, water, pe))
@@ -1233,7 +1297,8 @@ void RtArena_Build(void)
         for (y = 0; y < ARENA_MH; y++)
             for (x = 0; x < ARENA_MW; x++)
             {
-                clean[y][x] = CellClean(gx0 + bestOx + x, gy0 + bestOy + y, water, pe);
+                clean[y][x] = !(grid[(bestOy + y) * GRID_W + bestOx + x] & GF_CUT)
+                           && CellClean(gx0 + bestOx + x, gy0 + bestOy + y, water, pe);
                 objId[y][x] = 0;
             }
         // the field's ground: the most common clean metatile of the window (no tall grass on land)
@@ -1669,7 +1734,22 @@ static void LoadTileset(const struct Tileset *ts, u16 numTiles, u16 offsetTiles)
     if (ts == NULL)
         return;
     if (ts->isCompressed)
-        DecompressDataWithHeaderVram(ts->tiles, dst);
+    {
+        // like the overworld: decompress in WRAM (smol formats write bytes, which VRAM drops) and copy only
+        // the tileset's share of the tile slots
+        u32 size = GetDecompressedDataSize(ts->tiles);
+        void *buf = Alloc(size);
+        if (buf == NULL)
+        {
+            DecompressDataWithHeaderVram(ts->tiles, dst);
+            return;
+        }
+        DecompressDataWithHeaderWram(ts->tiles, buf);
+        if (size > numTiles * TILE_SIZE_4BPP)
+            size = numTiles * TILE_SIZE_4BPP;
+        CpuCopy16(buf, dst, size);
+        Free(buf);
+    }
     else
         CpuCopy16(ts->tiles, dst, numTiles * TILE_SIZE_4BPP);
 }
