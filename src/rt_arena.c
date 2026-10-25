@@ -525,12 +525,9 @@ static const u16 *GetMetatileTiles(u16 metatile);
 static bool8 HasTopLayer(u16 m)
 {
     const u16 *t = GetMetatileTiles(m);
-    u8 layer = (GetMetatileAttributesById(m) & METATILE_ATTR_LAYER_MASK) >> METATILE_ATTR_LAYER_SHIFT;
     s32 k;
-    // NORMAL: upper tiles go to the top layer; COVERED: both are under sprites
-    if (layer == METATILE_LAYER_TYPE_COVERED)
-        return FALSE;
-    for (k = 4; k < 8; k++)
+    // Platinum's metatiles have three layers: bottom (BG3), middle (BG2) and top (BG1, over the sprites)
+    for (k = 8; k < 12; k++)
         if ((t[k] & 0x3FF) != 0)
             return TRUE;
     return FALSE;
@@ -550,7 +547,7 @@ static bool8 IsBlankMetatile(u16 m)
     s32 k;
     if (t == NULL)
         return TRUE;
-    for (k = 1; k < 8; k++)
+    for (k = 1; k < NUM_TILES_PER_METATILE; k++)
         if ((t[k] & 0x3FF) != (t[0] & 0x3FF))
             return FALSE;
     return TRUE;
@@ -1699,29 +1696,19 @@ static void LoadTilesetPal(const struct Tileset *ts, u16 dest, u16 size)
     }
 }
 
+// the overworld's way (field_camera.c DrawMetatile): three layers, bottom on BG3, middle on BG2, top on BG1
 static void PutCell(u16 *bg1, u16 *bg2, u16 *bg3, s32 mx, s32 my, u16 metatile)
 {
     const u16 *t = GetMetatileTiles(metatile);
-    u8 layer = (GetMetatileAttributesById(metatile) & METATILE_ATTR_LAYER_MASK) >> METATILE_ATTR_LAYER_SHIFT;
     s32 k;
     for (k = 0; k < 4; k++)
     {
         s32 tx = mx * 2 + (k & 1);
         s32 ty = my * 2 + (k >> 1);
         s32 idx = (tx >> 5) * 1024 + ty * 32 + (tx & 31);
-        u16 lo = t[k], hi = t[k + 4];
-        switch (layer)
-        {
-        case METATILE_LAYER_TYPE_SPLIT:
-            bg3[idx] = lo; bg2[idx] = 0; bg1[idx] = hi;
-            break;
-        case METATILE_LAYER_TYPE_COVERED:
-            bg3[idx] = lo; bg2[idx] = hi; bg1[idx] = 0;
-            break;
-        default: // NORMAL
-            bg3[idx] = 0; bg2[idx] = lo; bg1[idx] = hi;
-            break;
-        }
+        bg3[idx] = t[k];
+        bg2[idx] = t[k + 4];
+        bg1[idx] = t[k + 8];
     }
 }
 
